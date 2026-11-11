@@ -1,0 +1,17 @@
+# OGIMORA - ogimora.com
+User-agent: *
+Allow: /
+Disallow: /api/
+
+# Wyszukiwarki i asystenci AI: wstep wolny (opis strony: /llms.txt)
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: PerplexityBot
+User-agent: Google-Extended
+Allow: /
+Disallow: /api/
+
+Sitemap: https://ogimora.com/sitemap.xml

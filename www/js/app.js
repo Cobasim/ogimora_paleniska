@@ -1369,7 +1369,7 @@ function plikDoPobrania() {
   document.body.appendChild(a); a.click(); a.remove();
   toast((EN_UI ? 'Saved “' : 'Zapisano „') + nazwa + '”' + (EN_UI ? ' to a file' : ' do pliku'));
 }
-function idzDo(q) { zapiszTeraz(); location.href = q; }
+function idzDo(q) { zapiszTeraz(); location.href = location.pathname + q; }   // z pathname: strony /en/ i /pl/ mają <base href="/">
 {
   const btn = $('pjMenuBtn'), menu = $('pjMenu');
   document.body.appendChild(menu);
@@ -1417,7 +1417,7 @@ function idzDo(q) { zapiszTeraz(); location.href = q; }
     const b = e.target.closest('[data-pm]'); if (!b) return; zamknij();
     const k = b.dataset.pm; track('menu', { k });
     if (k === 'nowy-start' || k === 'nowy-czysty') idzDo('?nowy=' + (k === 'nowy-czysty' ? 'czysty' : 'start'));
-    else if (k === 'usun') { const q = cur.id && B.pobierz(cur.id); if (q && confirm(T.usunQ(q.nazwa))) { autoReady = false; B.usun(q.id); try { localStorage.setItem('ogip_biez', ''); } catch {} location.href = '?nowy=start'; } }
+    else if (k === 'usun') { const q = cur.id && B.pobierz(cur.id); if (q && confirm(T.usunQ(q.nazwa))) { autoReady = false; B.usun(q.id); try { localStorage.setItem('ogip_biez', ''); } catch {} location.href = location.pathname + '?nowy=start'; } }
     else if (k === 'dup') { zapiszTeraz(); const q = B.duplikuj(cur.id, EN_UI ? 'copy' : 'kopia'); if (q) idzDo('?p=' + q.id); }
     else if (k === 'otworz') $('loadFile').click();
     else if (k === 'zapisz') plikDoPobrania();

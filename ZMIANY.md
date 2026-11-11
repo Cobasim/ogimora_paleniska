@@ -2,6 +2,9 @@
 
 Jedna linijka na każde wgranie na serwer. Numer wersji jest w `www/js/wersja.js`.
 
+## 0.1.5 – 2026-11-11
+Pod wyszukiwarki: osobne adresy `/pl/` i `/en/` (adres główny dalej według przeglądarki), `robots.txt`, `sitemap.xml`, `llms.txt`, obrazek i opis do podglądu linku (`img/og.jpg`), opis strony tekstem, opis strukturalny dla Google.
+
 ## 0.1.4 – 2026-11-11
 Stopka na dole strony: © ogimora.com, podpis „autor: OGI”, wersja i trzy liczniki szesnastkowo (wizyty, DXF, PDF – liczone od tej wersji; `api/licznik.php`). W „O stronie” dopisek, że autorem strony jest jedna osoba – OGI.
 

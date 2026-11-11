@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<!-- (c) 2026 OGIMORA - ogimora.com. Wszelkie prawa zastrzezone / All rights reserved. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <base href="/">
+  <link rel="canonical" href="https://ogimora.com/en/">
+  <link rel="alternate" hreflang="pl" href="https://ogimora.com/pl/">
+  <link rel="alternate" hreflang="en" href="https://ogimora.com/en/">
+  <link rel="alternate" hreflang="x-default" href="https://ogimora.com/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="OGIMORA">
+  <meta property="og:url" content="https://ogimora.com/en/">
+  <meta property="og:title" content="OGIMORA — design a steel fire pit, download the DXF">
+  <meta property="og:description" content="Free steel fire pit generator: set the size, pick a pattern, add lettering – and download a DXF ready for laser or plasma cutting.">
+  <meta property="og:image" content="https://ogimora.com/img/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"OGIMORA","url":"https://ogimora.com/en/","description":"Free steel fire pit generator: set the size, pick a pattern, add lettering – and download a DXF ready for laser or plasma cutting.","inLanguage":"en","applicationCategory":"DesignApplication","operatingSystem":"Any (web browser)","softwareVersion":"0.1.5","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"OGI"},"publisher":{"@type":"Organization","name":"OGIMORA","url":"https://ogimora.com/","logo":"https://ogimora.com/img/logo.svg"}}</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+  <meta name="description" content="Free steel fire pit generator: set the size, pick a pattern, add lettering – and download a DXF ready for laser or plasma cutting.">
+  <title>OGIMORA — design a steel fire pit, download the DXF</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=e1c7b2">
+  <link rel="stylesheet" href="strona.css?v=a66aa9">
+  <link rel="stylesheet" href="naglowek.css?v=dceb1d">
+  <link rel="stylesheet" href="prosty.css?v=0eecad">
+  <style>/* wersja publiczna: bez narzędzi wewnętrznych */ .proj-id,.saved-wrap,#saveFav,#copyLink{display:none!important}</style>
+</head>
+<body>
+  <header class="ob">
+    <a class="ob-brand" href="./" aria-label="OGIMORA"><img src="img/logo.svg" alt=""><span>OGIMORA</span></a>
+    <button type="button" class="ob-proj" id="pjMenuBtn" aria-haspopup="menu" aria-expanded="false"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2.5h9V19H3z"/></svg><span class="pj-n"></span><span class="pj-ok">✓</span><svg class="i caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+    <button type="button" class="ob-opinia" id="opBtn"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Napisz, co zmienić</span></button>
+    <div class="ob-lang" role="group" aria-label="Język / Language"><button type="button" data-l="pl">PL</button><button type="button" data-l="en">EN</button></div>
+    <!-- PROSTY: elementy pełnego generatora (projekty, pliki) – zostają w kodzie, ukryte -->
+    <div hidden>
+      <a id="obGen" href="./"></a>
+    </div>
+    <div class="top-actions" hidden>
+      <div class="proj-id">
+        <label class="codebox" title="Kod kształtu: każde ustawienie suwaków ma swój kod. Wklej kod, aby odtworzyć kształt.">
+          <span>Kod</span><input id="codeInput" spellcheck="false" autocomplete="off" aria-label="Kod konfiguracji">
+        </label>
+        <div class="pj-line">
+          <button type="button" id="pjNameBtn" class="pj-name" title="Nazwa projektu – kliknij, aby zmienić (nowa nazwa = nowy projekt)">Nowy projekt</button>
+          <input id="pjNameIn" class="pj-name-in" maxlength="40" hidden aria-label="Nazwa projektu">
+          <span id="pjVer" class="pj-ver" title="Wersja projektu"></span>
+        </div>
+      </div>
+      <button class="ghost" id="copyLink" type="button">Kopiuj link</button>
+      <button class="ghost fav" id="saveFav" type="button" title="Zapisz nową wersję projektu w tej przeglądarce (Ctrl+S)">☆ Zapisz wersję</button>
+      <div class="saved-wrap">
+        <button class="ghost" id="savedBtn" type="button" aria-expanded="false" title="Projekty zapisane w tej przeglądarce i ich wersje">Projekty <span id="savedCount">0</span></button>
+        <div class="saved-pop hidden" id="savedPop"></div>
+      </div>
+      <label class="ghost file-btn" id="loadFileBtn" title="Wczytaj projekt z pliku (.ogimora.json)"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v5h16v-5M12 4v11m-4-4 4 4 4-4" transform="rotate(180 12 12)"/></svg><input type="file" id="loadFile" accept=".json,application/json" hidden></label>
+      <button class="ghost" id="saveFileBtn" type="button" title="Zapisz projekt do pliku – do przechowania albo wysłania"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14v5h16v-5M12 4v11m-4-4 4 4 4-4"/></svg></button>
+      <button class="ghost" id="reset" type="button" title="Zacznij od nowa"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v4h4"/></svg></button>
+    </div>
+  </header>
+
+
+  <div class="opis-tekst">
+    <h1>OGIMORA – free steel fire pit generator (DXF files)</h1>
+    <p>Design a steel fire pit in your browser and download a DXF file ready for CNC cutting – laser or plasma. Set the size, the wall angle and the sheet thickness (3, 4 or 5 mm), pick a cut-out pattern for each wall and add your own lettering. The parts go together with tabs and slots, no jigs needed.</p>
+    <p>Downloads: a DXF file in millimetres at 1:1 scale, an A4 paper model (PDF) and small test plates for finding the right slot clearance on your own machine. The site also shows a rough cutting price.</p>
+    <p>This is a test site: the files are made by a script and come with no warranty – check them before cutting. Licence: free for your own use; commercial use up to 20 finished fire pits per design; do not sell the files. Made by OGI. Contact: info@ogimora.com.</p>
+  </div>
+  <main class="workspace">
+    <section class="preview" aria-label="Podgląd">
+      <div class="toolbar">
+        <div class="tabs" role="tablist">
+          <button role="tab" class="tab active" data-view="model" aria-selected="true" title="Model 3D">3D</button>
+          <button role="tab" class="tab" data-view="flat" aria-selected="false" title="Rozkrój: elementy płasko, tak jak w pliku DXF do cięcia">Rozkrój</button>
+          <button role="tab" class="tab" data-view="decor" aria-selected="false" hidden>Wzory</button>
+        </div>
+        <div class="toolbar-decor hidden" id="dBar"></div>
+        <div class="toolbar-model" id="viewTools">
+          <div class="tm-left">
+            <div class="chips small swatches" id="look">
+              <button class="chip sw f-draw" data-shade="draw" data-icon="iso" title="Rysunek: jasny model z czarnymi krawędziami"></button>
+              <span id="finish"></span>
+            </div>
+            <div class="chips small" id="shading">
+              <button class="chip icon active" data-shade="edges" data-icon="edges" title="Krawędzie: podkreśl krawędzie, gięcia i łączenia"></button>
+              <button class="chip icon" data-shade="xray" data-icon="xray" title="X-ray: pokaż krawędzie zasłonięte"></button>
+              <button class="chip icon" data-shade="weld" data-icon="seamWeld" title="Pokaż linie spawania (czerwone)"></button>
+              <button class="chip icon" data-shade="bend" data-icon="seamBend" title="Pokaż linie gięcia (niebieskie)"></button>
+              <button class="chip icon" data-shade="fire" data-icon="fire" title="Ogień w misie: blask widać przez wzory, szczeliny gięcia i podcięcia (oświetlenie z zewnątrz bez zmian)"></button>
+              <button class="chip icon" data-shade="night" data-icon="night" title="Wieczór (przy włączonym ogniu): ciemna scena, ogień oświetla ziemię przez wycięcia" disabled></button>
+            </div>
+          </div>
+          <div class="chips small cams">
+            <button class="chip icon" data-cam="iso" data-icon="iso" title="Widok izometryczny"></button>
+            <button class="chip icon" data-cam="front" data-icon="front" title="Widok z przodu"></button>
+            <button class="chip icon" data-cam="top" data-icon="topView" title="Widok z góry"></button>
+            <button class="chip icon" data-cam="bottom" data-icon="bottom" title="Widok z dołu"></button>
+            <button class="chip icon cam-back" id="camBack" type="button" title="Poprzedni widok (sprzed ostatniego przycisku widoku)" disabled>↩</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="stage" id="stage">
+        <canvas id="scene" aria-label="Interaktywny model 3D paleniska"></canvas>
+        <div class="decor hidden" id="decor">
+          <div class="d-left"><div class="d-list" id="dList"></div><div class="d-mini" id="dMini" title="Kliknij element na modelu, aby go wybrać"></div></div>
+          <div class="d-main"><div class="d-tools off" id="dTools"></div><svg id="dPlate" aria-label="Element widziany od zewnątrz"></svg><div class="d-status" id="dStatus"></div></div>
+        </div>
+        <div class="card card-left">
+          <h2>Kształt</h2>
+          <div class="opt-row">
+            <div class="seg" data-opt="bowlBent">
+              <button type="button" data-v="0" data-icon="weld" title="Spawana: dno i 4 ścianki osobno, łączone na ząbki">Spaw</button>
+              <button type="button" data-v="1" data-icon="bend" title="Gięcie 2: dno i 2 przeciwległe ścianki z jednej blachy, 2 ścianki dospawane">Gięcie 2</button>
+              <button type="button" data-v="2" data-icon="bendAll" id="bowlAll" title="Gięcie 4 (całość): dno i 4 ścianki z jednej blachy (krzyż), gięte na wszystkich brzegach dna – spawasz tylko 4 narożniki">Gięcie 4</button>
+            </div>
+          </div>
+          <div class="opt-row" title="Nacięcia na linii gięcia: wąskie szczeliny, żeby łatwiej zgiąć grubą blachę albo na słabszej giętarce">
+            <span class="opt-ic" data-icon="bendLine"></span>
+            <div class="seg perf" data-opt="perfBowl" data-perf></div>
+          </div>
+          <div id="ctl-body"></div>
+          <div class="row derived" title="Górny obrys misy (wynika z boku dna, wysokości i odchylenia)"><span data-icon="top"></span><output id="topOut"></output></div>
+        </div>
+        <div class="card card-right">
+          <h2>Stopki</h2>
+          <div class="opt-row skirt-row">
+            <div class="seg" data-opt="skirt" id="skirtOpts">
+              <button type="button" data-v="0" title="Osobne stopki pod narożnikami">Osobne</button>
+              <button type="button" data-v="1" title="Nogi z boków: każdy bok przedłużony w dół do ziemi, nogi w narożnikach (kąt stopek = odwrotność kąta ścianek). Spawane: 4 boki + dno. Gięte: boki 1+2 i 3+4 jako dwa kątowniki (po jednym gięciu) + dno.">Z boków</button>
+            </div>
+            <div class="seg" data-opt="skirtArch" id="archOpts">
+              <button type="button" data-v="0" title="Wycięcie między nogami: proste (trapez)">Proste</button>
+              <button type="button" data-v="1" title="Wycięcie między nogami: łuk">Łuk</button>
+            </div>
+          </div>
+          <div class="opt-row">
+            <div class="seg" data-opt="legBent" id="legOpts">
+              <button type="button" data-v="0" data-icon="weld" title="Spawane: dwa skrzydła łączone na ząbki">Spaw</button>
+              <button type="button" data-v="1" data-icon="bend" title="Gięte: jedna blacha zgięta wzdłuż narożnika">Gięcie</button>
+            </div>
+          </div>
+          <div class="opt-row" title="Nacięcia na linii gięcia stopek">
+            <span class="opt-ic" data-icon="bendLine"></span>
+            <div class="seg perf" data-opt="perfLeg" data-perf></div>
+          </div>
+          <div id="ctl-legs"></div>
+        </div>
+        <p class="stage-hint" id="stageHint">Przeciągnij – obrót · Shift + przeciągnij – przesuń · kółko – przybliż · kliknij ściankę, aby ją zmienić</p>
+        <div class="stage-ctl" id="stageCtl">
+          <button type="button" id="cardsTgl" title="Pokaż / schowaj panele Misa i Stopki">Schowaj opcje</button>
+        </div>
+      </div>
+
+      <div class="infobar">
+        <div class="stats" id="stats"></div>
+        <div class="hist-btns"><button type="button" id="histUndo" title="Cofnij (Ctrl+Z) – kształt i wzory">↶</button><button type="button" id="histRedo" title="Ponów (Ctrl+Shift+Z)">↷</button><button type="button" id="clearDecor" title="Usuń wszystkie wzory ze wszystkich elementów (można cofnąć)">Wyczyść wzory</button></div>
+        <div class="warn-slot" id="warnSlot" tabindex="0" aria-live="polite">
+          <div class="warn-line" id="warnLine"></div>
+          <ul class="warn-pop" id="warnings"></ul>
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel" aria-label="Materiał i pobieranie">
+      <div class="panel-scroll">
+        <section class="group p-panel" id="pPanel"></section>
+        <section class="group">
+          <h2>Blacha</h2>
+          <div class="mat-row" id="matChips">
+            <button type="button" class="mat f-mill" data-v="0" title="Stal czarna S235">S235</button>
+            <button type="button" class="mat f-c_ripe" data-v="1" title="Stal patynująca S355J2W (odporna na warunki atmosferyczne)">S355J2W</button>
+          </div>
+          <div class="thk-box">
+            <div class="thk-head" title="Grubość blachy w milimetrach"><span data-icon="thk"></span><span>mm</span></div>
+            <div class="row thk" title="Grubość blachy misy (ścianki + dno), mm"><span data-icon="bowl"></span><div class="chips" data-thk="tBowl"></div></div>
+            <div class="row thk" title="Grubość blachy stopek, mm"><span data-icon="leg"></span><div class="chips" data-thk="tLeg"></div></div>
+          </div>
+          <div id="ctl-joint"></div>
+          <button type="button" class="proba-btn" id="probaBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 20.2 7.2v9.6L12 21.5 3.8 16.8V7.2z"/><path d="M12 8.5 14.5 13h-5z"/></svg><span><b>Płytki próbne</b><small>sprawdź luz na swojej maszynie</small></span></button>
+          <div id="maleBox" class="male-box"></div>
+        </section>
+        <section class="d-panel hidden" id="dPanel"></section>
+      </div>
+      <div class="panel-foot">
+        <div class="price" id="price"></div>
+        <p class="plan"><b>Plik DXF — za darmo.</b> Więcej kształtów i bogatsze wzory wkrótce.</p>
+        <button id="download" class="cta" type="button">
+          <span class="cta-icon">↓</span>
+          <span><b>Pobierz plik DXF</b><small id="ctaSub">9 elementów · gotowy do cięcia CNC</small></span>
+        </button>
+        <button id="pdf" class="cta secondary" type="button">
+          <span class="cta-icon">⎙</span>
+          <span><b>Model papierowy A4 (PDF)</b><small id="pdfSub"></small></span>
+        </button>
+        <p class="note" id="note" role="status" aria-live="polite"></p>
+      </div>
+    </aside>
+  </main>
+  <footer class="stopka" id="stopka"></footer>
+
+  <div class="pj-menu" id="pjMenu" role="menu" hidden></div>
+
+  <dialog id="nowyDlg" class="dl nowy-dlg" aria-labelledby="nowyT">
+    <button type="button" class="dl-x" data-close aria-label="Zamknij">✕</button>
+    <h2 id="nowyT">Nowy projekt</h2>
+    <p class="dl-sub">Zacznij od kształtu. Obecny projekt zostaje w Twoich projektach.</p>
+    <div class="nowy-grid" id="nowyGrid"></div>
+  </dialog>
+
+  <dialog id="dl" class="dl" aria-labelledby="dlT">
+    <button type="button" class="dl-x" id="dlX" aria-label="Zamknij">✕</button>
+    <h2 id="dlT">Pobierz plik DXF</h2>
+    <div class="dl-ostrz" id="dlOstrz"></div>
+    <p class="dl-sub">Pytania poniżej są nieobowiązkowe — robię Ogimorę sam, a to moje badanie rynku.</p>
+    <div class="dl-q"><span>Do czego?</span><div class="chips" data-q="use">
+      <button type="button" class="chip" data-a="self">Dla siebie</button><button type="button" class="chip" data-a="sell">Na sprzedaż</button>
+      <button type="button" class="chip" data-a="outsource">Zlecę wykonanie</button><button type="button" class="chip" data-a="browse">Tylko oglądam</button></div></div>
+    <div class="dl-q" id="dlLic"><span>Licencja na nielimitowaną sprzedaż?</span><div class="chips" data-q="license">
+      <button type="button" class="chip" data-a="yes">Tak</button><button type="button" class="chip" data-a="maybe">Może, zależy od ceny</button><button type="button" class="chip" data-a="no">Nie</button></div></div>
+    <div class="dl-q"><span>Za co zapłaciłbyś najchętniej?</span><div class="chips" data-q="pay">
+      <button type="button" class="chip" data-a="edit_parts">Edycja elementów</button><button type="button" class="chip" data-a="patterns">Wzory i napisy</button>
+      <button type="button" class="chip" data-a="models">Więcej modeli</button><button type="button" class="chip" data-a="cut_kit">Wycięty zestaw</button>
+      <button type="button" class="chip" data-a="nothing">Za nic</button></div></div>
+    <label class="dl-t"><span>Uwagi i życzenia</span><textarea id="dlNotes" rows="2" placeholder="Czego brakuje? Co zmienić?"></textarea></label>
+    <textarea id="dlCodes" hidden></textarea>
+    <button type="button" class="cta" id="dlGo" disabled><span class="cta-icon">↓</span><span><b>Pobierz DXF</b><small id="dlHint">Zaznacz coś powyżej albo napisz słowo</small></span></button>
+  </dialog>
+
+  <dialog id="opDlg" class="dl" aria-labelledby="opT">
+    <button type="button" class="dl-x" data-close aria-label="Zamknij">✕</button>
+    <h2 id="opT">Napisz, co zmienić</h2>
+    <p class="dl-sub">Strona testowa — Twój odzew decyduje, co powstanie dalej.</p>
+    <form id="opForm" novalidate>
+      <label class="dl-t"><span>Kilka słów</span><textarea name="tekst" rows="4" required></textarea></label>
+      <label class="dl-t"><span>E-mail <small>(nieobowiązkowo, jeśli chcesz odpowiedź)</small></span><input type="email" name="email" class="op-mail" autocomplete="email"></label>
+      <label class="hp">www<input name="www" tabindex="-1" autocomplete="off"></label>
+      <button type="submit" class="cta"><span class="cta-icon">→</span><span><b>Wyślij</b><small id="opOk">trafia prosto do mnie</small></span></button>
+    </form>
+  </dialog>
+
+  <script type="importmap">
+    { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    } }
+  </script>
+  <script type="module" src="js/a6b434b966.js"></script>
+</body>
+</html>

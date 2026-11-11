@@ -1,13 +1,16 @@
 // Wersja angielska generatora (ogimora.com). Bez zmian w logice: tłumaczy teksty w DOM (także te dodawane
 // później – MutationObserver). Klucz = dokładny polski tekst; dla tekstów z liczbami – reguły (WZORY).
 // Język: ?lang=en|pl → wybór ze strony głównej (localStorage ogi_lang) → język przeglądarki.
+const Z_ADRESU = (/^\/(en|pl)\//.exec(location.pathname) || [])[1];   // ogimora.com/en/ i /pl/ – stały język (dla wyszukiwarek); ogimora.com/ – według przeglądarki
 export const LANG = (() => {
+  if (Z_ADRESU) return Z_ADRESU;
   const q = new URLSearchParams(location.search).get('lang');
   if (q === 'en' || q === 'pl') { try { localStorage.setItem('ogi_lang', JSON.stringify(q)); } catch {} return q; }
   try { const s = JSON.parse(localStorage.getItem('ogi_lang') || 'null'); if (s === 'en' || s === 'pl') return s; } catch {}
   return (navigator.language || 'en').toLowerCase().startsWith('pl') ? 'pl' : 'en';
 })();
 export function ustawJezyk(l) { try { localStorage.setItem('ogi_lang', JSON.stringify(l)); } catch {} const u = new URL(location.href); u.searchParams.delete('lang');
+  if (Z_ADRESU) { u.pathname = u.pathname.replace(/^\/(en|pl)\//, '/' + l + '/'); location.href = u.toString(); return; }
   // adres zwykle ma #kod…, a przypisanie tego samego adresu z kotwicą NIE przeładowuje strony – dlatego replaceState + reload
   history.replaceState(null, '', u.toString()); location.reload(); }
 

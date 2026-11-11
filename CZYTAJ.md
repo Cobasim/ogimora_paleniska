@@ -29,6 +29,11 @@ Zasada: na serwerze jest zawsze to, co w gałęzi `main` z ostatnim znacznikiem.
 - **Kod kształtu** (`www/js/code.js`) – stare wersje kodu muszą się dalej wczytywać; nową wersję dopisuje się obok, nie zamiast.
 - **Klucze w pamięci przeglądarki** (`ogip_…`).
 
+## Wyszukiwarki
+- Trzy adresy: `ogimora.com/` (język według przeglądarki), `/pl/`, `/en/`. Pliki `pl/index.html` i `en/index.html` robi skrypt budujący – tytuł, opis i tekst dla wyszukiwarek w wersji angielskiej zmienia się w `narzedzia/buduj/jezyki.mjs`, polski w `www/index.html` (blok `<!--OPIS-->`).
+- `www/robots.txt`, `www/sitemap.xml`, `www/llms.txt` (streszczenie dla wyszukiwarek AI), `www/img/og.jpg` (obrazek podglądu linku, 1200×630).
+- Po większej zmianie na stronie: Google Search Console → Sprawdzenie adresu URL → „Poproś o zindeksowanie”.
+
 ## Dane o wizytach
 - Podgląd: `https://ADRES/api/statystyki.php?k=KLUCZ` (klucz jest w pliku `api/dane/klucz.txt` na serwerze – nikomu go nie podawaj).
 - Raz w tygodniu: FileZillą ściągnij cały folder `api/dane/` z serwera do `dane_z_serwera/RRRR-MM-DD/`. Są tam liczniki miesiąca (`licznik-RRRR-MM.json`), rejestr pobrań (`pobrania-RRRR-MM.csv`), ankiety i wiadomości (`*.jsonl`). Na serwerze nie ma kopii zapasowej.
