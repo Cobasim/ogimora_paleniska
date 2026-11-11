@@ -72,14 +72,16 @@ function plus(&$t, $grupa, $klucz, $n = 1) {
   if (!isset($t[$grupa][$klucz]) && count($t[$grupa]) >= MAX_KLUCZY) $klucz = 'inne';
   $t[$grupa][$klucz] = ($t[$grupa][$klucz] ?? 0) + $n;
 }
-/** Liczniki miesiąca: odczyt → zmiana → zapis, pod blokadą. */
+/** Liczniki: odczyt → zmiana → zapis, pod blokadą. Te same dane trafiają do pliku miesiąca i pliku tygodnia (pon.–niedz., numer tygodnia ISO). */
 function licznik($dir, callable $fn) {
-  $fh = fopen("$dir/licznik-" . date('Y-m') . '.json', 'c+');
-  if (!$fh || !flock($fh, LOCK_EX)) return;
-  $t = json_decode(stream_get_contents($fh) ?: '{}', true) ?: [];
-  $fn($t);
-  ftruncate($fh, 0); rewind($fh); fwrite($fh, json_encode($t, JSON_UNESCAPED_UNICODE));
-  flock($fh, LOCK_UN); fclose($fh);
+  foreach (['licznik-' . date('Y-m'), 'licznik-tydz-' . date('o-\\WW')] as $nazwa) {
+    $fh = fopen("$dir/$nazwa.json", 'c+');
+    if (!$fh || !flock($fh, LOCK_EX)) continue;
+    $t = json_decode(stream_get_contents($fh) ?: '{}', true) ?: [];
+    $fn($t);
+    ftruncate($fh, 0); rewind($fh); fwrite($fh, json_encode($t, JSON_UNESCAPED_UNICODE));
+    flock($fh, LOCK_UN); fclose($fh);
+  }
 }
 $kraj = kraj($d['tz'] ?? '');
 $jez  = strtolower(slowo($d['lang'] ?? '', 2, '/[^A-Za-z]/'));

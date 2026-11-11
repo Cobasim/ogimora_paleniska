@@ -32,6 +32,7 @@ Zasada: na serwerze jest zawsze to, co w gałęzi `main` z ostatnim znacznikiem.
 ## Dane o wizytach
 - Podgląd: `https://ADRES/api/statystyki.php?k=KLUCZ` (klucz jest w pliku `api/dane/klucz.txt` na serwerze – nikomu go nie podawaj).
 - Raz w tygodniu: FileZillą ściągnij cały folder `api/dane/` z serwera do `dane_z_serwera/RRRR-MM-DD/`. Są tam liczniki miesiąca (`licznik-RRRR-MM.json`), rejestr pobrań (`pobrania-RRRR-MM.csv`), ankiety i wiadomości (`*.jsonl`). Na serwerze nie ma kopii zapasowej.
+- Na stronie statystyk: wybór miesiąca albo tygodnia (tygodnie liczone od wersji 0.1.3) i link „wszystkie liczniki … (CSV)” – jeden plik z kliknięciami, wizytami i pobraniami za wybrany okres.
 - Liczniki i rejestr mają pole `wersja` – widać, z którego wydania pochodzi odzew.
 
 ## Pierwsze uruchomienie repozytorium (raz)

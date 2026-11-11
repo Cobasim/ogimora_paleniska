@@ -2,6 +2,9 @@
 
 Jedna linijka na każde wgranie na serwer. Numer wersji jest w `www/js/wersja.js`.
 
+## 0.1.3 – 2026-11-11
+Statystyki: liczniki także tygodniowe (pon.–niedz.), na stronie statystyk wybór tygodnia i plik CSV ze wszystkimi licznikami tygodnia albo miesiąca.
+
 ## 0.1.2 – 2026-11-11
 Na serwer idzie teraz folder `wydanie/` (skrypty sklejone i zaciemnione, podpis © OGIMORA w plikach); w „O stronie” dopisek, że strony nie wolno kopiować.
 
