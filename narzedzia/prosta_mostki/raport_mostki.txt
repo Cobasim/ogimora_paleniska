@@ -1,0 +1,108 @@
+rozeta-cyrklowa-w-recicy 
+    65 mm  otwór 14→7  szczelina 28→20  wycięte 52→29% 
+    87 mm  otwór 15→7  szczelina 29→22  wycięte 43→23% 
+   119 mm  otwór 21→8  szczelina 44→33  wycięte 51→33% 
+   159 mm  otwór 30→9  szczelina 64→43  wycięte 58→34% 
+   213 mm  otwór 42→10  szczelina 92→64  wycięte 64→35% 
+   287 mm  otwór 57→10  szczelina 130→70  wycięte 68→37% 
+   386 mm  otwór 78→10  szczelina 132→68  wycięte 70→40%
+slonce 
+    78 mm  otwór 37→5  szczelina 40→19  wycięte 35→18% 
+   113 mm  otwór 47→8  szczelina 52→29  wycięte 30→16% 
+   168 mm  otwór 65→10  szczelina 50→49  wycięte 27→17% 
+   243 mm  otwór 89→10  szczelina 76→53  wycięte 25→14% 
+   343 mm  otwór 121→10  szczelina 112→56  wycięte 23→13%
+kwiat-zycia-w-podwojnym-otoku 
+    87 mm  otwór 6→5  szczelina 11→10  wycięte 29→20% 
+   119 mm  otwór 10→8  szczelina 17→16  wycięte 37→27% 
+   159 mm  otwór 13→10  szczelina 25→22  wycięte 41→22% 
+   213 mm  otwór 19→10  szczelina 35→35  wycięte 43→25% 
+   287 mm  otwór 27→8  szczelina 49→48  wycięte 45→22% 
+   386 mm  otwór 37→8  szczelina 73→52  wycięte 46→22%
+gwiazda-w-recicy 
+    87 mm  otwór 7→6  szczelina 13→11  wycięte 34→24% 
+   119 mm  otwór 10→9  szczelina 21→19  wycięte 43→33% 
+   159 mm  otwór 15→9  szczelina 31→30  wycięte 51→26% 
+   214 mm  otwór 21→8  szczelina 47→47  wycięte 57→31% 
+   288 mm  otwór 29→8  szczelina 66→60  wycięte 59→31% 
+   387 mm  otwór 39→8  szczelina 91→69  wycięte 61→30%
+rozeta-cyrklowa-w-zabkach 
+    65 mm  otwór 14→7  szczelina 28→20  wycięte 52→29% 
+    69 mm  otwór 15→7  szczelina 30→22  wycięte 54→30% 
+   120 mm  otwór 22→9  szczelina 45→33  wycięte 46→29% 
+   160 mm  otwór 30→9  szczelina 65→43  wycięte 54→29% 
+   215 mm  otwór 42→10  szczelina 93→65  wycięte 61→38% 
+   290 mm  otwór 58→11  szczelina 132→60  wycięte 65→36% 
+   390 mm  otwór 79→10  szczelina 133→68  wycięte 68→41%
+slonce-wschodzace-w-luku 
+    64 mm  otwór 13→10  szczelina 39→36  wycięte 46→30% 
+    87 mm  otwór 18→10  szczelina 57→49  wycięte 51→31% 
+   119 mm  otwór 25→9  szczelina 78→57  wycięte 54→30% 
+   158 mm  otwór 33→9  szczelina 104→69  wycięte 55→29% 
+   213 mm  otwór 45→10  szczelina 140→68  wycięte 56→32% 
+   287 mm  otwór 62→11  szczelina 135→69  wycięte 58→33% 
+   386 mm  otwór 83→10  szczelina 195→67  wycięte 59→32%
+krzyz-promienisty-w-kropkach 
+    62 mm  otwór 12→9  szczelina 30→29  wycięte 46→31% 
+    83 mm  otwór 15→7  szczelina 44→37  wycięte 38→21% 
+   120 mm  otwór 15→7  szczelina 48→36  wycięte 21→12% 
+   160 mm  otwór 20→11  szczelina 66→57  wycięte 25→16% 
+   215 mm  otwór 27→15  szczelina 90→50  wycięte 26→16% 
+   290 mm  otwór 37→10  szczelina 100→67  wycięte 26→15% 
+   390 mm  otwór 50→10  szczelina 197→70  wycięte 28→15%
+wezel-trojpetlowy 
+    65 mm  otwór 4→4  szczelina 82→39  wycięte 25→23% 
+    88 mm  otwór 5→4  szczelina 113→60  wycięte 26→18% 
+   120 mm  otwór 7→6  szczelina 117→59  wycięte 26→19% 
+   160 mm  otwór 10→8  szczelina 105→51  wycięte 26→21% 
+   215 mm  otwór 4→4  szczelina 116→56  wycięte 9→8% 
+   290 mm  otwór 5→4  szczelina 120→63  wycięte 9→6% 
+   390 mm  otwór 7→6  szczelina 120→58  wycięte 9→6%
+dziewieciornik-w-luczkach 
+    64 mm  otwór 8→7  szczelina 40→39  wycięte 34→23% 
+    87 mm  otwór 11→9  szczelina 70→68  wycięte 36→25% 
+   119 mm  otwór 14→13  szczelina 113→109  wycięte 36→23% 
+   160 mm  otwór 12→10  szczelina 144→112  wycięte 26→18% 
+   215 mm  otwór 16→11  szczelina 198→135  wycięte 28→19% 
+   290 mm  otwór 23→9  szczelina 281→69  wycięte 29→15% 
+   390 mm  otwór 31→10  szczelina 431→68  wycięte 30→17%
+lilijka-heraldyczna-w-kratce 
+    81 mm  otwór 7→6  szczelina 42→41  wycięte 17→14% 
+   111 mm  otwór 11→9  szczelina 72→61  wycięte 14→10% 
+   159 mm  otwór 10→9  szczelina 106→90  wycięte 15→10% 
+   214 mm  otwór 12→10  szczelina 92→67  wycięte 18→14% 
+   289 mm  otwór 16→10  szczelina 182→70  wycięte 20→10% 
+   389 mm  otwór 21→10  szczelina 223→66  wycięte 21→11%
+parzenica-koronkowa 
+    65 mm  otwór 3→3  szczelina 36→36  wycięte 24→24% 
+    80 mm  otwór 4→4  szczelina 41→41  wycięte 22→22% 
+   117 mm  otwór 4→4  szczelina 66→66  wycięte 19→19% 
+   156 mm  otwór 5→4  szczelina 97→62  wycięte 24→24% 
+   209 mm  otwór 8→7  szczelina 116→67  wycięte 28→20% 
+   282 mm  otwór 12→10  szczelina 110→60  wycięte 34→26% 
+   379 mm  otwór 17→11  szczelina 121→70  wycięte 36→23%
+parzenica-goralska-pelna 
+    65 mm  otwór 4→4  szczelina 52→52  wycięte 22→22% 
+    88 mm  otwór 6→4  szczelina 77→40  wycięte 24→17% 
+   119 mm  otwór 5→4  szczelina 52→51  wycięte 17→13% 
+   159 mm  otwór 8→6  szczelina 77→66  wycięte 22→17% 
+   214 mm  otwór 11→10  szczelina 113→66  wycięte 26→20% 
+   290 mm  otwór 20→10  szczelina 208→60  wycięte 26→15% 
+   390 mm  otwór 27→10  szczelina 282→64  wycięte 26→16%
+parzenica-cztery-swiaty 
+    65 mm  otwór 8→6  szczelina 36→36  wycięte 26→26% 
+    74 mm  otwór 4→4  szczelina 39→39  wycięte 24→24% 
+   102 mm  otwór 8→6  szczelina 47→47  wycięte 22→22% 
+   156 mm  otwór 11→10  szczelina 92→61  wycięte 27→26% 
+   209 mm  otwór 15→6  szczelina 87→64  wycięte 31→21% 
+   282 mm  otwór 22→11  szczelina 118→59  wycięte 36→27% 
+   383 mm  otwór 30→11  szczelina 118→70  wycięte 40→25%
+serce-z-rozeta-zlozona-parzenica 
+    65 mm  otwór 4→4  szczelina 72→57  wycięte 28→28% 
+    88 mm  otwór 4→4  szczelina 107→64  wycięte 26→25% 
+   120 mm  otwór 4→4  szczelina 101→65  wycięte 23→22% 
+   160 mm  otwór 4→4  szczelina 116→65  wycięte 20→19% 
+   215 mm  otwór 8→6  szczelina 161→66  wycięte 13→11% 
+   290 mm  otwór 11→9  szczelina 182→58  wycięte 19→13% 
+   390 mm  otwór 15→10  szczelina 200→65  wycięte 18→12%
+smok-pelny 

@@ -1,0 +1,113 @@
+/* OGIMORA – generator uproszczony: to, co różni go od pełnego (ładowane na końcu). */
+.card-right, #clearDecor, .tab[data-view=decor], #cardsTgl { display: none !important; }
+.row.thk:has([data-thk=tLeg]) { display: none; }
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+/* pasek: logo · … · Napisz · PL/EN */
+.ob-opinia { margin-left: auto; display: flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px; border: 1px solid rgba(255,255,255,.35); border-radius: 10px; background: none; color: #f1ece4; font-size: 13.5px; font-weight: 500; cursor: pointer; }
+.ob-opinia:hover { background: rgba(255,255,255,.14); color: #fff; }
+.ob .ob-lang { margin-left: 8px; }
+@media (max-width: 520px) { .ob-opinia span { display: none; } .ob-opinia { padding: 0 9px; } .ob-brand span { display: inline !important; font-size: 16px; } }
+.op-mail { width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 9px; font: inherit; }
+#opForm { display: grid; gap: 10px; }
+
+/* panel „Wzory” */
+.p-panel h2 { margin-bottom: 10px; }
+.p-same { display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: var(--ink-2); cursor: pointer; user-select: none; }
+.p-same input { width: 17px; height: 17px; accent-color: var(--ink); flex: none; margin: 0; }
+.p-same small { color: var(--ink-3); font-size: 12px; margin-left: 4px; }
+.p-sc { display: flex; align-items: center; gap: 6px; margin: 10px 0 12px; font-size: 13px; color: var(--ink-2); }
+.p-sc span { margin-right: 4px; }
+.p-sc .chip { min-width: 38px; justify-content: center; }
+.p-sc.off { opacity: .38; }
+.p-gal { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-bottom: 10px; }
+.p-wz { aspect-ratio: 1; padding: 5px; border: 1px solid var(--line); border-radius: 9px; background: #fff; cursor: pointer; display: grid; place-items: center; min-width: 0; }
+.p-wz svg { width: 100%; height: 100%; display: block; }
+.p-wz svg path { fill: var(--ink); fill-rule: nonzero; }
+.p-wz svg.p-x { width: 58%; height: 58%; }
+.p-wz svg.p-x circle, .p-wz svg.p-x path { fill: none; stroke: var(--ink-3); stroke-width: 1.4; stroke-linecap: round; }
+.p-wz:hover { border-color: var(--ink-3); }
+.p-wz.on { border-color: var(--ink); box-shadow: 0 0 0 1.5px var(--ink) inset; }
+.p-row { display: grid; grid-template-columns: 22px 1fr; align-items: center; gap: 10px; height: 30px; }
+.p-row.off { opacity: .35; }
+.p-ic { display: grid; place-items: center; color: var(--ink-2); }
+.p-sub { margin: 14px 0 7px; font: 700 13px var(--display); }
+.p-text { width: 100%; box-sizing: border-box; padding: 9px 11px; margin-bottom: 4px; border: 1px solid var(--line); border-radius: 9px; background: #fff; font: 600 14px var(--sans); letter-spacing: .02em; }
+.p-text:focus { outline: 2px solid var(--ink); outline-offset: -1px; }
+.p-kom { min-height: 18px; margin: 4px 0 8px; font-size: 12.5px; color: var(--rust); }
+.p-logo { padding-top: 10px; border-top: 1px solid var(--line-2); }
+.p-row input[type=range] { margin: 0; }
+/* stopka panelu: niska, żeby „Wzory” mieściły się bez przewijania na laptopie */
+.panel-foot .plan { display: none; }
+.panel-foot { padding-top: 10px !important; }
+.price { margin-bottom: 8px; padding: 8px 12px; }
+.price-head b { font-size: 17px; display: inline; }
+.price-head span { display: inline; margin-right: 8px; }
+.cta { padding: 10px 14px; }
+.cta.secondary { margin-top: 6px; padding: 7px 14px; }
+.price summary.price-head { grid-template-columns: 1fr auto; grid-template-areas: "l s" "d m"; align-items: baseline; }
+.price-head b { justify-self: end; font-size: 18px !important; }
+.p-panel { padding-top: 14px !important; }
+.p-sc { margin: 8px 0 10px; }
+.p-sub { margin-top: 10px; }
+/* v2: znów widać „Schowaj opcje”; dno; mignięcie po kliknięciu elementu */
+#cardsTgl { display: inline-block !important; }
+.p-dno { margin-top: 12px; padding-top: 2px; border-top: 1px solid var(--line-2); }
+.p-dno .p-sc { margin: 0 0 6px; }
+.p-row:has(output) { grid-template-columns: 22px 1fr 44px; }
+.p-row output { font-size: 12.5px; color: var(--ink-2); text-align: right; font-variant-numeric: tabular-nums; }
+@keyframes pMig { 0% { box-shadow: 0 0 0 3px #b4532a66; } 100% { box-shadow: 0 0 0 3px #b4532a00; } }
+.p-mig { animation: pMig 1.1s ease-out; border-radius: 10px; }
+/* v3: tylko spawanie; bez widoku gięcia, X-ray i krawędzi */
+#shading [data-shade=bend], #shading [data-shade=xray], #shading [data-shade=edges] { display: none !important; }
+/* v6: uczciwa informacja – znaczek TEST, „O stronie”, kartka przy pierwszej wizycie, ostrzeżenie przy pobieraniu */
+.ob-test { margin-left: 2px; height: 26px; padding: 0 10px; display: flex; align-items: center; gap: 8px; border: 1px solid #f6b08c; border-radius: 7px; background: none; color: #f6b08c; font: 700 11px/1 var(--sans, sans-serif) !important; cursor: pointer; white-space: nowrap; }
+.ob-test b { letter-spacing: .12em; } .ob-test span { font-weight: 500; font-size: 12.5px; color: #f1ece4; padding-left: 8px; border-left: 1px solid #f6b08c80; }
+.ob-test:hover span { color: #16130f; border-color: #16130f66; }
+@media (max-width: 1100px) { .ob-test span { display: none; } }
+.ob-test .t-kr { display: none; } @media (max-width: 760px) { .ob-test .t-dl { display: none; } .ob-test .t-kr { display: inline; } }
+.ob-test:hover { background: #f6b08c; color: #16130f; }
+.ob .ob-proj { margin-left: auto; height: 34px; font-size: 13.5px !important; } .ob-proj + .ob-opinia { margin-left: 8px; }
+.ob-proj svg.i { width: 17px; height: 17px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
+.ob-proj .pj-n { white-space: nowrap; }
+.pj-menu .pm-p { position: relative; } .pj-menu .pm-del { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; color: var(--ink-3); font-size: 13px; }
+.pj-menu .pm-del:hover { background: #fff; color: var(--err); }
+.pj-menu .pm-p > span:not(.pm-del) { padding-right: 26px; min-width: 0; }
+.pj-menu .pm-lista { max-height: 250px; overflow-y: auto; }
+@media (max-width: 900px) { .ob-proj .pj-n { max-width: 120px; } }
+.info-dlg { max-width: 640px; max-height: 86vh; overflow-y: auto; }
+.info-dlg h3 { margin: 18px 0 6px; font: 700 14px var(--display); }
+.info-dlg p, .info-dlg li { font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+.info-dlg ul, .dl-ostrz ul { margin: 0; padding-left: 18px; } .info-dlg li, .dl-ostrz li { margin: 4px 0; }
+.info-wyl { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line-2); }
+.info-male { font-size: 12.5px !important; color: var(--ink-3) !important; margin: 6px 0 0; }
+.info-bar { position: fixed; z-index: 60; left: 16px; bottom: 16px; width: min(380px, calc(100vw - 32px)); padding: 12px 14px; border-radius: 12px; background: #16130f; color: #f1ece4; box-shadow: 0 10px 30px #0000004d; font-size: 13px; line-height: 1.45; display: grid; gap: 6px; }
+.info-bar b { color: #f6b08c; } .info-bar div { display: flex; gap: 6px; justify-content: flex-end; }
+.info-bar .chip { background: none; color: #f1ece4; border-color: #ffffff59; } .info-bar .chip.active { background: #fff; color: #16130f; }
+.dl-ostrz { margin: 8px 0 12px; padding: 10px 12px; border: 1px solid #e6b89f; border-radius: 10px; background: #fbf1ea; font-size: 12.5px; line-height: 1.45; color: #4a3a30; }
+.dl-ostrz > b { display: block; margin-bottom: 4px; color: var(--rust); font-size: 13px; }
+.dl-zgoda { margin-top: 10px; padding-top: 9px; border-top: 1px solid #e6b89f; font-weight: 600; color: #16130f; font-size: 13px; align-items: flex-start; }
+#dl { max-height: 92vh; overflow-y: auto; }
+#dl #dlGo { position: sticky; bottom: 0; z-index: 2; box-shadow: 0 -10px 14px 6px #fff; }   /* przycisk pobrania zawsze widoczny, ankieta przewija się pod nim */
+#dl.bez-ankiety .dl-q, #dl.bez-ankiety .dl-t, #dl.bez-ankiety .dl-sub { display: none; }
+
+/* ---- płytka próbna (js/proba.js) ---- */
+.proba-btn { width: 100%; margin-top: 8px; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); text-align: left; cursor: pointer; }
+.proba-btn:hover { border-color: var(--ink); }
+.proba-btn svg { width: 26px; height: 26px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; }
+.proba-btn b { display: block; font: 700 13px var(--display); } .proba-btn small { display: block; color: var(--ink-3); font-size: 12px; }
+.proba-dlg img { display: block; width: 100%; height: auto; margin: 0 0 12px; border-radius: 10px; background: #f3f3f3; }
+.proba-dlg a.cta { text-decoration: none; box-sizing: border-box; }
+.proba-dlg .cta.secondary small { color: var(--ink-3); }
+.proba-dlg .proba-note { margin: 12px 0 0; color: var(--ink-2); font-size: 12px; line-height: 1.45; }
+.ob-test svg { width: 15px; height: 15px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; margin-right: -2px; }
+.price-head .rynek { text-decoration: none; display: inline-block; margin: 2px 0 0 2px; white-space: nowrap; text-transform: none; padding: 1px 5px; border-radius: 5px; background: var(--ink); color: #fff; font: 700 10.5px/1.4 var(--sans); letter-spacing: .06em; vertical-align: 1px; }
+/* wąski telefon: przełącznik języka musi zostać na ekranie */
+@media (max-width: 520px) { .ob { padding: 0 8px !important; gap: 4px !important; } .ob-brand { margin-right: 2px !important; } .ob-brand span { font-size: 14px !important; letter-spacing: .08em !important; }
+  .ob-test { padding: 0 6px; } .ob-test svg { display: none; } .ob .ob-proj, .ob-opinia { padding: 0 7px; } .ob .ob-lang { margin-left: 4px; } .ob-lang button { padding: 6px 6px !important; } }
+@media (max-width: 370px) { .ob-brand span { display: none !important; } }
+/* 760–1100 px: pasek narzędzi podglądu zawija się, zamiast ucinać próbki wykończenia */
+@media (max-width: 1000px) { :root { --tools-h: auto; } .toolbar { height: auto !important; flex-wrap: wrap !important; row-gap: 6px; }
+  .toolbar-model { display: flex !important; flex-wrap: wrap; gap: 6px 14px; flex: 1 1 100%; }
+  .tm-left { max-height: none !important; overflow: visible !important; flex-wrap: wrap; }
+  #look, #finish, #shading, .cams { flex: none; overflow: visible; max-width: none; } }
+.dl-lic { margin: 8px 0 0; padding-top: 8px; border-top: 1px solid #0000001a; font-size: 12px; color: var(--ink-2); }

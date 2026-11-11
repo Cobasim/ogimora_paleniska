@@ -1,0 +1,7 @@
+# żywe dane z serwera – nigdy do gita
+www/api/dane/
+dane_z_serwera/
+.DS_Store
+node_modules/
+# stare wersje narzedzi (kopie robocze)
+narzedzia/**/_stare*/

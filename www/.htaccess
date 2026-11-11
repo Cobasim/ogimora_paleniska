@@ -1,0 +1,6 @@
+# OGIMORA - po wgraniu poprawki przegladarki maja od razu brac nowe pliki (pytaja serwer, czy plik sie zmienil).
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|js|css|json|svg)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
