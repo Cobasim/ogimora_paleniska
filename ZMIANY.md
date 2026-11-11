@@ -2,5 +2,8 @@
 
 Jedna linijka na każde wgranie na serwer. Numer wersji jest w `www/js/wersja.js`.
 
+## 0.1.1 – 2026-11-11
+Poprawka po pierwszym wgraniu: serwer OVH podawał plik `clipper.mjs` bez typu i przeglądarka nie uruchamiała strony (rozmyty podgląd). Dopisany typ w `.htaccess`.
+
 ## 0.1.0 – 2026-11-11
 Pierwsze publiczne wydanie strony testowej: uproszczony generator (ścianki-nogi, 34 wzory, napis, otwory w dnie), projekty w przeglądarce, wycena orientacyjna PL / USA, płytki próbne z instrukcją, anonimowe statystyki, licencja testowa (własny użytek + 20 sztuk komercyjnie), wersja polska i angielska.
