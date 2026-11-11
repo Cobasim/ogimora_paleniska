@@ -11,4 +11,4 @@ Dotyczy plików (DXF, PDF) pobranych ze strony testowej ogimora.com. Ten sam tek
 
 Limit (20) jest w jednym miejscu kodu: `www/js/wersja.js` → `LIMIT_SZTUK`.
 To nie jest żadna ze znanych licencji (np. Creative Commons) – tekst własny, **nieprzejrzany przez prawnika**.
-Kod strony (repozytorium) nie jest objęty tą licencją – pozostaje własnością autora.
+Kod strony (repozytorium) nie jest objęty tą licencją – pozostaje własnością autora. Na stronie („O stronie”) i w plikach wydania jest dopisek: © OGIMORA, strony nie wolno kopiować ani uruchamiać pod innym adresem.

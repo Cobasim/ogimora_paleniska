@@ -1,6 +1,7 @@
 # OGIMORA – strona testowa (repozytorium)
 
-- `www/` – dokładnie to, co leży na serwerze. Nic więcej tam nie wgrywamy.
+- `www/` – czytelne źródła strony. Tu się robi zmiany i tu działa podgląd (`uruchom.command`). **Tego folderu nie wgrywamy na serwer.**
+- `wydanie/` – **to idzie na serwer.** Powstaje z `www/` skryptem `narzedzia/buduj/buduj.mjs`: skrypty sklejone w jeden nieczytelny plik, ściśnięty CSS, podpis © OGIMORA. Nie poprawiaj tu nic ręcznie – przy następnym budowaniu zniknie.
 - `narzedzia/` – skrypty, które tworzą pliki do `www/` (płytki próbne, instrukcja PDF, nowe wzory, mostki). Nie idą na serwer.
 - `ZMIANY.md` – jedna linijka na każde wgranie.
 - `LICENCJA.md` – licencja testowa dla użytkowników.
@@ -17,7 +18,8 @@ Dwuklik w `uruchom.command` → strona pod adresem http://localhost:8793 (potrze
 3. Nowy numer w `www/js/wersja.js` (poprawka: 0.1.0 → 0.1.1; coś widocznego dla ludzi: 0.1.x → 0.2.0) i data.
 4. Linijka w `ZMIANY.md`.
 5. Git: `git add -A` → `git commit -m "0.1.1: krótko co"` → `git tag v0.1.1` → `git push --follow-tags`.
-6. FileZilla: wgraj zawartość `www/` na serwer (nadpisz). **Nie wgrywaj i nie kasuj folderu `api/dane` na serwerze** – tam są statystyki.
+6. Zbuduj wydanie: `node narzedzia/buduj/buduj.mjs` (pierwszy raz: `cd narzedzia/buduj && npm install`; potrzebny Node.js – albo poproś Claude, zbuduje i wgra do `wydanie/`). Po zbudowaniu zrób commit, żeby `wydanie/` było w repozytorium.
+7. FileZilla: wgraj zawartość `wydanie/` na serwer (nadpisz). W folderze `js/` na serwerze mają zostać tylko dwa pliki z `wydanie/js/` – stary plik o innej nazwie skasuj. **Nie wgrywaj i nie kasuj folderu `api/dane` na serwerze** – tam są statystyki.
 7. Wejdź na stronę, otwórz „O stronie” – na dole ma być nowy numer wersji.
 
 Zasada: na serwerze jest zawsze to, co w gałęzi `main` z ostatnim znacznikiem.
@@ -49,5 +51,5 @@ git push -u origin main --follow-tags
 ## Do sprawdzenia po pierwszym wgraniu na OVH
 - [ ] `https://ADRES/api/dane/klucz.txt` ma dawać błąd 403 (nie pokazywać klucza).
 - [ ] „Napisz, co zmienić” – czy wiadomość przychodzi e-mailem.
-- [ ] Po wgraniu poprawki strona od razu pokazuje nowy numer wersji (plik `www/.htaccess` każe przeglądarce sprawdzać świeżość plików).
+- [ ] Po wgraniu poprawki strona od razu pokazuje nowy numer wersji (plik `.htaccess` każe przeglądarce sprawdzać świeżość plików).
 - [ ] Wersja angielska: dopisz `?lang=en` do adresu albo kliknij EN.

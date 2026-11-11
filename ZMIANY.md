@@ -2,6 +2,9 @@
 
 Jedna linijka na każde wgranie na serwer. Numer wersji jest w `www/js/wersja.js`.
 
+## 0.1.2 – 2026-11-11
+Na serwer idzie teraz folder `wydanie/` (skrypty sklejone i zaciemnione, podpis © OGIMORA w plikach); w „O stronie” dopisek, że strony nie wolno kopiować.
+
 ## 0.1.1 – 2026-11-11
 Poprawka po pierwszym wgraniu: serwer OVH podawał plik `clipper.mjs` bez typu i przeglądarka nie uruchamiała strony (rozmyty podgląd). Dopisany typ w `.htaccess`.
 
