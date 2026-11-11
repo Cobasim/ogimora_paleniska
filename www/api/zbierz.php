@@ -83,6 +83,15 @@ function licznik($dir, callable $fn) {
     flock($fh, LOCK_UN); fclose($fh);
   }
 }
+/** Sumy od początku (wizyty, pobrania DXF, modele PDF) – same trzy liczby, pokazywane w stopce strony przez api/licznik.php. */
+function razem($dir, $co, $n = 1) {
+  $fh = fopen("$dir/razem.json", 'c+');
+  if (!$fh || !flock($fh, LOCK_EX)) return;
+  $t = json_decode(stream_get_contents($fh) ?: '{}', true) ?: [];
+  $t[$co] = (int)($t[$co] ?? 0) + $n;
+  ftruncate($fh, 0); rewind($fh); fwrite($fh, json_encode($t));
+  flock($fh, LOCK_UN); fclose($fh);
+}
 $kraj = kraj($d['tz'] ?? '');
 $jez  = strtolower(slowo($d['lang'] ?? '', 2, '/[^A-Za-z]/'));
 $urz  = in_array($d['dev'] ?? '', ['mobile', 'tablet', 'desktop'], true) ? $d['dev'] : '';
@@ -90,6 +99,8 @@ $dzien = date('d');
 $wer   = slowo($d['v'] ?? '', 12, '/[^0-9.]/') ?: 'brak';   // wersja strony (js/wersja.js)
 
 if ($typ === 'wizyta') {
+  if (!empty($d['nowa'])) razem($dir, 'w');
+  $pdf = (int)(((array)($d['k'] ?? []))['pdf'] ?? 0); if ($pdf > 0) razem($dir, 'p', min(200, $pdf));
   licznik($dir, function (&$t) use ($d, $kraj, $jez, $urz, $dzien, $wer) {
     if (!empty($d['nowa'])) {
       plus($t, 'razem', 'wizyty'); plus($t, 'dni_wizyty', $dzien); plus($t, 'wizyty_wersja', $wer);
@@ -109,6 +120,7 @@ if ($typ === 'wizyta') {
 }
 
 if ($typ === 'pobranie') {
+  razem($dir, 'd');
   $kod = slowo($d['kod'] ?? '', 24, '/[^A-Za-z0-9\-]/');
   $wz = []; foreach (array_slice((array)($d['wz'] ?? []), 0, 4) as $w) $wz[] = slowo($w, 48, '/[^a-z0-9\-]/') ?: '-';
   $nap = []; foreach (array_slice((array)($d['nap'] ?? []), 0, 4) as $n) $nap[] = max(0, min(40, (int)$n));

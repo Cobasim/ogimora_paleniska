@@ -111,3 +111,14 @@
   .tm-left { max-height: none !important; overflow: visible !important; flex-wrap: wrap; }
   #look, #finish, #shading, .cams { flex: none; overflow: visible; max-width: none; } }
 .dl-lic { margin: 8px 0 0; padding-top: 8px; border-top: 1px solid #0000001a; font-size: 12px; color: var(--ink-2); }
+
+/* ---- stopka: cienka linijka na dole (podpis, wersja, trzy liczniki szesnastkowo). Miejsce zarezerwowane od razu – nic nie skacze. */
+:root { --st-h: 24px; }
+.workspace { height: calc(100vh - var(--top-h) - var(--st-h)); }
+.stopka { height: var(--st-h); box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 20px; overflow: hidden; white-space: nowrap;
+  font-size: 11px; letter-spacing: .02em; color: var(--ink-3); background: var(--paper); border-top: 1px solid var(--line-2); }
+.stopka i { font-style: normal; color: var(--ink-4); }
+.stopka b { font: 600 11px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #a8603f; letter-spacing: .04em; display: inline-block; min-width: 2ch; }
+.stopka .st-p { margin-left: auto; }
+@media (max-width: 1100px) { .workspace { height: auto; min-height: calc(100vh - 64px - var(--st-h)); } }
+@media (max-width: 560px) { .stopka { padding: 0 12px; gap: 6px; } .stopka .st-w { display: none; } }

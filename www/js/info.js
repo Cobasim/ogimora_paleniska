@@ -43,7 +43,8 @@ const T = EN ? {
        'Your designs (the list under the design name in the top bar), language and choices are saved <b>in this browser only</b> (local storage, not cookies) so they are there when you return. They are not sent anywhere. Clearing the browser data removes them – use “Save to file” to keep a copy.',
        'The page loads fonts from Google Fonts and the 3D library from jsDelivr. Like any site you visit, those servers see your IP address.'],
   wyl: 'Send anonymous statistics from this browser', wylP: 'Off – your browser asks sites not to track (Do Not Track / Global Privacy Control).',
-  kontakt: 'Questions, or want something removed? info@ogimora.com',
+  kontakt: 'This site is made by one person – OGI. Questions, or want something removed? info@ogimora.com',
+  st: ['by OGI', 'visits', 'DXF', 'PDF', 'since the test started'],
   zamknij: 'Close', dlWarn: 'Before you cut – read this',
 } : {
   test: 'STRONA TESTOWA', test2: 'pliki bez gwarancji – przeczytaj, zanim wytniesz', testT: 'Strona testowa – przeczytaj, zanim wytniesz',
@@ -81,7 +82,8 @@ const T = EN ? {
        'Twoje projekty (lista pod nazwą projektu na górnym pasku), język i wybory zapisują się <b>tylko w tej przeglądarce</b> (pamięć lokalna, nie ciasteczka), żeby były, gdy wrócisz. Nigdzie nie są wysyłane. Wyczyszczenie danych przeglądarki je usuwa – kopię zrobisz przez „Zapisz do pliku”.',
        'Strona pobiera czcionki z Google Fonts i bibliotekę 3D z jsDelivr. Te serwery, jak każda odwiedzana strona, widzą Twój adres IP.'],
   wyl: 'Wysyłaj anonimowe statystyki z tej przeglądarki', wylP: 'Wyłączone – Twoja przeglądarka prosi strony, żeby nie śledziły (Do Not Track / Global Privacy Control).',
-  kontakt: 'Pytania albo chcesz coś usunąć? info@ogimora.com',
+  kontakt: 'Autorem strony jest jedna osoba – OGI. Pytania albo chcesz coś usunąć? info@ogimora.com',
+  st: ['autor: OGI', 'wizyty', 'DXF', 'PDF', 'od początku testu'],
   zamknij: 'Zamknij', dlWarn: 'Zanim wytniesz – przeczytaj',
 };
 const lista = a => '<ul>' + a.map(x => `<li>${x}</li>`).join('') + '</ul>';
@@ -139,3 +141,13 @@ if (box) {
   // strona otwarta od wczoraj: przy otwieraniu okna pobierania sprawdzamy datę jeszcze raz (przed obsługą kliknięcia w app.js)
   const dlBtn = $('download'); if (dlBtn) dlBtn.addEventListener('click', () => { if ($('dlZgoda').checked && !wazna()) $('dlZgoda').checked = false; }, true);
 }
+
+// ---------------------------------------------------------------- stopka: podpis, wersja, trzy liczniki (szesnastkowo; dymek = zwykła liczba)
+{ const st = document.getElementById('stopka');
+  if (st) {
+    const licz = (k, n) => `<span>${n} <b data-k="${k}">··</b></span>`;
+    st.innerHTML = `<span>© ogimora.com</span><i>·</i><span>${T.st[0]}</span><i class="st-w">·</i><span class="st-w">v${WERSJA}</span><span class="st-p">${licz('w', T.st[1])}</span><i>·</i>${licz('d', T.st[2])}<i>·</i>${licz('p', T.st[3])}`;
+    fetch('api/licznik.php', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(d => { if (!d) return;
+      st.querySelectorAll('b[data-k]').forEach(b => { const n = Math.max(0, +d[b.dataset.k] || 0); b.textContent = n.toString(16).toUpperCase().padStart(2, '0'); b.parentNode.title = `${n} – ${T.st[4]}`; });
+    }).catch(() => {});
+  } }
