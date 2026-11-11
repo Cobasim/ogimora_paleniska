@@ -2,6 +2,9 @@
 
 Jedna linijka na każde wgranie na serwer. Numer wersji jest w `www/js/wersja.js`.
 
+## 0.1.7 – 2026-11-11
+Wycena: tylko jedna sztuka. Usunięte ceny „za sztukę przy większym zamówieniu” (PL i USA) i wzmianki, że szacunek jest dopasowany do prawdziwych wycen. W USA pozycje tabeli sumują się teraz do ceny jednej sztuki. Pod tabelą zostało tylko „Ceny orientacyjne, testowe.”
+
 ## 0.1.6 – 2026-11-11
 Wąskie ekrany (małe okno, tablet, telefon): przy przewijaniu podgląd 3D przypina się u góry, więc widać zmiany podczas ruszania suwaków i wybierania wzorów. Z ankiety (USA): „annoying to have to scroll to see the changes”.
 

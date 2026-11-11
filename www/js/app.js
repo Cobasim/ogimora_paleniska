@@ -212,19 +212,20 @@ function renderInfo() {
   // na wierzchu: suma (duża) i pod nią koszt wzorów; szczegóły po kliknięciu
   if (!$('priceHead')) $('price').innerHTML = `<details><summary class="price-head" id="priceHead"></summary>
     <div class="price-pop"><table id="priceTable"></table>
-    <p>${US ? 'Test prices, a rough estimate for the <b>USA</b> (Nov 2026) – not a quote. Matched to <b>two real online laser-cutting quotes</b> for the starter design (A36, 3/16\u2033, with and without patterns); steel price checked against US suppliers. Other thicknesses, shapes and shops will differ. No sales tax, welding, painting or shipping.' : 'Ceny testowe, szacunek orientacyjny dla <b>Polski</b> (XI 2026) – to nie oferta. Dopasowane do <b>dwóch prawdziwych wycen</b> cięcia online dla projektu startowego (blacha 5 mm, ze wzorami i bez). Inne grubości, kształty i zakłady wyjdą inaczej. Bez spawania, malowania i transportu.'}</p></div></details>`;
+    <p>${US ? 'Rough test prices.' : 'Ceny orientacyjne, testowe.'}</p></div></details>`;
   const L = Object.fromEntries(est.lines.map(l => [l[0], l]));
   const seria = est.net + dc.cost;                           // PL: cena netto; USA: cena sztuki przy dużej serii
   // suma zaokrąglana w górę do 5 (ceny orientacyjne, własne – nie czyjś cennik)
   const K1 = US ? USA_SERIA[0][1] : 1, total = Math.ceil((US ? usaCena(seria, 1) : seria) / 5) * 5;   // USA: jedna sztuka – przeliczenie dopasowane do dwóch prawdziwych wycen
-  $('priceHead').innerHTML = (US ? `<span title="Test price for ONE piece – a rough estimate for the USA, matched to real online laser-cutting quotes. Before sales tax. Ask a shop for a real quote.">Test price, rough <u class="rynek">USA · 1 pc</u></span>` : `<span title="Cena testowa za JEDNĄ sztukę – szacunek orientacyjny dla Polski, dopasowany do prawdziwych wycen cięcia online. Netto. Dokładną cenę poda zakład.">Cena testowa, orientacyjna <u class="rynek">PL · 1 szt.</u></span>`) + `<b>≈ ${zl(total)}</b>` +
+  $('priceHead').innerHTML = (US ? `<span title="Test price for ONE piece – a rough estimate for the USA. Before sales tax. Ask a shop for a real quote.">Test price, rough <u class="rynek">USA · 1 pc</u></span>` : `<span title="Cena testowa za JEDNĄ sztukę – szacunek orientacyjny dla Polski. Netto. Dokładną cenę poda zakład.">Cena testowa, orientacyjna <u class="rynek">PL · 1 szt.</u></span>`) + `<b>≈ ${zl(total)}</b>` +
     `<em class="decor-price${dc.cost > 0.5 ? '' : ' none'}">${dc.cost > 0.5 ? (US ? `incl. patterns ${zl(dc.cost * K1)}` : `w tym wzory ${zl(dc.cost)}`) : (US ? 'no patterns' : 'bez wzorów')}</em><i class="price-more">${US ? 'details' : 'szczegóły'}</i>`;
-  const row = (k, d, v, cls = '') => `<tr class="${cls}"><td>${k}<small>${d}</small></td><td>${zl(v)}</td></tr>`;
+  // jedna sztuka: w USA pozycje × K1 + stała obsługa zlecenia (razem = cena jednej sztuki); bez cen za serię
+  const row = (k, d, v, cls = '') => `<tr class="${cls}"><td>${k}<small>${d}</small></td><td>${zl(v * K1)}</td></tr>`;
   const sec = t => `<tr class="sec"><td colspan="2">${t}</td></tr>`;
   const m = model.stats;
   $('priceTable').innerHTML =
-    row('Stal', L['Materiał'][1], L['Materiał'][2]) +
-    (US ? '' : row('Przygotowanie', L['Przygotowanie'][1], L['Przygotowanie'][2])) +
+    row('Stal', US ? String(L['Materiał'][1]).replace(/\s*×.*$/, '') : L['Materiał'][1], L['Materiał'][2]) +
+    (US ? `<tr><td>Order handling<small>setup, per order</small></td><td>${zl(USA_SERIA[0][2])}</td></tr>` : row('Przygotowanie', L['Przygotowanie'][1], L['Przygotowanie'][2])) +
     sec('Kształt główny') +
     row('Cięcie', L['Cięcie laserem'][1], L['Cięcie laserem'][2]) +
     row('Przebicia', L['Przebicia'][1], L['Przebicia'][2]) +
@@ -232,12 +233,9 @@ function renderInfo() {
     sec('Wzory') +
     row('Cięcie', US ? `${(dc.len / 1000).toFixed(1)} m (${(dc.len / 304.8).toFixed(0)} ft)` : `${fmt(dc.len / 1000, 1)} m`, dc.cut || 0, 'decor-line') +
     row('Przebicia', `${dc.n} szt.`, dc.pierce || 0, 'decor-line') +
-    (US ? `<tr><td>Per piece in a large run (50+)<small>cut length ${(m.cut / 1000).toFixed(1)} m (${(m.cut / 304.8).toFixed(0)} ft) · ${m.pierces ?? '—'} pierces</small></td><td>${zl(seria)}</td></tr>` +
-      `<tr class="sum"><td>One piece (USA), before sales tax<small>a single piece costs about ${(total / seria).toFixed(1)}× the run price</small></td><td>${zl(total)}</td></tr>` +
-      `<tr><td>Each, if you order more<small>${USA_SERIA.slice(1).map(([n]) => `${n}${n >= 50 ? '+' : ''} pcs ${zl(usaCena(seria, n))}`).join(' · ')}</small></td><td></td></tr>`
+    (US ? `<tr class="sum"><td>One piece (USA), before sales tax<small>cut length ${(m.cut / 1000).toFixed(1)} m (${(m.cut / 304.8).toFixed(0)} ft) · ${m.pierces ?? '—'} pierces</small></td><td>${zl(total)}</td></tr>`
     : `<tr class="sum"><td>Razem netto (PL)<small>długość cięcia ${fmt(m.cut / 1000, 1)} m · przebić ${m.pierces ?? '—'}</small></td><td>${zl(total)}</td></tr>` +
-      `<tr><td>Brutto (23% VAT)<small>to cena jednej sztuki</small></td><td>${zl(total * 1.23)}</td></tr>` +
-      `<tr><td>Za sztukę, gdy zamówisz więcej<small>obsługa zlecenia rozkłada się na serię · netto</small></td><td>10 szt.: ${zl(total - L['Przygotowanie'][2] * 0.9)}</td></tr>`);
+      `<tr><td>Brutto (23% VAT)<small>to cena jednej sztuki</small></td><td>${zl(total * 1.23)}</td></tr>`);
   const plan = planPrint(model);           // model ze zdobieniami – wzory też na modelu papierowym
   const np = plan.pages.length + 1;                 // + kartka z widokami
   $('pdfSub').textContent = `skala 1:${plan.N} · ${np} ${np === 1 ? 'kartka' : np < 5 ? 'kartki' : 'kartek'} A4${plan.mode === 'tiles' ? ' do sklejenia' : ''}`;
