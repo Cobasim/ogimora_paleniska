@@ -1431,3 +1431,18 @@ setCam('iso');
 if (widokNaStart === 'start') { shading = 'real'; setFinish('paint'); fireOn = true; fireNight = false; syncLook(); rebuildScene(); setCam('start'); }
 else if (widokNaStart === 'czysty') { shading = 'draw'; fireOn = false; syncLook(); rebuildScene(); setCam('iso'); }
 track('view', { w: innerWidth });
+
+// ---------------------------------------------------------------- wąskie ekrany: podgląd zostaje na ekranie przy przewijaniu
+// Na laptopie z małym oknem, tablecie i telefonie suwaki leżą pod podglądem. Gdy podgląd wyjeżdża poza ekran,
+// przypinamy go u góry (mniejszy) – układ strony się nie zmienia, bo płótno i tak leży „nad” swoim polem.
+{ const mq = matchMedia('(max-width: 1100px)'); let pin = false, czeka = false;
+  const sprawdz = () => { czeka = false;
+    const r = stage.getBoundingClientRect(), pole = mq.matches ? (innerWidth <= 760 ? 340 : 420) : 0;
+    const wys = Math.round(Math.min(innerWidth <= 760 ? 300 : 360, innerHeight * 0.38));
+    const chce = mq.matches && view !== 'decor' && r.top + pole < wys && stage.closest('.workspace').getBoundingClientRect().bottom > wys + 80;   // pole podglądu prawie zniknęło, a strona jeszcze trwa
+    if (chce) { const s = document.body.style; s.setProperty('--pin-l', Math.round(r.left) + 'px'); s.setProperty('--pin-w', Math.round(r.width) + 'px'); s.setProperty('--pin-h', wys + 'px'); }
+    if (chce !== pin) { pin = chce; document.body.classList.toggle('pin', pin); resize(); needsRender = true; }
+  };
+  const pytaj = () => { if (!czeka) { czeka = true; requestAnimationFrame(sprawdz); } };
+  addEventListener('scroll', pytaj, { passive: true }); addEventListener('resize', pytaj); mq.addEventListener('change', pytaj);
+}

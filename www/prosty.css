@@ -125,3 +125,8 @@
 
 /* opis strony tekstem (dla czytników ekranu i wyszukiwarek) – poza widokiem, generator zostaje bez zmian */
 .opis-tekst { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+
+/* wąskie ekrany: podgląd przypięty u góry, gdy jego pole wyjechało poza ekran (js/app.js) */
+body.pin #scene, body.pin .flat { position: fixed; top: 0; left: var(--pin-l); right: auto; bottom: auto; width: var(--pin-w); height: var(--pin-h); z-index: 40;
+  background: inherit; background-color: #f1f1f1; border-radius: 0 0 12px 12px; box-shadow: 0 10px 26px #00000038; }
+body.pin .flat { background: #fffffff5; }
