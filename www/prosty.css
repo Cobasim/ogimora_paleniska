@@ -130,3 +130,23 @@
 body.pin #scene, body.pin .flat { position: fixed; top: 0; left: var(--pin-l); right: auto; bottom: auto; width: var(--pin-w); height: var(--pin-h); z-index: 40;
   background: inherit; background-color: #f1f1f1; border-radius: 0 0 12px 12px; box-shadow: 0 10px 26px #00000038; }
 body.pin .flat { background: #fffffff5; }
+/* 0.2.0: przełącznik jednostek mm | in (obok PL / EN) – wygląd jak przełącznik języka */
+.ob .ob-jedn { margin-left: 8px; display: flex; flex: none; border: 1px solid rgba(255,255,255,.35); border-radius: 10px; overflow: hidden; }
+.ob-jedn button { border: 0; background: none; padding: 6px 10px; font-size: 13px !important; font-weight: 600 !important; color: #ddd; cursor: pointer; }
+.ob-jedn button.on { background: #fff; color: #16130f; }
+.ob .ob-jedn + .ob-lang { margin-left: 6px; }
+@media (max-width: 520px) { .ob .ob-jedn { margin-left: 4px; } .ob-jedn button { padding: 6px 6px !important; } .ob .ob-jedn + .ob-lang { margin-left: 4px; } }
+/* blachy calowe: 4 przyciski w jednym rzędzie */
+.row.thk [data-thk] .chip.thk-in { font-size: 12px; white-space: nowrap; }
+/* okno pobierania: jednostki pliku DXF (widoczne także bez ankiety) */
+.dl-jedn { margin: 4px 0 12px; }
+.dl-jedn > span { display: block; margin-bottom: 5px; font-size: 12.5px; font-weight: 700; }
+.dl-jedn .chips { display: flex; gap: 6px; }
+.dl-jedn small { display: block; margin-top: 6px; font-size: 11.5px; line-height: 1.35; color: var(--ink-3, #6f665c); }
+/* średnica otworów w dnie: w calach dłuższy napis (0.3125 in) */
+.p-row output { white-space: nowrap; }
+html[data-jedn=in] .p-row:has(output) { grid-template-columns: 22px 1fr 62px; }
+/* pasek z dwoma przełącznikami (mm | in, PL | EN) */
+@media (max-width: 1000px) { .ob-opinia span { display: none; } .ob-opinia { padding: 0 9px; } }   /* „Napisz, co zmienić” – sama ikona (podpis w dymku) */
+@media (max-width: 520px) { .ob-jedn button:not(.on) { display: none; } .ob-jedn button.on { background: none; color: #fff; } }   /* telefon: jeden przycisk, kliknięcie zmienia jednostki */
+@media (max-width: 430px) { .ob-brand span { display: none !important; } }

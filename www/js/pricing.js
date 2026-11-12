@@ -66,6 +66,7 @@ export const PRICE_DEFAULTS = {
 //   przygotowanie: 40–80 $, w przykładach 50–60 $ (lapas, stylecnc, eminacademy) → 50 $.
 // Uwaga: to koszt wyliczony, nie oferta. Prawdziwa wycena jednej sztuki bywa dużo wyższa (minimalne zamówienie, kolejka).
 import { LANG } from './i18n.js';
+import { BLACHY_IN, akt } from './jednostki.js';
 export const RYNEK = LANG === 'en' ? 'us' : 'pl';
 export const WALUTA = RYNEK === 'us' ? '$' : 'zł';
 // DWIE PRAWDZIWE WYCENY (11 XI 2026, podane przez użytkownika): serwis cięcia online w USA, projekt startowy, A36 4,8 mm ($/szt.):
@@ -89,6 +90,13 @@ if (RYNEK === 'us') {
   for (const t of Object.keys(V)) CUT_RATES[t] = [+(C5 * V[5] / V[t]).toFixed(2), +(P5 * TP[t] / TP[5]).toFixed(3)];   // [$/m, $/przebicie]
   Object.assign(PRICE_DEFAULTS, { setup: 0, bendPrice: 6, vat: 0 });
 }
+// Blachy calowe (11 ga, 10 ga, 3/16", 1/4"): stawki z sąsiednich grubości w mm, liniowo według grubości (bez własnej wyceny).
+for (const b of BLACHY_IN) {
+  const ts = Object.keys(CUT_RATES).map(Number).sort((x, y) => x - y), t = b.t;
+  const hi = ts.find(x => x >= t) ?? ts[ts.length - 1], lo = [...ts].reverse().find(x => x <= t) ?? ts[0];
+  const k = hi === lo ? 0 : (t - lo) / (hi - lo), A = CUT_RATES[lo], B = CUT_RATES[hi];
+  CUT_RATES[t] = [+(A[0] + (B[0] - A[0]) * k).toFixed(3), +(A[1] + (B[1] - A[1]) * k).toFixed(3)];
+}
 const pl = (v, d) => v.toLocaleString('pl-PL', { minimumFractionDigits: d, maximumFractionDigits: d });   // przecinek, jak w reszcie strony
 
 export function estimate(model, material, opts = PRICE_DEFAULTS, overrides = {}) {
@@ -106,8 +114,11 @@ export function estimate(model, material, opts = PRICE_DEFAULTS, overrides = {})
     bends += (p.folds || []).length * p.qty;
   }
   const bendCost = bends * opts.bendPrice;
-  lines.push(['Materiał', RYNEK === 'us' ? `${mass.toFixed(1)} kg (${(mass * 2.2046).toFixed(0)} lb) + ${opts.scrap}% scrap × $${kg.toFixed(2)}/kg` : `${pl(mass, 1)} kg + ${opts.scrap}% odpadu × ${pl(kg, 2)} zł/kg`, materialCost]);
-  lines.push(['Cięcie laserem', RYNEK === 'us' ? `${(model.stats.cut / 1000).toFixed(1)} m (${(model.stats.cut / 304.8).toFixed(0)} ft)` : `${pl(model.stats.cut / 1000, 1)} m`, cutCost]);
+  const CALE = RYNEK === 'us' && akt() === 'in';   // USA + cale: najpierw funty i stopy
+  lines.push(['Materiał', CALE ? `${(mass * 2.2046).toFixed(0)} lb (${mass.toFixed(1)} kg) + ${opts.scrap}% scrap × $${(kg / 2.2046).toFixed(2)}/lb`
+    : RYNEK === 'us' ? `${mass.toFixed(1)} kg (${(mass * 2.2046).toFixed(0)} lb) + ${opts.scrap}% scrap × $${kg.toFixed(2)}/kg` : `${pl(mass, 1)} kg + ${opts.scrap}% odpadu × ${pl(kg, 2)} zł/kg`, materialCost]);
+  lines.push(['Cięcie laserem', CALE ? `${(model.stats.cut / 304.8).toFixed(0)} ft (${(model.stats.cut / 1000).toFixed(1)} m)`
+    : RYNEK === 'us' ? `${(model.stats.cut / 1000).toFixed(1)} m (${(model.stats.cut / 304.8).toFixed(0)} ft)` : `${pl(model.stats.cut / 1000, 1)} m`, cutCost]);
   lines.push(['Przebicia', `${model.parts.reduce((s, p) => s + (p.pierces || 1) * p.qty, 0)} szt.`, pierceCost]);
   if (bends) lines.push(['Gięcie', `${bends} gięć`, bendCost]);
   lines.push(['Przygotowanie', 'obsługa zlecenia: program, przygotowanie, pakowanie', opts.setup]);

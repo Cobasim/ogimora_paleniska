@@ -29,6 +29,12 @@ Zasada: na serwerze jest zawsze to, co w gałęzi `main` z ostatnim znacznikiem.
 - **Kod kształtu** (`www/js/code.js`) – stare wersje kodu muszą się dalej wczytywać; nową wersję dopisuje się obok, nie zamiast.
 - **Klucze w pamięci przeglądarki** (`ogip_…`).
 
+## Jednostki: mm i cale (od 0.2.0)
+- Silnik liczy zawsze w milimetrach. Projekt jest „calowy”, gdy ma blachę z listy calowej (11 ga, 10 ga, 3/16", 1/4") – wszystko w `www/js/jednostki.js` (listy blach, siatki, przeliczanie, wyświetlanie).
+- Kod kształtu: projekty w mm – jak dotąd (wersja 9); projekty calowe – wersja `A` (`www/js/code.js`). Starych kodów nie wolno zmieniać.
+- Płytki próbne calowe i instrukcje PDF w calach robią te same skrypty co mm (`narzedzia/plytka_probna`, opis w `OPIS.md`).
+- Na start strona wybiera cale w strefie czasowej USA; do testów: `?j=in` albo `?j=mm` w adresie.
+
 ## Wyszukiwarki
 - Trzy adresy: `ogimora.com/` (język według przeglądarki), `/pl/`, `/en/`. Pliki `pl/index.html` i `en/index.html` robi skrypt budujący – tytuł, opis i tekst dla wyszukiwarek w wersji angielskiej zmienia się w `narzedzia/buduj/jezyki.mjs`, polski w `www/index.html` (blok `<!--OPIS-->`).
 - `www/robots.txt`, `www/sitemap.xml`, `www/llms.txt` (streszczenie dla wyszukiwarek AI), `www/img/og.jpg` (obrazek podglądu linku, 1200×630).

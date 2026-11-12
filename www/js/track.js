@@ -31,7 +31,7 @@ function wyslij(typ, dane) {
 
 let getCode = () => '', getProjekt = () => ({});
 export function setCodeSource(fn) { getCode = fn; }
-/** Opis pobieranego projektu: { wym, wz, nap, smok, otw, mat, luz } – buduje js/prosty.js. */
+/** Opis pobieranego projektu: { wym, wz, nap, smok, otw, mat, luz, jedn } – buduje js/prosty.js; jednostki pliku DXF (plik) – z okna pobierania. */
 export function setProjektSource(fn) { getProjekt = fn; }
 
 // ---- liczniki przycisków: nazwa = zdarzenie[:co]; wartości suwaków nie są wysyłane
@@ -39,7 +39,7 @@ const K = {}; let zmiana = false, pierwsza = true;
 const nazwa = (e, d) => { const v = d.param ?? d.key ?? d.k ?? d.part ?? (typeof d.value === 'string' || typeof d.value === 'number' ? d.value : undefined); return String(v === undefined ? e : `${e}:${v}`).replace(/[^A-Za-z0-9_:.\-]/g, '').slice(0, 40); };
 const POMIN = new Set(['view', 'interact', 'survey', 'download', 'projekt_nowy', 'save', 'saved_loaded']);
 export function track(event, data = {}) {
-  if (event === 'download') { K.pobranie = (K.pobranie || 0) + 1; zmiana = true; let p = {}; try { p = getProjekt() || {}; } catch {} wyslij('pobranie', { kod: getCode(), ...CONTEXT, ...p }); return; }
+  if (event === 'download') { K.pobranie = (K.pobranie || 0) + 1; zmiana = true; let p = {}; try { p = getProjekt() || {}; } catch {} wyslij('pobranie', { kod: getCode(), ...CONTEXT, ...p, plik: data.plik === 'in' ? 'in' : 'mm' }); return; }
   if (event === 'survey') { wyslij('ankieta', { use: data.use, license: data.license, pay: data.pay, notes: data.notes, tz: CONTEXT.tz, lang: CONTEXT.lang }); return; }
   if (POMIN.has(event)) return;
   const k = nazwa(event, data); if (!k) return;

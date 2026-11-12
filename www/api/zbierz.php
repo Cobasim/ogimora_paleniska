@@ -125,24 +125,36 @@ if ($typ === 'pobranie') {
   $wz = []; foreach (array_slice((array)($d['wz'] ?? []), 0, 4) as $w) $wz[] = slowo($w, 48, '/[^a-z0-9\-]/') ?: '-';
   $nap = []; foreach (array_slice((array)($d['nap'] ?? []), 0, 4) as $n) $nap[] = max(0, min(40, (int)$n));
   $w = (array)($d['wym'] ?? []);
-  $wym = ['bok' => (int)($w['bok'] ?? 0), 'wys' => (int)($w['wys'] ?? 0), 'kat' => (int)($w['kat'] ?? 0), 'dno' => (int)($w['dno'] ?? 0), 'nogi' => (int)($w['nogi'] ?? 0), 'blacha' => (int)($w['blacha'] ?? 0)];
+  // wymiary zawsze w mm (także projekty calowe); blacha: '3' / '4' / '5' (mm) albo '11ga' / '10ga' / '3-16' / '1-4' (cale, od 0.2.0)
+  $wym = ['bok' => (int)($w['bok'] ?? 0), 'wys' => (int)($w['wys'] ?? 0), 'kat' => (int)($w['kat'] ?? 0), 'dno' => (int)($w['dno'] ?? 0), 'nogi' => (int)($w['nogi'] ?? 0), 'blacha' => slowo($w['blacha'] ?? '', 6, '/[^0-9a-z\-]/') ?: '0'];
+  $jedn = ($d['jedn'] ?? '') === 'in' ? 'in' : 'mm';           // jednostki projektu na stronie
+  $plik = ($d['plik'] ?? '') === 'in' ? 'in' : 'mm';           // jednostki pobranego pliku DXF
   $mat = slowo($d['mat'] ?? '', 12); $ciecie = slowo($d['luz'] ?? '', 6, '/[^0-9.]/');
   $otw = max(0, min(8, (int)($d['otw'] ?? 0)));
   $poza = false;
   $csv = "$dir/pobrania-" . date('Y-m') . '.csv';
-  if (!is_file($csv)) file_put_contents($csv, "czas;kraj;jezyk;urzadzenie;kod;bok;wysokosc;kat;dno;nozki;blacha;material;luz;wzory;napis_znakow;otwory_dna;wersja\n", LOCK_EX);
+  $NAGL = "czas;kraj;jezyk;urzadzenie;kod;bok;wysokosc;kat;dno;nozki;blacha;material;luz;wzory;napis_znakow;otwory_dna;wersja;jednostki;plik_dxf\n";
+  if (!is_file($csv)) file_put_contents($csv, $NAGL, LOCK_EX);
+  else {   // rejestr założony przed 0.2.0: nowy nagłówek (dwie kolumny na końcu – starsze wiersze mają je puste)
+    $f = fopen($csv, 'r+');
+    if ($f && flock($f, LOCK_EX)) { $tresc = stream_get_contents($f); $nl = strpos($tresc, "\n");
+      if ($nl !== false && substr($tresc, 0, $nl + 1) !== $NAGL) { $tresc = $NAGL . substr($tresc, $nl + 1); ftruncate($f, 0); rewind($f); fwrite($f, $tresc); }
+      flock($f, LOCK_UN); }
+    if ($f) fclose($f);
+  }
   if (filesize($csv) < MAX_CSV) {
     $linia = [date('Y-m-d H:i'), $kraj, $jez, $urz, $kod, $wym['bok'], $wym['wys'], $wym['kat'], $wym['dno'], $wym['nogi'], $wym['blacha'], $mat, $ciecie,
-              implode('|', $wz), implode('|', $nap), $otw, $wer];
+              implode('|', $wz), implode('|', $nap), $otw, $wer, $jedn, $plik];
     file_put_contents($csv, implode(';', $linia) . "\n", FILE_APPEND | LOCK_EX);
   } else $poza = true;
-  licznik($dir, function (&$t) use ($wz, $nap, $wym, $mat, $kraj, $dzien, $d, $otw, $poza, $wer) {
+  licznik($dir, function (&$t) use ($wz, $nap, $wym, $mat, $kraj, $dzien, $d, $otw, $poza, $wer, $jedn, $plik) {
     plus($t, 'razem', 'pobrania'); plus($t, 'pobrania_wersja', $wer); plus($t, 'dni_pobrania', $dzien); plus($t, 'pobrania_kraj', $kraj);
     if ($poza) plus($t, 'razem', 'pobrania_poza_rejestrem');
     foreach (array_unique($wz) as $w) plus($t, 'wzor', $w === '-' ? 'bez_wzoru' : $w);
     plus($t, 'napis', array_sum($nap) > 0 ? 'jest' : 'brak');
     plus($t, 'otwory_dna', (string)$otw);
     plus($t, 'blacha_mm', (string)$wym['blacha']); plus($t, 'material', $mat);
+    plus($t, 'jednostki', $jedn); plus($t, 'plik_dxf', $plik);
     plus($t, 'bok_dna_mm', (string)(intdiv($wym['bok'], 50) * 50));          // przedziały co 50 mm
     plus($t, 'wysokosc_mm', (string)(intdiv($wym['wys'], 50) * 50));
     plus($t, 'kat_stopni', (string)((int)floor($wym['kat'] / 5) * 5));

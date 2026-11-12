@@ -2,6 +2,9 @@
 
 Jedna linijka na każde wgranie na serwer. Numer wersji jest w `www/js/wersja.js`.
 
+## 0.2.0 – 2026-11-12
+Cale (USA). Przełącznik `mm | in` w pasku obok PL / EN. W calach: blachy 11 ga (0,120"), 10 ga (0,135"), 3/16" (0,188") i 1/4" (0,250") – zamki liczone z prawdziwej grubości; wymiary co 1/4"; luz na ząbkach 0,005–0,060" co 0,005" (podpowiedzi: laser 0,010", plazma 0,030", stara plazma 0,050"); masa w funtach, długość cięcia w stopach; model papierowy na US Letter. W oknie pobierania wybór jednostek pliku DXF (mm albo cale; domyślnie jak na stronie; jednostka w nazwie pliku i w komentarzu). Płytki próbne calowe (4 grubości, luz cyframi i kropkami po 0,005", grubość cyframi, np. „.135”) i instrukcja PDF po angielsku i po polsku (Letter); płytki mm także w calach. Projekt calowy ma własny kod kształtu (wersja „A”); stare linki i projekty w mm działają jak dotąd (ten sam kod i ten sam plik DXF). Powrót mm → cale → mm bez zmian po drodze przywraca dokładnie poprzedni projekt. Na start: cale, gdy przeglądarka jest w strefie czasowej USA (albo `?j=in` w adresie). Statystyki: jednostki projektu i pliku DXF, blacha jako kod (`5`, `10ga`, `3-16`…). Poprawione przy okazji: kilka komunikatów bez tłumaczenia w wersji angielskiej (PDF gotowy, „Gotowe: mm…”), skala w PDF po angielsku.
+
 ## 0.1.7 – 2026-11-11
 Wycena: tylko jedna sztuka. Usunięte ceny „za sztukę przy większym zamówieniu” (PL i USA) i wzmianki, że szacunek jest dopasowany do prawdziwych wycen. W USA pozycje tabeli sumują się teraz do ceny jednej sztuki. Pod tabelą zostało tylko „Ceny orientacyjne, testowe.”
 

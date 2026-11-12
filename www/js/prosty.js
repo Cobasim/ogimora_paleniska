@@ -11,6 +11,7 @@ import { elements, pole, rules, elementPlaced, elementHoles, itemsFor } from './
 import { wczytajIndeks, wczytajMini, Mini, wzor as wzorInfo } from './wzory_dane.js';
 import { LANG } from './i18n.js';
 import { track, trackDebounced, setProjektSource } from './track.js';
+import { CAL, blachaCalowa, jednostkaStanu, przelicz, preferencja, naSiatke, wDol, luzNaSiatke, naWysw, zWysw, liczba, akt, kodBlachy, SIATKA } from './jednostki.js';
 
 // ---------------------------------------------------------------- kształt: ograniczenia
 export const LIM = {
@@ -20,23 +21,32 @@ export const LIM = {
   legHeight: { min: 30, max: 250 }, // wysokość dna nad ziemią [mm]
 };
 export const TOT = { min: 200, max: 600 };   // wysokość paleniska (całkowita) [mm]
+// projekty calowe: te same granice zaokrąglone do siatki 1/4" (do środka zakresu)
+export const LIM_IN = { base: { min: 12 * CAL, max: 23.5 * CAL }, height: { min: 4.75 * CAL, max: 17.5 * CAL }, angle: LIM.angle, legHeight: { min: 1.25 * CAL, max: 9.75 * CAL } };
+export const TOT_IN = { min: 8 * CAL, max: 23.5 * CAL };
+/** Granice kształtu dla jednostki j ('mm' | 'in'). */
+export const limity = j => (j === 'in' ? { L: LIM_IN, T: TOT_IN } : { L: LIM, T: TOT });
 // projekt startowy (wybrany przez użytkownika, plik starter_20261111): niskie palenisko zwężone ku górze, blacha 5 mm
 export const START = { base: 450, height: 190, angle: -8, legHeight: 55, legCut: 35, skirtArch: 1, footTop: 140, footBottom: 70, tBowl: 5, bowlBent: 0, perfBowl: 0, gap: 0.3, mat: 0 };
 for (const p of PARAMS) { if (p.id === 'base') p.step = 5; }
 for (const p of PARAMS) if (LIM[p.id]) { Object.assign(p, LIM[p.id]); if (START[p.id] != null) p.value = START[p.id]; }
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-/** Każdy stan (z linku, z pamięci, z suwaka) przechodzi przez to sito. */
+/** Projekt startowy w jednostce j (domyślnie: preferencja z przełącznika / strefy czasowej). Calowy = START przeliczony (5 mm → 3/16"). */
+export const startowy = (j = preferencja()) => (j === 'in' ? przelicz(START, 'in') : { ...START });
+/** Każdy stan (z linku, z pamięci, z suwaka) przechodzi przez to sito. Projekt calowy (blacha z listy calowej) – granice i siatka w calach. */
 export function ogranicz(s) {
   const o = { ...s };
-  for (const k in LIM) o[k] = clamp(Number.isFinite(+o[k]) ? +o[k] : START[k], LIM[k].min, LIM[k].max);
-  { const t = clamp(o.height + clamp(+o.legHeight || START.legHeight, LIM.legHeight.min, LIM.legHeight.max), TOT.min, TOT.max);
-    o.legHeight = clamp(+o.legHeight || START.legHeight, LIM.legHeight.min, Math.min(LIM.legHeight.max, t - LIM.height.min)); o.height = t - o.legHeight; }
+  const tIn = blachaCalowa(o.tBowl), j = tIn ? 'in' : 'mm', { L, T } = limity(j), S0 = j === 'in' ? startowy('in') : START;
+  for (const k in L) o[k] = clamp(Number.isFinite(+o[k]) ? +o[k] : S0[k], L[k].min, L[k].max);
+  { const t = clamp(o.height + clamp(+o.legHeight || S0.legHeight, L.legHeight.min, L.legHeight.max), T.min, T.max);
+    o.legHeight = clamp(+o.legHeight || S0.legHeight, L.legHeight.min, Math.min(L.legHeight.max, t - L.height.min)); o.height = +(t - o.legHeight).toFixed(4); }
   o.skirt = 1; o.skirtArch = +o.skirtArch ? 1 : 0; o.legBent = 0; o.perfLeg = 0; o.footInset = 0;   // nogi = przedłużenie ścianek
   o.footTop = START.footTop; o.footBottom = START.footBottom;
   o.notchDepth = 0;                                                              // bez podcięć
-  o.tBowl = [3, 4, 5].includes(+o.tBowl) ? +o.tBowl : START.tBowl; o.tLeg = o.tBowl;
+  o.tBowl = tIn ?? ([3, 4, 5].includes(+o.tBowl) ? +o.tBowl : START.tBowl); o.tLeg = o.tBowl;
   o.bowlBent = 0; o.perfBowl = 0;   // tylko spawane
-  o.legCut = clamp(Math.round((+o.legCut || 0) / 5) * 5, 0, 300);
+  o.legCut = clamp(naSiatke(+o.legCut || 0, j), 0, wDol(300, j));
+  o.gap = luzNaSiatke(Number.isFinite(+o.gap) && +o.gap > 0 ? +o.gap : S0.gap, j);   // mm co 0,1; cale co 0,005"
   return o;
 }
 
@@ -84,13 +94,14 @@ const T = EN ? {
 // S.sc[k] = { w: id wzoru | '', s: wysokość / wysokość pola, v: −1…1, t: napis, ts, tv }
 const scDef = () => ({ w: WZORY[0], s: 0.78, v: 0, t: '', ts: 0.16, tv: -0.72 });
 // na start: projekt startowy użytkownika – serce z napisem OGIMORA na ściance 1, dziewięciornik na 2 i 4, kwiat życia na 3
-const stanDef = () => ({ same: false, sel: 1, smok: false, dno: { n: 4, d: 6, r: 0.2 }, sc: {
+const dnoD0 = () => (preferencja() === 'in' ? 7.9375 : 6);   // otwory w dnie na start: 6 mm albo 5/16" (1/4" przy blasze 1/4" byłby „małym otworem”)
+const stanDef = () => ({ same: false, sel: 1, smok: false, dno: { n: 4, d: dnoD0(), r: 0.2 }, sc: {
   1: { ...scDef(), w: 'serce-z-rozeta-zlozona-parzenica', s: 0.5588, v: -0.2971, t: 'OGIMORA', ts: 0.1597, tv: 0.6568 },   // napis u góry, serce pod nim
   2: { ...scDef(), w: 'dziewieciornik-w-luczkach', s: 0.7782, v: 0.0022 },
   3: { ...scDef(), w: 'kwiat-zycia-w-podwojnym-otoku', s: 0.7782, v: 0.0022 },
   4: { ...scDef(), w: 'dziewieciornik-w-luczkach', s: 0.7782, v: 0.0022 } } });
 // projekt „czysty”: bez wzorów, sam napis OGIMORA na ściance 1 (otwory w dnie zostają – odpływ wody)
-const stanCzysty = () => { const pusta = () => ({ ...scDef(), w: '' }); return { same: false, sel: 1, smok: false, dno: { n: 4, d: 6, r: 0.2 }, sc: { 1: { ...pusta(), t: 'OGIMORA', ts: 0.22, tv: 0 }, 2: pusta(), 3: pusta(), 4: pusta() } }; };
+const stanCzysty = () => { const pusta = () => ({ ...scDef(), w: '' }); return { same: false, sel: 1, smok: false, dno: { n: 4, d: dnoD0(), r: 0.2 }, sc: { 1: { ...pusta(), t: 'OGIMORA', ts: 0.22, tv: 0 }, 2: pusta(), 3: pusta(), 4: pusta() } }; };
 let S = stanDef();
 let A = null;                 // { wz, model(), zmiana(), kamera(n) } z app.js
 let setDecor0 = null;         // oryginalne wz.setDecor
@@ -367,7 +378,7 @@ function budujPanel() {
       <div class="p-row"><span class="p-ic" title="${T.dnoD}">${IK.dia}</span><input type="range" id="pDd" min="5" max="30" step="1" aria-label="${T.dnoD}"><output id="pDdO"></output></div>
       <div class="p-row"><span class="p-ic" title="${T.dnoR}">${IK.roz}</span><input type="range" id="pDr" min="8" max="40" step="1" aria-label="${T.dnoR}"><output></output></div></div>`;
   $('pDn').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; track('dno_otwory', { k: b.dataset.n }); S.dno.n = +b.dataset.n; odswiez(); wyslij(); });
-  $('pDd').addEventListener('input', e => { S.dno.d = +e.target.value; odswiez(); wyslij(true, false); });
+  $('pDd').addEventListener('input', e => { S.dno.d = akt() === 'in' ? +(+e.target.value * CAL).toFixed(4) : +e.target.value; odswiez(); wyslij(true, false); });
   $('pDr').addEventListener('input', e => { S.dno.r = +e.target.value / 100; odswiez(); wyslij(true, false); });
   $('pSame').addEventListener('change', e => {
     if (e.target.checked) { const c = { ...S.sc[S.sel] };
@@ -430,8 +441,11 @@ function odswiez() {
   $('pKom').textContent = kom[S.same ? 1 : S.sel] || '';
   const d = S.dno;
   $('pDn').querySelectorAll('button').forEach(b => b.classList.toggle('active', +b.dataset.n === d.n));
-  ust('pDd', d.d, d.n > 0); ust('pDr', Math.round(d.r * 100), d.n > 1);
-  $('pDdO').textContent = d.n ? `${d.d} mm` : '';
+  // średnica otworów: mm co 1 (5–30) albo cale co 1/16" (0,25–1,125 – typowe wiertła)
+  { const e = $('pDd'), c = akt() === 'in', [a, b, k] = c ? [0.25, 1.125, 0.0625] : [5, 30, 1];
+    if (+e.step !== k) { e.min = a; e.max = b; e.step = k; } }
+  ust('pDd', akt() === 'in' ? d.d / CAL : d.d, d.n > 0); ust('pDr', Math.round(d.r * 100), d.n > 1);
+  $('pDdO').textContent = d.n ? (akt() === 'in' ? `${liczba(d.d / CAL, 4, true)} in` : `${liczba(d.d, 1, true)} mm`) : '';
 }
 /** Zmiana z panelu: kto ('w' | 't'), co ('s' | 'v' | 'nowy'), fn zmienia kopię ustawienia. */
 function zmien(kto, co, fn, szybko = false) {
@@ -477,14 +491,18 @@ function sprawdz() {
 }
 
 function syncNogi() {
-  const st = A.stan(), m = A.model(), L = (m && m.limits) || {};
+  const st = A.stan(), m = A.model(), L = (m && m.limits) || {}, j = jednostkaStanu(st), cale = j === 'in', { L: LL, T: TT } = limity(j);
+  // cale: suwak w calach co 1/4", granice zaokrąglone do środka zakresu; mm: jak dotąd (co 5 mm)
   const ust = (id, v, min, max) => { const r = document.getElementById('r-' + id), n = document.getElementById('n-' + id); if (!r) return;
-    r.min = min; r.max = Math.max(max, min + 5); r.value = v; r.disabled = max <= min;
-    if (document.activeElement !== n) n.value = v;
-    r.style.setProperty('--p', `${max > min ? (v - min) / (max - min) * 100 : 0}%`); };
+    let k = 5;
+    if (cale) { k = 0.25; const a = Math.ceil(min / CAL / k - 1e-6) * k; max = Math.max(a, Math.floor(max / CAL / k + 1e-6) * k); min = a; v = v / CAL; }
+    r.step = n.step = k; r.min = min; r.max = Math.max(max, min + k); r.value = v; r.disabled = max <= min;
+    if (document.activeElement !== n) n.value = cale ? +v.toFixed(2) : v;
+    const em = r.closest('.ctl').querySelector('em'); if (em && em.textContent !== j) em.textContent = j;
+    r.style.setProperty('--p', `${max > min ? Math.min(1, Math.max(0, (v - min) / (max - min))) * 100 : 0}%`); };
   const t = st.height + st.legHeight;
-  ust('total', t, TOT.min, TOT.max);
-  ust('dno', st.legHeight, LIM.legHeight.min, Math.min(LIM.legHeight.max, t - LIM.height.min, (L.legHeight || {}).max || 999));
+  ust('total', t, TT.min, TT.max);
+  ust('dno', st.legHeight, LL.legHeight.min, Math.min(LL.legHeight.max, t - LL.height.min, (L.legHeight || {}).max || 999));
   const lc = L.legCut || { min: 15, max: 200 };
   ust('legCut', st.legCut, lc.min, lc.max);
 }
@@ -503,7 +521,8 @@ export function initProsty(a) {
   budujPanel();
   // rejestr pobrań: wymiary, wzory, czy jest napis (TYLKO liczba znaków – treść nie jest wysyłana), smok, otwory dna
   setProjektSource(() => { const st = A.stan(), d = dnoItems()[0];
-    return { wym: { bok: st.base, wys: st.height + st.legHeight, kat: st.angle, dno: st.legHeight, nogi: st.legCut, blacha: st.tBowl }, mat: st.mat ? 'S355J2W' : 'S235', luz: st.gap,
+    return { wym: { bok: Math.round(st.base), wys: Math.round(st.height + st.legHeight), kat: st.angle, dno: Math.round(st.legHeight), nogi: Math.round(st.legCut), blacha: kodBlachy(st.tBowl) }, mat: st.mat ? 'S355J2W' : 'S235', luz: st.gap,
+      jedn: jednostkaStanu(st),
       wz: [1, 2, 3, 4].map(k => { const c = cfg(k); return c.w && !c.wBrak ? c.w : '-'; }), nap: [1, 2, 3, 4].map(k => { const c = cfg(k); return c.t && !c.tBrak ? c.t.length : 0; }),
       otw: d ? d.n : 0 }; });
   for (const id of ['notchDepth', 'notchWidth']) { const r = document.getElementById('r-' + id); if (r) r.closest('.ctl').style.display = 'none'; }   // bez podcięć
@@ -520,15 +539,17 @@ export function initProsty(a) {
     if (lh) lh.closest('.ctl').style.display = 'none';
     const dno = wiersz('dno', IK.dnoH, T.floorH, LIM.legHeight.min, LIM.legHeight.max), nog = wiersz('legCut', IK.nogi, T.legH, 15, 200);
     body.appendChild(dno); body.appendChild(nog);
+    // wartości z suwaka / pola są w jednostce wyświetlania (mm albo cale) – do silnika idą milimetry na siatce tej jednostki
     const pod = (id, fn) => { const r = document.getElementById('r-' + id), n = document.getElementById('n-' + id);
-      r.addEventListener('input', () => fn(+r.value));
-      n.addEventListener('change', () => { if (n.value !== '' && Number.isFinite(+n.value)) fn(Math.round(+n.value / 5) * 5); else syncNogi(); });   // puste / nie-liczba: wraca poprzednia wartość
+      r.addEventListener('input', () => fn(naSiatke(zWysw(+r.value, akt()), akt())));
+      n.addEventListener('change', () => { if (n.value !== '' && Number.isFinite(+n.value)) fn(naSiatke(zWysw(+n.value, akt()), akt())); else syncNogi(); });   // puste / nie-liczba: wraca poprzednia wartość
       n.addEventListener('keydown', e => { if (e.key === 'Enter') n.blur(); }); };
-    pod('total', v => { const st = A.stan(); v = clamp(v, TOT.min, TOT.max); const leg = clamp(st.legHeight, LIM.legHeight.min, v - LIM.height.min); A.ustaw({ legHeight: leg, height: v - leg }); });
+    const LT = () => limity(jednostkaStanu(A.stan()));
+    pod('total', v => { const st = A.stan(), { L: LL, T: TT } = LT(); v = clamp(v, TT.min, TT.max); const leg = clamp(st.legHeight, LL.legHeight.min, v - LL.height.min); A.ustaw({ legHeight: leg, height: +(v - leg).toFixed(4) }); });
     // dno przesuwa się wewnątrz tej samej bryły: wysokość i obrys paleniska zostają, zmienia się bok dna (ścianki są pochylone)
-    pod('dno', v => { const st = A.stan(), t = st.height + st.legHeight; const leg = clamp(v, LIM.legHeight.min, Math.min(LIM.legHeight.max, t - LIM.height.min));
-      const base = clamp(Math.round((st.base + 2 * (leg - st.legHeight) * Math.tan(st.angle * Math.PI / 180)) / 5) * 5, LIM.base.min, LIM.base.max);
-      A.ustaw({ legHeight: leg, height: t - leg, base }); });
+    pod('dno', v => { const st = A.stan(), t = st.height + st.legHeight, { L: LL } = LT(), j = jednostkaStanu(st); const leg = clamp(v, LL.legHeight.min, Math.min(LL.legHeight.max, t - LL.height.min));
+      const base = clamp(naSiatke(st.base + 2 * (leg - st.legHeight) * Math.tan(st.angle * Math.PI / 180), j), LL.base.min, LL.base.max);
+      A.ustaw({ legHeight: leg, height: +(t - leg).toFixed(4), base }); });
     pod('legCut', v => A.set('legCut', Math.max(15, v)));   // 0 oznacza w silniku „najwyżej jak się da” – z pola liczbowego nie wpuszczamy
     for (const id of ['total', 'dno', 'legCut']) document.getElementById('r-' + id).addEventListener('input', () => trackDebounced('k' + id, 'slider', { param: id }));
     for (const q of ['[data-opt=bowlBent]', '[data-opt=perfBowl]']) { const e = document.querySelector('.card-left ' + q); if (e) e.closest('.opt-row').style.display = 'none'; }   // bez gięcia
@@ -553,6 +574,11 @@ export function initProsty(a) {
       mig($('pGal'));
     },
     stan: () => S,
+    /** Przełączenie jednostek: średnica otworów w dnie na siatkę drugiej jednostki (mm co 1, cale co 1/16"). */
+    jednostka(j, dawne = null) { const d = S.dno; if (!d) return;
+      if (dawne && dawne.d) d.d = dawne.d;   // powrót do poprzedniej jednostki bez zmian po drodze – dokładnie ta sama średnica
+      else d.d = j === 'in' ? +(Math.min(18, Math.max(4, Math.round(d.d / (CAL / 16)))) * CAL / 16).toFixed(4) : Math.min(30, Math.max(5, Math.round(d.d)));
+      zapisz(); odswiez(); wyslij(false); },
     /** Nowy projekt: 'start' (wzory startowe + napis) albo 'czysty' (sam napis OGIMORA na ściance 1). */
     reset(rodzaj) { S = rodzaj === 'czysty' ? stanCzysty() : stanDef(); naprawy = 0; ostatni = ''; zapisz(); if (wzorInfo(WZORY[0])) { ulozWszystko(); odswiez(); } wyslij(false); },
     /** Spełnia się, gdy wzory są wczytane i ułożone (stan projektu jest już ustalony). */

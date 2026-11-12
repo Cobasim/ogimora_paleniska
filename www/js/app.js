@@ -17,7 +17,8 @@ import { wczytajIndeks } from './wzory_dane.js';
 import { createFire } from './ogien.js';
 import * as B from './biblioteka.js';
 import { LANG } from './i18n.js';
-import { LIM, START, ogranicz, initProsty } from './prosty.js';   // PROSTY: wersja uproszczona
+import { LIM, START, ogranicz, initProsty, limity, startowy } from './prosty.js';   // PROSTY: wersja uproszczona
+import { CAL, BLACHY_IN, BLACHY_MM, SIATKA, jednostkaStanu, przelicz, ustawAkt, akt, ustawPreferencje, luzNaSiatke, wDol, liczba, dl, luzTxt, luzLiczba, masa, pole as poleTxt, dlugosc, tekstJ, nazwaBlachy, opisBlachy } from './jednostki.js';
 const MAT_KEYS = ['s235', 'weather'];
 
 const $ = id => document.getElementById(id);
@@ -25,7 +26,8 @@ const fmt = (n, d = 0) => n.toLocaleString(LANG === 'en' ? 'en-US' : 'pl-PL', { 
 const dz = v => (LANG === 'en' ? String(v) : String(v).replace('.', ','));
 
 // ---------------- stan ----------------
-let state = ogranicz({ ...DEFAULTS, ...START, ...readHash() });   // PROSTY
+let state = ogranicz({ ...DEFAULTS, ...startowy(), ...readHash() });   // PROSTY; projekt startowy w mm albo w calach (preferencja)
+ustawAkt(jednostkaStanu(state));
 let model = null, baseModel = null;   // baseModel – sam kształt; model – ze zdobieniami (3D, DXF)
 let view = 'model';
 
@@ -63,6 +65,11 @@ function writeHash() {
 setCodeSource(() => code);
 
 // ---------------- kontrolki ----------------
+// Suwaki wymiarów pokazują mm albo cale (projekt calowy); do silnika zawsze idą milimetry.
+// Cale: wymiary co 1/4", luz co 0,005" (wartości na siatce – po zapisaniu kodu i ponownym otwarciu są takie same).
+const dlugosc_ = p => p.unit === 'mm';
+const zWyswP = (p, v) => (!dlugosc_(p) || akt() !== 'in' ? v : p.id === 'gap' ? luzNaSiatke(v * CAL, 'in') : +(v * CAL).toFixed(4));
+const wyswP = (p, mm) => (!dlugosc_(p) || akt() !== 'in' ? mm : p.id === 'gap' ? +(mm / CAL).toFixed(3) : +(mm / CAL).toFixed(2));
 const ctl = {};
 for (const p of PARAMS) {
   const wrap = document.createElement('div');
@@ -75,25 +82,37 @@ for (const p of PARAMS) {
     (p.id === 'footAngle' ? `<button type="button" class="mini" id="matchAngle" title="Stopki w linii narożników misy (kąt stopek = kąt ścianek)">${ICONS.match}</button>` : '');
   $({ body: 'ctl-body', legs: 'ctl-legs', joint: 'ctl-joint' }[p.section]).appendChild(wrap);
   const range = wrap.querySelector('input[type=range]'), num = wrap.querySelector('input[type=number]');
-  range.addEventListener('input', () => { set(p.id, +range.value); trackDebounced(p.id, 'slider', { param: p.id, value: state[p.id] }); interacted(); });
-  num.addEventListener('change', () => { if (num.value === '') { num.value = state[p.id]; return; }   // puste / nie-liczba: wraca poprzednia wartość
-    if (num.value !== '') { set(p.id, +(Math.round(+num.value / p.step) * p.step).toFixed(2)); track('slider', { param: p.id, value: state[p.id], typed: true }); interacted(); } });
+  range.addEventListener('input', () => { set(p.id, zWyswP(p, +range.value)); trackDebounced(p.id, 'slider', { param: p.id, value: state[p.id] }); interacted(); });
+  num.addEventListener('change', () => { if (num.value === '') { num.value = wyswP(p, state[p.id]); syncControls(); return; }   // puste / nie-liczba: wraca poprzednia wartość
+    if (num.value !== '') { const k = +range.step || p.step; set(p.id, zWyswP(p, +(Math.round(+num.value / k) * k).toFixed(4))); track('slider', { param: p.id, value: state[p.id], typed: true }); interacted(); } });
   num.addEventListener('keydown', e => { if (e.key === 'Enter') num.blur(); });
-  ctl[p.id] = { p, range, num };
+  ctl[p.id] = { p, range, num, em: wrap.querySelector('em') };
 }
 // ---------------- luz ząbków: widoczny podpis, rysunek w dymku, szybki wybór laser / plazma ----------------
-const GAP_PRE = [{ v: 0.3, n: 'Laser', d: 'Laser: wąskie, dokładne cięcie' }, { v: 0.8, n: 'Plazma', d: 'Plazma CNC: szersze cięcie' }, { v: 1.2, n: 'Stara plazma', d: 'Starsza / mniej dokładna plazma' }];
+// mm: 0,3 / 0,8 / 1,2 mm; cale: 0,010" / 0,030" / 0,050" (w mm na siatce 0,005" = 0,127 mm)
+const GAP_PRE = { mm: [{ v: 0.3, n: 'Laser' }, { v: 0.8, n: 'Plazma' }, { v: 1.2, n: 'Stara plazma' }],
+  in: [{ v: 0.254, n: 'Laser' }, { v: 0.762, n: 'Plazma' }, { v: 1.27, n: 'Stara plazma' }] };
+// tabelka w dymku: mm – jak dotąd (teksty tłumaczy i18n); cale – zakresy w calach (SendCutSend, fora plazmowe – orientacyjnie)
+const GAP_TAB = () => akt() === 'in'
+  ? [[0.008, 0.012], [0.03, 0.04], [0.045, 0.06]].map(([a, b]) => `${liczba(a, 3)}–${liczba(b, 3)} in`)
+  : ['0,2–0,3 mm', '0,8–1,0 mm', '1,2–1,5 mm'];
+function budujLuz() {
+  const pre = document.querySelector('.gap-pre'); if (!pre) return;
+  pre.innerHTML = GAP_PRE[akt()].map(g => `<button type="button" class="chip" data-g="${g.v}">${g.n} <small>${luzLiczba(g.v)}</small></button>`).join('');
+  const t = GAP_TAB(), tab = document.getElementById('gapTab');
+  if (tab) tab.innerHTML = `<span>Laser</span><b>${t[0]}</b><span>Plazma CNC</span><b>${t[1]}</b><span>Stara / niedokładna plazma</span><b>${t[2]}</b>`;
+}
 {
   const box = $('ctl-joint'); box.classList.add('gap-box');
   ctl.gap.range.closest('.ctl').removeAttribute('title');
   box.insertAdjacentHTML('afterbegin', `<div class="gap-head"><span>Luz na ząbkach</span><span class="gap-q" tabindex="0" aria-label="Co to jest luz na ząbkach?">?</span></div>`);
-  box.insertAdjacentHTML('beforeend', `<div class="gap-pre">${GAP_PRE.map(g => `<button type="button" class="chip" data-g="${g.v}">${g.n} <small>${dz(g.v)}</small></button>`).join('')}</div>`);
+  box.insertAdjacentHTML('beforeend', `<div class="gap-pre"></div>`);
   const pop = document.createElement('div'); pop.className = 'gap-pop'; pop.setAttribute('role', 'tooltip'); pop.id = 'gapPop';
   pop.innerHTML = `<b>Luz na ząbkach</b><svg viewBox="0 0 240 118" id="gapSvg" aria-hidden="true"></svg>
     <p>Odstęp między ząbkiem jednej blachy a wycięciem w drugiej – <b>z każdej strony</b>. Dzięki niemu elementy wchodzą w siebie bez szlifowania.</p>
-    <p class="gap-tab"><span>Laser</span><b>0,2–0,3 mm</b><span>Plazma CNC</span><b>0,8–1,0 mm</b><span>Stara / niedokładna plazma</span><b>1,2–1,5 mm</b></p>
+    <p class="gap-tab" id="gapTab"></p>
     <p class="gap-note">Za mały – ząbki nie wejdą. Za duży – luźno, więcej spawania.</p>`;
-  document.body.appendChild(pop);
+  document.body.appendChild(pop); budujLuz();
   let hideT = 0;
   const show = () => { clearTimeout(hideT); const r = box.getBoundingClientRect(); pop.classList.add('on');
     pop.style.top = Math.max(8, Math.min(innerHeight - pop.offsetHeight - 8, r.top - 20)) + 'px';
@@ -109,24 +128,33 @@ const GAP_PRE = [{ v: 0.3, n: 'Laser', d: 'Laser: wąskie, dokładne cięcie' },
 function syncGap() {
   const g = state.gap, gp = 2 + g * 9, tw = 34, cx = 120, L = cx - tw / 2 - gp, R = cx + tw / 2 + gp;
   const f = v => v.toFixed(1);
-  document.querySelectorAll('.gap-pre button').forEach(b => b.classList.toggle('active', Math.abs(+b.dataset.g - g) < 0.05));
+  document.querySelectorAll('.gap-pre button').forEach(b => b.classList.toggle('active', Math.abs(+b.dataset.g - g) < 0.05));   // sąsiednie wartości: 0,1 mm albo 0,127 mm
   const s = $('gapSvg'); if (!s) return;
   s.innerHTML = `<rect x="8" y="62" width="${f(L - 8)}" height="26" fill="#cfc8bd" stroke="#16130f" stroke-width="1.2"/>
     <rect x="${f(R)}" y="62" width="${f(232 - R)}" height="26" fill="#cfc8bd" stroke="#16130f" stroke-width="1.2"/>
     <rect x="${cx - tw / 2}" y="14" width="${tw}" height="74" fill="#6f665c" stroke="#16130f" stroke-width="1.2"/>
     <rect x="${f(L)}" y="62" width="${f(gp)}" height="26" fill="#df3434" opacity=".85"/><rect x="${cx + tw / 2}" y="62" width="${f(gp)}" height="26" fill="#df3434" opacity=".85"/>
     <path d="M${f(L)} 98V108M${f(L + gp)} 98V108M${f(R - gp)} 98V108M${f(R)} 98V108" stroke="#df3434" stroke-width="1.2"/>
-    <text x="${f(L - 4)}" y="110" text-anchor="end" font-size="12" fill="#df3434" font-weight="700">${dz(g)} mm</text>
-    <text x="${f(R + 4)}" y="110" font-size="12" fill="#df3434" font-weight="700">${dz(g)} mm</text>
+    <text x="${f(L - 4)}" y="110" text-anchor="end" font-size="12" fill="#df3434" font-weight="700">${luzTxt(g)}</text>
+    <text x="${f(R + 4)}" y="110" font-size="12" fill="#df3434" font-weight="700">${luzTxt(g)}</text>
     <text x="${cx}" y="10" text-anchor="middle" font-size="11" fill="#4a443e">ząbek</text>
     <text x="10" y="56" font-size="11" fill="#4a443e">blacha z wycięciem</text>`;
 }
 
+// Grubość blachy: mm – 3 / 4 / 5; cale – 11 ga, 10 ga, 3/16", 1/4" (przyciski trzymają grubość w mm, dokładnie z listy)
+function budujBlachy() {
+  const cale = akt() === 'in';
+  document.querySelectorAll('[data-thk]').forEach(box => {
+    box.innerHTML = cale ? BLACHY_IN.map(b => `<button type="button" class="chip thk-in" data-v="${b.t}" title="${opisBlachy(b.t).replace(/"/g, '&quot;')}">${b.n.replace('"', '')}</button>`).join('')
+      : BLACHY_MM.map(t => `<button type="button" class="chip" data-v="${t}" title="${t} mm">${t}</button>`).join('');
+  });
+  const h = document.querySelector('.thk-head'); if (h) { h.lastElementChild.textContent = cale ? 'gauge / in' : 'mm'; h.title = cale ? 'Grubość blachy: numer (gauge) albo ułamek cala' : 'Grubość blachy w milimetrach'; }
+}
 document.querySelectorAll('[data-thk]').forEach(box => {
   const key = box.dataset.thk;
-  box.innerHTML = THICKNESSES.filter(t => t <= 5).map(t => `<button type="button" class="chip" data-v="${t}" title="${t} mm">${t}</button>`).join('');
-  box.addEventListener('click', e => { const b = e.target.closest('button'); if (b) { set(key, +b.dataset.v); track('thickness', { part: key, value: +b.dataset.v }); interacted(); } });
+  box.addEventListener('click', e => { const b = e.target.closest('button'); if (b) { set(key, +b.dataset.v); track('thickness', { part: key, value: akt() === 'in' ? nazwaBlachy(+b.dataset.v) : +b.dataset.v }); interacted(); } });
 });
+budujBlachy();
 
 // Wykonanie (spawane / gięte) i gęstość nacięć na linii gięcia
 document.querySelectorAll('[data-perf]').forEach(box => {
@@ -159,14 +187,53 @@ document.getElementById('matChips').addEventListener('click', e => {
   track('material', { value: MAT_KEYS[state.mat] }); interacted();
 });
 function set(key, value) { state[key] = value; update(); }
+// ---------------- przełącznik jednostek (pasek u góry, obok PL / EN) ----------------
+// Zamienia projekt na drugą jednostkę: blacha na najbliższą z drugiej listy (3 mm ↔ 11 ga, 4 mm ↔ 10 ga, 5 mm ↔ 3/16"),
+// wymiary na siatkę (mm co 5, cale co 1/4"), luz na siatkę (0,1 mm albo 0,005"). Zapamiętuje wybór dla nowych projektów.
+function syncJedn() { document.querySelectorAll('.ob-jedn button').forEach(b => { b.classList.toggle('on', b.dataset.j === akt()); b.setAttribute('aria-pressed', b.dataset.j === akt()); }); }
+// Powrót bez zmian po drodze (mm → cale → mm) przywraca dokładnie poprzedni projekt – zaokrąglenia się nie sumują.
+let przedJedn = null;
+function zmienJedn(j) {
+  if (j === akt()) return;
+  const wrot = przedJedn && przedJedn.po === encode(state) && przedJedn.j === j;
+  const przed = { state: { ...state }, dno: PR ? PR.stan().dno && { ...PR.stan().dno } : null };
+  state = wrot ? { ...przedJedn.state } : ogranicz(przelicz(state, j)); ustawPreferencje(j);
+  if (PR) PR.jednostka(j, wrot ? przedJedn.dno : null);
+  update(); interacted(); track('jednostki', { value: j });
+  przedJedn = wrot ? null : { j: j === 'in' ? 'mm' : 'in', state: przed.state, dno: przed.dno, po: encode(state) };
+  toast(j === 'in'
+    ? (EN_UI ? `Inches: ${nazwaBlachy(state.tBowl)} sheet (US), sizes in 1/4" steps` : `Cale: blacha ${nazwaBlachy(state.tBowl)} (USA), wymiary co 1/4"`)
+    : (EN_UI ? `Millimetres: ${state.tBowl} mm sheet, sizes in 5 mm steps` : `Milimetry: blacha ${state.tBowl} mm, wymiary co 5 mm`));
+}
+// na telefonie widać tylko bieżącą jednostkę – kliknięcie w nią przełącza na drugą
+document.querySelectorAll('.ob-jedn button').forEach(b => b.addEventListener('click', () => {
+  const inny = [...document.querySelectorAll('.ob-jedn button')].find(x => x !== b);
+  zmienJedn(b.dataset.j === akt() && inny && !inny.offsetParent ? inny.dataset.j : b.dataset.j);
+}));
 let didInteract = false;
 function interacted() { if (!didInteract) { didInteract = true; track('interact'); } }
 
 function syncControls() {
+  const cale = akt() === 'in', LJ = limity(akt()).L;
   for (const id in ctl) {
-    const { p, range, num } = ctl[id];
+    const { p, range, num, em } = ctl[id];
     let lim = model.limits[id] || p;
-    if (LIM[id]) lim = { min: Math.max(lim.min, LIM[id].min), max: Math.min(lim.max, LIM[id].max) };   // PROSTY
+    if (LJ[id]) lim = { min: Math.max(lim.min, LJ[id].min), max: Math.min(lim.max, LJ[id].max) };   // PROSTY
+    if (cale && dlugosc_(p)) {
+      // cale: suwak w calach (wymiary co 1/4", luz co 0,005" w zakresie 0,005–0,060"), granice zaokrąglone do środka zakresu
+      const k = id === 'gap' ? 0.005 : 0.25;
+      let a = Math.ceil(lim.min / CAL / k - 1e-6) * k, b = Math.floor(lim.max / CAL / k + 1e-6) * k;
+      if (id === 'gap') [a, b] = [0.005, 0.06];
+      a = +a.toFixed(3); b = Math.max(a, +b.toFixed(3));
+      const v = wyswP(p, state[id]);
+      range.step = num.step = k; range.min = a; range.max = b; range.value = v;
+      if (document.activeElement !== num) num.value = id === 'gap' ? v.toFixed(3) : v;   // luz: zawsze 3 miejsca (0.010)
+      if (em.textContent !== 'in') em.textContent = 'in';
+      range.style.setProperty('--p', `${b > a ? Math.min(1, Math.max(0, (v - a) / (b - a))) * 100 : 0}%`);
+      continue;
+    }
+    if (+range.step !== p.step) range.step = num.step = p.step;
+    if (em.textContent !== p.unit) em.textContent = p.unit;
     range.min = lim.min; range.max = lim.max; range.value = state[id];
     if (document.activeElement !== num) num.value = state[id];
     range.style.setProperty('--p', `${lim.max > lim.min ? (state[id] - lim.min) / (lim.max - lim.min) * 100 : 0}%`);
@@ -193,17 +260,17 @@ function syncControls() {
   syncGap();
   if (typeof wz !== 'undefined') $('clearDecor').disabled = !wz.decorCount();
   document.querySelectorAll('[data-thk]').forEach(box => box.querySelectorAll('button')
-    .forEach(b => b.classList.toggle('active', +b.dataset.v === state[box.dataset.thk])));
+    .forEach(b => b.classList.toggle('active', Math.abs(+b.dataset.v - state[box.dataset.thk]) < 1e-3)));
 }
 
 function renderInfo() {
-  const s = model.stats;
-  $('topOut').textContent = `${fmt(model.derived.top)} mm`;
+  const s = model.stats, cale = akt() === 'in';
+  $('topOut').textContent = cale ? dl(model.derived.top, 'in', 1) : `${fmt(model.derived.top)} mm`;
   $('stats').innerHTML = [
-    ['size', 'Gabaryt (szerokość × wysokość)', `${fmt(s.width)} × ${fmt(s.height)} mm`],
-    ['mass', 'Masa stali', `${fmt(s.mass, 1)} kg`],
-    ['sheet', 'Blacha netto', `${fmt(s.area / 1e6, 2)} m²`],
-    ['cut', 'Długość cięcia', `${fmt(s.cut / 1000, 1)} m`],
+    ['size', 'Gabaryt (szerokość × wysokość)', cale ? `${liczba(s.width / CAL, 1)} × ${liczba(s.height / CAL, 1)} in` : `${fmt(s.width)} × ${fmt(s.height)} mm`],
+    ['mass', 'Masa stali', masa(s.mass)],
+    ['sheet', 'Blacha netto', poleTxt(s.area / 1e6)],
+    ['cut', 'Długość cięcia', dlugosc(s.cut)],
   ].map(([ic, k, v]) => `<div class="stat" title="${k}">${ICONS[ic]}<b>${v}</b></div>`).join('');
   const est = estimate(baseModel, MAT_KEYS[state.mat]);
   const dc = decorCost(model, MAT_KEYS[state.mat]);
@@ -231,19 +298,21 @@ function renderInfo() {
     row('Przebicia', L['Przebicia'][1], L['Przebicia'][2]) +
     (L['Gięcie'] ? row('Gięcie', L['Gięcie'][1], L['Gięcie'][2]) : '') +
     sec('Wzory') +
-    row('Cięcie', US ? `${(dc.len / 1000).toFixed(1)} m (${(dc.len / 304.8).toFixed(0)} ft)` : `${fmt(dc.len / 1000, 1)} m`, dc.cut || 0, 'decor-line') +
+    row('Cięcie', US ? (cale ? `${(dc.len / 304.8).toFixed(0)} ft (${(dc.len / 1000).toFixed(1)} m)` : `${(dc.len / 1000).toFixed(1)} m (${(dc.len / 304.8).toFixed(0)} ft)`) : `${fmt(dc.len / 1000, 1)} m`, dc.cut || 0, 'decor-line') +
     row('Przebicia', `${dc.n} szt.`, dc.pierce || 0, 'decor-line') +
-    (US ? `<tr class="sum"><td>One piece (USA), before sales tax<small>cut length ${(m.cut / 1000).toFixed(1)} m (${(m.cut / 304.8).toFixed(0)} ft) · ${m.pierces ?? '—'} pierces</small></td><td>${zl(total)}</td></tr>`
+    (US ? `<tr class="sum"><td>One piece (USA), before sales tax<small>cut length ${cale ? `${(m.cut / 304.8).toFixed(0)} ft (${(m.cut / 1000).toFixed(1)} m)` : `${(m.cut / 1000).toFixed(1)} m (${(m.cut / 304.8).toFixed(0)} ft)`} · ${m.pierces ?? '—'} pierces</small></td><td>${zl(total)}</td></tr>`
     : `<tr class="sum"><td>Razem netto (PL)<small>długość cięcia ${fmt(m.cut / 1000, 1)} m · przebić ${m.pierces ?? '—'}</small></td><td>${zl(total)}</td></tr>` +
       `<tr><td>Brutto (23% VAT)<small>to cena jednej sztuki</small></td><td>${zl(total * 1.23)}</td></tr>`);
-  const plan = planPrint(model);           // model ze zdobieniami – wzory też na modelu papierowym
+  const plan = planPrint(model);           // model ze zdobieniami – wzory też na modelu papierowym (cale: papier US Letter)
   const np = plan.pages.length + 1;                 // + kartka z widokami
-  $('pdfSub').textContent = `skala 1:${plan.N} · ${np} ${np === 1 ? 'kartka' : np < 5 ? 'kartki' : 'kartek'} A4${plan.mode === 'tiles' ? ' do sklejenia' : ''}`;
+  const papier = cale ? 'Letter' : 'A4';
+  $('pdfSub').textContent = `skala 1:${plan.N} · ${np} ${np === 1 ? 'kartka' : np < 5 ? 'kartki' : 'kartek'} ${papier}${plan.mode === 'tiles' ? ' do sklejenia' : ''}`;
+  { const b = $('pdf').querySelector('b'), t = `Model papierowy ${papier} (PDF)`; if (b.dataset.t !== t) { b.dataset.t = t; b.textContent = t; } }
   const nParts = model.parts.reduce((s, p) => s + p.qty, 0);
   $('ctaSub').textContent = `${nParts} elementów · gotowy do cięcia CNC`;
   maleBlacha(); renderMale();
   // ostrzeżenia w stałym miejscu jednej linii; wszystkie — po najechaniu
-  const W = model.warnings;
+  const W = model.warnings.map(w => tekstJ(w));   // cale: wymiary i masa w ostrzeżeniach w calach / funtach
   $('warnings').innerHTML = W.map(w => `<li>${w}</li>`).join('');
   $('warnLine').innerHTML = W.length ? `${ICONS.warn}<span>${W[0]}</span>${W.length > 1 ? `<b>+${W.length - 1}</b>` : ''}` : '';
   $('warnSlot').classList.toggle('has', W.length > 0);
@@ -255,7 +324,7 @@ function renderMale() {
   const box = $('maleBox'); if (!box) return;
   const M = model.male || { n: 0, lims: [] }, D = wz.decor, rec = D.minOtw > 0;
   const prog = rec ? D.minOtw : state.tBowl;           // domyślnie grubość blachy
-  const mm = v => `${fmt(v, v % 1 ? 1 : 0)} mm`;
+  const mm = v => (akt() === 'in' ? `${liczba(v / CAL, 2)} in` : `${fmt(v, v % 1 ? 1 : 0)} mm`);
   if (!box.firstChild) {
     box.innerHTML = `<div class="male-head"><span class="male-txt"></span><button type="button" class="chip male-btn" title="Zaznacz małe otwory na modelu (czerwone, migające)">pokaż</button></div>
       <label class="male-sl" title="Otwór węższy i krótszy niż ten wymiar jest zgłaszany jako za mały do czystego cięcia (domyślnie grubość blachy)"><span>Próg</span><input type="range" min="1" max="10" step="0.5"><output></output></label>
@@ -322,12 +391,26 @@ document.addEventListener('pointerdown', e => { if (e.target.matches && e.target
 document.addEventListener('pointerup', () => { if (suwakWDol && kadr.auto) setTimeout(() => { if (view === 'model') dopasuj(); }, 500);
   if (suwakWDol) { suwakWDol = false; if (hasDecor() && view !== 'decor') decorSoon(80); } }, true);
 const hasDecor = () => Object.values(wz.decor.el).some(e => e.items && e.items.length);
+let jPrev = '';
 function update() {
   state = ogranicz(state);   // PROSTY
+  { const j = jednostkaStanu(state);   // mm albo cale – wynika z blachy; przy zmianie przebudowa przycisków blach, luzu i przełącznika
+    if (j !== jPrev) { jPrev = j; ustawAkt(j); budujBlachy(); budujLuz(); syncJedn(); } }
   baseModel = build(state);
   { // PROSTY: wysokość paleniska stała – gdy silnik obniży dno (nogi zbiegają się pod misą), misa odpowiednio rośnie
-    const chcial = state.height + state.legHeight, q = baseModel.params, h = chcial - q.legHeight;
-    if (q.height + q.legHeight !== chcial && h >= LIM.height.min && h <= LIM.height.max) baseModel = build({ ...state, legHeight: q.legHeight, height: h }); }
+    const LJ = limity(akt()).L;
+    const chcial = state.height + state.legHeight, q = baseModel.params, h = +(chcial - q.legHeight).toFixed(4);
+    if (Math.abs(q.height + q.legHeight - chcial) > 1e-4 && h >= LJ.height.min && h <= LJ.height.max) baseModel = build({ ...state, legHeight: q.legHeight, height: h }); }
+  if (akt() === 'in') {
+    // cale: silnik przycina wysokość dna i nóżek do swoich granic (co 5–10 mm) – wracają na siatkę 1/4" (w dół, w granicach silnika)
+    for (let i = 0; i < 2; i++) {
+      const q = baseModel.params, L = baseModel.limits || {};
+      const naS = (v, lim) => { let w = wDol(v, 'in'); if (lim && w < lim.min - 1e-6) w = +(w + SIATKA.in).toFixed(4); return lim && w > lim.max + 1e-6 ? v : w; };
+      const leg = naS(q.legHeight, L.legHeight), cut = q.legCut > 0 ? naS(q.legCut, L.legCut) : q.legCut;
+      if (Math.abs(leg - q.legHeight) < 1e-4 && Math.abs(cut - q.legCut) < 1e-4) break;
+      baseModel = build({ ...state, legHeight: leg, height: +(q.height + q.legHeight - leg).toFixed(4), legCut: cut });
+    }
+  }
   state = { ...state, ...baseModel.params };
   if (typeof PR !== 'undefined' && PR) PR.ksztalt();   // PROSTY: pola ścianek mają nowe wymiary – wzory układane od nowa
   if (hasDecor()) { if (!model || view === 'decor') applyDecor(); else { model = { ...baseModel, parts: model.parts }; decorSoon(350); } }
@@ -790,19 +873,20 @@ function toast(msg) {
   t.textContent = msg; t.classList.add('show');
   clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2200);
 }
-$('reset').addEventListener('click', () => { state = ogranicz({ ...DEFAULTS, ...START }); setFinish('mill'); fitted = false; update(); setCam('iso'); toast('Przywrócono ustawienia początkowe'); });
+$('reset').addEventListener('click', () => { state = ogranicz({ ...DEFAULTS, ...startowy() }); setFinish('mill'); fitted = false; update(); setCam('iso'); toast('Przywrócono ustawienia początkowe'); });
 $('copyLink').addEventListener('click', async () => {
   track('copy_link');
   try { await navigator.clipboard.writeText(location.href); toast('Link z Twoją konfiguracją skopiowany'); }
   catch { toast('Skopiuj adres z paska przeglądarki'); }
 });
+let dxfJ = 'mm';   // jednostki pliku DXF (wybór w oknie pobierania; na start – jak na stronie)
 function saveDxf() {
   try {
-    const dxf = buildDxf(model);
+    const dxf = buildDxf(model, { jedn: dxfJ });
     const url = URL.createObjectURL(new Blob([dxf], { type: 'application/dxf' }));
-    const a = Object.assign(document.createElement('a'), { href: url, download: `ogimora-palenisko-${code}.dxf` });
+    const a = Object.assign(document.createElement('a'), { href: url, download: `ogimora-palenisko-${code}-${dxfJ}.dxf` });
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
-    $('note').textContent = 'Gotowe: mm, skala 1:1, tylko kontury do cięcia. Strona zewnętrzna do góry.';
+    $('note').textContent = dxfJ === 'in' ? 'Gotowe: cale, skala 1:1, tylko kontury do cięcia. Strona zewnętrzna do góry.' : 'Gotowe: mm, skala 1:1, tylko kontury do cięcia. Strona zewnętrzna do góry.';
     $('note').className = 'note ok';
   } catch (err) {
     console.error(err);
@@ -930,6 +1014,7 @@ function dlSync() {
   // pytanie o licencję zawsze na miejscu (bez skakania okna) — aktywne tylko przy „Na sprzedaż”
   $('dlLic').classList.toggle('off', answers.use !== 'sell');
   $('dlLic').querySelectorAll('button').forEach(b => { b.disabled = answers.use !== 'sell'; });
+  document.querySelectorAll('#dlJedn [data-j]').forEach(b => b.classList.toggle('active', b.dataset.j === dxfJ));
   $('dlGo').disabled = !($('dlZgoda') && $('dlZgoda').checked);   // PROSTY: bez potwierdzenia ostrzeżenia nie ma pobrania
   $('dlHint').textContent = $('dlGo').disabled ? (LANG === 'en' ? 'First tick the box above' : 'Najpierw zaznacz pole powyżej') : `${model.parts.reduce((s, p) => s + p.qty, 0)} elementów · gotowy do cięcia CNC`;
 }
@@ -941,6 +1026,7 @@ document.querySelectorAll('#dl [data-q]').forEach(box => box.addEventListener('c
   dlSync();
 }));
 $('dlNotes').addEventListener('input', dlSync);
+$('dlJedn').addEventListener('click', e => { const b = e.target.closest('[data-j]'); if (!b) return; dxfJ = b.dataset.j; dlSync(); });
 $('dl').addEventListener('change', e => { if (e.target.id === 'dlZgoda') dlSync(); });
 $('download').addEventListener('click', () => {
   { const b = PR && PR.blokada(); if (b) { $('note').textContent = b; $('note').className = 'note'; toast(b); return; } }   // PROSTY
@@ -951,7 +1037,7 @@ $('download').addEventListener('click', () => {
   // PROSTY: okno z ostrzeżeniem otwiera się zawsze; pytania ankiety tylko raz dziennie
   $('dl').classList.toggle('bez-ankiety', byl === dzis);
   try { localStorage.setItem('ogi_ankieta_dzien', dzis); } catch {}
-  dlSync(); track('download_open');
+  dxfJ = akt(); dlSync(); track('download_open');
   $('dl').showModal();
 });
 $('dlX').addEventListener('click', () => { track('download_cancel'); $('dl').close(); });
@@ -962,7 +1048,7 @@ $('dlGo').addEventListener('click', () => {
   try { localStorage.setItem('ogi_answers', JSON.stringify(answers)); } catch {}
   $('dlNotes').value = '';
   $('dl').close();
-  track('download', baseInfo());
+  track('download', { ...baseInfo(), plik: dxfJ }); track('dxf_jedn', { value: dxfJ });
   saveDxf();
 });
 
@@ -1000,7 +1086,7 @@ function isoSnapshots() {
     // narożniki gabarytu na obrazku (piksele) + wymiary w cm (three: x, y = wysokość, z)
     const px = [...Array(8).keys()].map(i => { const q = corner(i).project(camera); return [(q.x + 1) / 2 * Wi, (1 - q.y) / 2 * Hi]; });
     const sz = box.getSize(new THREE.Vector3());
-    boxShot = { img, w: Wi, h: Hi, px, cm: { x: Math.round(sz.x / 10), y: Math.round(sz.y / 10), z: Math.round(sz.z / 10) } };
+    boxShot = { img, w: Wi, h: Hi, px, cm: { x: Math.round(sz.x / 10), y: Math.round(sz.y / 10), z: Math.round(sz.z / 10) }, mm: { x: sz.x, y: sz.y, z: sz.z } };
   }
   ground.visible = groundWas;
   ({ view, shading, xray, fireOn } = keep);
@@ -1031,8 +1117,8 @@ $('pdf').addEventListener('click', async () => {
     track('pdf');
     const { views, box } = isoSnapshots();
     const logo = await logoPng();
-    const plan = await buildPdf(model, { views, box, logo, url: 'ogimora.com', code });
-    $('note').textContent = `PDF gotowy: skala 1:${plan.N}, ${plan.pages.length + 1} str. A4. Drukuj w skali 100%.`;
+    const plan = await buildPdf(model, { views, box, logo, url: 'ogimora.com', code, jedn: akt(), lang: LANG });
+    $('note').textContent = `PDF gotowy: skala 1:${plan.N}, ${plan.pages.length + 1} str. ${akt() === 'in' ? 'Letter' : 'A4'}. Drukuj w skali 100%.`;
     $('note').className = 'note ok';
   } catch (err) { console.error(err); $('note').textContent = 'Nie udało się zrobić PDF (sprawdź internet — biblioteka ładuje się z sieci).'; }
 });
@@ -1333,7 +1419,7 @@ else {
     czyscAdres(otwarty ? '?p=' + cur.id : '');
   } else if (startNowy) {
     const rodzaj = startQ.get('nowy') === 'czysty' ? 'czysty' : 'start';
-    state = ogranicz({ ...DEFAULTS, ...START }); setFinish('mill'); PR.reset(rodzaj); model = null; update();
+    state = ogranicz({ ...DEFAULTS, ...startowy() }); setFinish('mill'); PR.reset(rodzaj); model = null; update();
     try { localStorage.setItem('ogip_rodzaj', rodzaj); localStorage.setItem('ogip_biez', ''); } catch {}
     cur.podglad = NAZWY_P[rodzaj]; otwarty = true; czyscAdres(''); widokNaStart = rodzaj;
   }

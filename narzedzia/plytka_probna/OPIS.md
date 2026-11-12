@@ -1,6 +1,6 @@
 # OGIMORA – pliki próbne
 
-Jeden plik na każdą grubość blachy (3, 4, 5 mm). Milimetry, skala 1:1, same zamknięte kontury cięcia, bez grawerowania.
+Jeden plik na każdą grubość blachy (3, 4, 5 mm; od 0.2.0 także calowe – niżej). Skala 1:1, same zamknięte kontury cięcia, bez grawerowania.
 Grubość blachy jest w nazwie pliku i w kropkach na częściach.
 
 ## Jak czytać oznaczenia
@@ -49,6 +49,18 @@ wymiar na długości i trzeba wziąć większy luz. Porównaj dwa ząbki ścięt
 w generatorze jako „luz na ząbkach”. Zanotuj maszynę i grubość.
 Boki naprzeciw siebie są równoległe, a sąsiednie obrócone o 60° – jeśli maszyna tnie inaczej w różnych kierunkach, zobaczysz to jako „skok” między bokami.
 
+## Płytki calowe (od 0.2.0) – `ogimora-test_<blacha>_in.dxf` / `_mm.dxf` (podgląd: `plytki_<blacha>.svg`)
+Blachy: `11ga` (0,120" = 3,048 mm), `10ga` (0,135" = 3,429 mm), `3-16` (0,1875" = 4,7625 mm), `1-4` (0,25" = 6,35 mm).
+Ten sam układ co w mm (dwa sześciokąty + klucz w jednym pliku), inne oznaczenia:
+- **Kropki przy boku = luz w krokach po 0,005"** (1 kropka = 0,005", 4 kropki = 0,020"). Pierwsza płytka 0,005–0,030", druga 0,035–0,060".
+- **Nad trójkątem cyframi luz boku, który wskazuje trójkąt:** `.005` (pierwsza płytka) i `.035` (druga).
+- **Pod trójkątem cyframi grubość blachy w calach:** `.120`, `.135`, `.188`, `.250` – zamiast kropek grubości. Ta sama liczba na kluczu.
+- Cyfry jak w mm: szczeliny szerokości = grubość blachy (nie mniej niż 4 mm), 3 mm metalu między nimi, kropka dziesiętna = otwór.
+- Grubsza blacha = większe cyfry, więc skrypt powiększa sześciokąt i klucz, aż napisy mieszczą się z zapasem 4 mm metalu
+  (wyszło: 11 ga, 10 ga – bez zmian 150 / 135 mm; 3/16" – klucz 150 mm; 1/4" – sześciokąt 160 mm, klucz 195 mm).
+- Każdy plik w dwóch wersjach zapisu: `_in` (cale) i `_mm` (ta sama geometria w mm). Płytki mm mają też wersję w calach: `ogimora-test_4mm_in.dxf`.
+- Instrukcje: `ogimora-test-plate-EN-inch.pdf` i `ogimora-plytka-probna-PL-cale.pdf` (papier US Letter, rysunki z płytki 10 ga, zrzut suwaka ustawionego na 0,020").
+
 ## Uwagi
 - Pliki powstały skryptem `proba.mjs` z tych samych rysunków i tego samego zapisu DXF co generator. Nie były jeszcze wycinane.
 - Ząbek klucza ma zawsze 20 mm; luz jest tylko w wycięciach – tak jak w generatorze.
@@ -58,9 +70,9 @@ Boki naprzeciw siebie są równoległe, a sąsiednie obrócone o 60° – jeśli
 - Przycisk **„Płytki próbne”** pod suwakiem „Luz na ząbkach” otwiera okno: wybór grubości (3 / 4 / 5 mm – obrazek zmienia się razem z wyborem,
   bo kropki na środku to grubość blachy), jeden plik DXF z obiema płytkami i kluczem oraz instrukcja PDF.
 - Pliki leżą w `strona_prosta/proba/`: `ogimora-test_Xmm.dxf`, `plytki_Xmm.svg` (obrazek w oknie), `ogimora-plytka-probna-PL.pdf`, `ogimora-test-plate-EN.pdf`.
-- Po każdej zmianie płytki (z folderu `_gen/plytka_probna`, strona uruchomiona przez `uruchom_prosta.command`, port 8792):
-  1. `node proba.mjs ../../strona_prosta ../../strona_prosta/proba` – pliki DXF i `_czesci.json`
-  2. `node instrukcja.js ../../strona_prosta/proba http://localhost:8792 ../../strona_prosta/proba` – PDF-y i obrazki (wymaga `playwright`)
-  3. z `strona_prosta/proba/` usuń pliki zaczynające się od `_` (robocze).
+- Po każdej zmianie płytki (z folderu `narzedzia/plytka_probna`, strona uruchomiona przez `uruchom.command`, port 8793):
+  1. `node proba.mjs ../../www ../../www/proba` – pliki DXF (mm i cale) i `_czesci.json`
+  2. `node instrukcja.js ../../www/proba http://localhost:8793 ../../www/proba` – 4 PDF-y (PL, EN, PL cale, EN cale) i obrazki (wymaga `playwright`)
+  3. z `www/proba/` usuń pliki zaczynające się od `_` (robocze).
 - Smok OGIMORY jest w nagłówku instrukcji (`smok.svg`) – ma być na każdym dokumencie.
 - Płytka do próby ognia została wycofana (stare pliki: `_stare_ogien/`).

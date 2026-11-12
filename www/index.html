@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="style.css?v=12">
   <link rel="stylesheet" href="strona.css?v=6">
   <link rel="stylesheet" href="naglowek.css?v=2">
-  <link rel="stylesheet" href="prosty.css?v=7">
+  <link rel="stylesheet" href="prosty.css?v=8">
   <script type="module" src="js/i18n.js"></script>
   <style>/* wersja publiczna: bez narzędzi wewnętrznych */ .proj-id,.saved-wrap,#saveFav,#copyLink{display:none!important}</style>
 </head>
@@ -21,7 +21,8 @@
   <header class="ob">
     <a class="ob-brand" href="./" aria-label="OGIMORA"><img src="img/logo.svg" alt=""><span>OGIMORA</span></a>
     <button type="button" class="ob-proj" id="pjMenuBtn" aria-haspopup="menu" aria-expanded="false"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2.5h9V19H3z"/></svg><span class="pj-n"></span><span class="pj-ok">✓</span><svg class="i caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
-    <button type="button" class="ob-opinia" id="opBtn"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Napisz, co zmienić</span></button>
+    <button type="button" class="ob-opinia" id="opBtn" title="Napisz, co zmienić"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Napisz, co zmienić</span></button>
+    <div class="ob-jedn" role="group" aria-label="Jednostki: milimetry albo cale"><button type="button" data-j="mm" title="Milimetry: blachy 3 / 4 / 5 mm, wymiary co 5 mm">mm</button><button type="button" data-j="in" title="Cale (USA): blachy 11 ga, 10 ga, 3/16&quot;, 1/4&quot;, wymiary co 1/4&quot;">in</button></div>
     <div class="ob-lang" role="group" aria-label="Język / Language"><button type="button" data-l="pl">PL</button><button type="button" data-l="en">EN</button></div>
     <!-- PROSTY: elementy pełnego generatora (projekty, pliki) – zostają w kodzie, ukryte -->
     <div hidden>
@@ -53,8 +54,8 @@
 
   <!--OPIS--><div class="opis-tekst">
     <h1>OGIMORA – darmowy generator stalowych palenisk (pliki DXF)</h1>
-    <p>Zaprojektuj stalowe palenisko ogrodowe w przeglądarce i pobierz gotowy plik DXF do cięcia na CNC – laserem albo plazmą. Ustawiasz wymiary, odchylenie ścianek i grubość blachy (3, 4 lub 5 mm), wybierasz wzór na każdą ściankę, dodajesz własny napis. Elementy łączą się na zamki (wypustki i szczeliny), bez przyrządów.</p>
-    <p>Do pobrania: plik DXF w milimetrach w skali 1:1, model papierowy A4 (PDF) oraz płytki próbne do ustawienia luzu szczelin na własnej maszynie. Strona pokazuje też orientacyjną cenę wycięcia.</p>
+    <p>Zaprojektuj stalowe palenisko ogrodowe w przeglądarce i pobierz gotowy plik DXF do cięcia na CNC – laserem albo plazmą. Ustawiasz wymiary, odchylenie ścianek i grubość blachy (3, 4 lub 5 mm; w calach: 11 ga, 10 ga, 3/16" lub 1/4"), wybierasz wzór na każdą ściankę, dodajesz własny napis. Elementy łączą się na zamki (wypustki i szczeliny), bez przyrządów.</p>
+    <p>Do pobrania: plik DXF w skali 1:1 w milimetrach albo w calach, model papierowy A4 albo US Letter (PDF) oraz płytki próbne do ustawienia luzu szczelin na własnej maszynie. Strona pokazuje też orientacyjną cenę wycięcia.</p>
     <p>To strona testowa: pliki tworzy skrypt, bez gwarancji – sprawdź je przed cięciem. Licencja: do własnego użytku bez ograniczeń; komercyjnie do 20 gotowych palenisk z jednego projektu; plików nie wolno sprzedawać. Autor: OGI. Kontakt: info@ogimora.com.</p>
   </div><!--/OPIS-->
   <main class="workspace">
@@ -203,6 +204,8 @@
     <button type="button" class="dl-x" id="dlX" aria-label="Zamknij">✕</button>
     <h2 id="dlT">Pobierz plik DXF</h2>
     <div class="dl-ostrz" id="dlOstrz"></div>
+    <div class="dl-jedn" id="dlJedn"><span>Jednostki pliku</span><div class="chips"><button type="button" class="chip" data-j="mm">mm</button><button type="button" class="chip" data-j="in">cale (in)</button></div>
+      <small>Program do cięcia musi wczytać plik w tych samych jednostkach. Część wyszła 25,4 × za duża albo za mała? Przy imporcie wybierz drugą jednostkę.</small></div>
     <p class="dl-sub">Pytania poniżej są nieobowiązkowe — robię Ogimorę sam, a to moje badanie rynku.</p>
     <div class="dl-q"><span>Do czego?</span><div class="chips" data-q="use">
       <button type="button" class="chip" data-a="self">Dla siebie</button><button type="button" class="chip" data-a="sell">Na sprzedaż</button>

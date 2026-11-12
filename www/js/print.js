@@ -1,10 +1,17 @@
-// Model papierowy na A4 (PDF): rozkrój w skali, tak duży jak się da.
+// Model papierowy na A4 albo US Letter (projekt calowy) (PDF): rozkrój w skali, tak duży jak się da.
 // Reguła: wszystko na 1 kartce w największej skali; jeśli wtedy najmniejszy element
 // ma < 3 cm², skala rośnie, aż ma ≥ 3 cm² — i element trafia na kolejne kartki.
 import { tessellate, polygonArea } from './geometry.js';
 
-const PAGE = { w: 210, h: 297, m: 10, head: 16, foot: 10 };
-const AREA = { w: PAGE.w - 2 * PAGE.m, h: PAGE.h - 2 * PAGE.m - PAGE.head - PAGE.foot };
+import { akt } from './jednostki.js';
+// papier: A4 (210 × 297) albo US Letter (215,9 × 279,4) – według jednostek projektu; ustawiany przed każdym planem
+const A4 = { w: 210, h: 297 }, LETTER = { w: 215.9, h: 279.4 };
+let PAGE = { ...A4, m: 10, head: 16, foot: 10 };
+let AREA = { w: PAGE.w - 2 * PAGE.m, h: PAGE.h - 2 * PAGE.m - PAGE.head - PAGE.foot };
+function ustawPapier(j = akt()) {
+  PAGE = { ...(j === 'in' ? LETTER : A4), m: 10, head: 16, foot: 10 };
+  AREA = { w: PAGE.w - 2 * PAGE.m, h: PAGE.h - 2 * PAGE.m - PAGE.head - PAGE.foot };
+}
 const GAP = 5, LABEL = 0;                       // bez podpisów przy elementach – rysunki same się tłumaczą
 const BOX = { w: 66, h: 44 };                   // mały widok w „pudełku” z gabarytem (mm na papierze)
 const MIN_AREA = 300; // mm² na papierze = 3 cm²
@@ -50,7 +57,8 @@ function pack(list, s, AW = AREA.w, AH = AREA.h) {
   return pages;
 }
 
-export function planPrint(model, withBox = true) {
+export function planPrint(model, withBox = true, j = akt()) {
+  ustawPapier(j);
   const list = items(model, withBox);
   // największa skala mieszcząca wszystko na 1 stronie (bisekcja)
   let lo = 1e-4, hi = 1;
@@ -116,7 +124,9 @@ function viewsPage(doc, model, extras) {
   brandFooter(doc, extras);
 }
 
-/** Widok w pudełku: krawędzie gabarytu i wymiary (cm), wpisany jak największy w prostokąt W×H i wyśrodkowany. */
+/** Widok w pudełku: krawędzie gabarytu i wymiary (cm albo cale), wpisany jak największy w prostokąt W×H i wyśrodkowany. */
+let CALE = false;
+const wym = (bx, k) => (CALE && bx.mm ? `${(bx.mm[k] / 25.4).toFixed(1)} in` : `${bx.cm[k]} cm`);
 function boxView(doc, bx, x, y, W = BOX.w, H = BOX.h) {
   // obrazek przycinany do rzutu pudełka; wokół miejsce na wymiary
   const fs = Math.max(6.5, Math.min(10, Math.min(W, H) / 9));
@@ -138,13 +148,13 @@ function boxView(doc, bx, x, y, W = BOX.w, H = BOX.h) {
   const c = P.reduce((s, q) => [s[0] + q[0] / 8, s[1] + q[1] / 8], [0, 0]);
   doc.setFont('helvetica', 'normal'); doc.setFontSize(fs); doc.setTextColor(60);
   const off = fs * 0.45;
-  for (const [i, j, val] of [[5, 4, bx.cm.x], [5, 1, bx.cm.z]]) {
+  for (const [i, j, k] of [[5, 4, 'x'], [5, 1, 'z']]) {
     const m = [(P[i][0] + P[j][0]) / 2, (P[i][1] + P[j][1]) / 2], d = [m[0] - c[0], m[1] - c[1]], l = Math.hypot(...d) || 1;
-    doc.text(`${val} cm`, m[0] + d[0] / l * off, m[1] + d[1] / l * off + fs * 0.15, { align: 'center' });
+    doc.text(wym(bx, k), m[0] + d[0] / l * off, m[1] + d[1] / l * off + fs * 0.15, { align: 'center' });
   }
   // wysokość przy lewej pionowej krawędzi pudełka, po jej zewnętrznej stronie
   const mh = (P[4][1] + P[6][1]) / 2;
-  doc.text(`${bx.cm.y} cm`, Math.min(P[4][0], P[6][0]) - fs * 0.25, mh + fs * 0.15, { align: 'right' });
+  doc.text(wym(bx, 'y'), Math.min(P[4][0], P[6][0]) - fs * 0.25, mh + fs * 0.15, { align: 'right' });
 }
 
 /** Największy wolny prostokąt wokół miejsca na pudełko (rozszerzanie w 4 strony, najlepsza kolejność). */
@@ -174,9 +184,11 @@ function freeRect(slot, others, AW, AH) {
 
 export async function buildPdf(model, extras = {}) {
   const jsPDF = await loadJsPDF();
-  const plan = planPrint(model, !!extras.box);
+  CALE = extras.jedn === 'in';
+  const EN = extras.lang === 'en';
+  const plan = planPrint(model, !!extras.box, CALE ? 'in' : 'mm');
   // compress: strumienie (linie rozkroju) skompresowane – plik kilka razy mniejszy, rysunek bez zmian
-  const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+  const doc = new jsPDF({ unit: 'mm', format: CALE ? 'letter' : 'a4', compress: true });
   const s = 1 / plan.N;
   const tileName = t => `${String.fromCharCode(65 + t.r)}${t.c + 1}`;
   const first = extras.views && extras.views.length ? 1 : 0;
@@ -185,12 +197,12 @@ export async function buildPdf(model, extras = {}) {
     const tiled = plan.mode === 'tiles';
     const page = tiled ? pg.items : pg, sx = tiled ? pg.x0 : 0, sy = tiled ? pg.y0 : 0;
     if (pi || first) doc.addPage();
-    // u góry tylko skala: odcinek 5 cm i ile to w palenisku
-    const ty = PAGE.m + 4;
+    // u góry tylko skala: odcinek 5 cm (cale: 2 in) i ile to w palenisku
+    const ty = PAGE.m + 4, L = CALE ? 50.8 : 50;
     doc.setLineDashPattern([], 0); doc.setDrawColor(27, 29, 25); doc.setLineWidth(0.3);
-    doc.line(PAGE.m, ty, PAGE.m + 50, ty); doc.line(PAGE.m, ty - 1.5, PAGE.m, ty + 1.5); doc.line(PAGE.m + 50, ty - 1.5, PAGE.m + 50, ty + 1.5);
+    doc.line(PAGE.m, ty, PAGE.m + L, ty); doc.line(PAGE.m, ty - 1.5, PAGE.m, ty + 1.5); doc.line(PAGE.m + L, ty - 1.5, PAGE.m + L, ty + 1.5);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(60);
-    doc.text(`5 cm = ${Math.round(5 * plan.N)} cm  ·  skala 1:${plan.N}`, PAGE.m + 54, ty + 1);
+    doc.text(`${CALE ? `2 in = ${2 * plan.N} in` : `5 cm = ${Math.round(5 * plan.N)} cm`}  ·  ${EN ? 'scale' : 'skala'} 1:${plan.N}`, PAGE.m + L + 4, ty + 1);
     if (tiled) {
       doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(27, 29, 25);
       doc.text(tileName(pg), PAGE.w - PAGE.m, PAGE.m + 6, { align: 'right' });
@@ -225,6 +237,6 @@ export async function buildPdf(model, extras = {}) {
     if (tiled) doc.restoreGraphicsState();
     brandFooter(doc, extras);
   });
-  doc.save(`ogimora-model-A4-${extras.code || '1do' + plan.N}.pdf`);
+  doc.save(`ogimora-model-${CALE ? 'Letter' : 'A4'}-${extras.code || '1do' + plan.N}.pdf`);
   return plan;
 }

@@ -10,8 +10,8 @@ const TXT = {
         opis: 'Free steel fire pit generator: set the size, pick a pattern, add lettering – and download a DXF ready for laser or plasma cutting.',
         blok: `<div class="opis-tekst">
     <h1>OGIMORA – free steel fire pit generator (DXF files)</h1>
-    <p>Design a steel fire pit in your browser and download a DXF file ready for CNC cutting – laser or plasma. Set the size, the wall angle and the sheet thickness (3, 4 or 5 mm), pick a cut-out pattern for each wall and add your own lettering. The parts go together with tabs and slots, no jigs needed.</p>
-    <p>Downloads: a DXF file in millimetres at 1:1 scale, an A4 paper model (PDF) and small test plates for finding the right slot clearance on your own machine. The site also shows a rough cutting price.</p>
+    <p>Design a steel fire pit in your browser and download a DXF file ready for CNC cutting – laser or plasma. Set the size, the wall angle and the sheet thickness (3, 4 or 5 mm – or in inches: 11 ga, 10 ga, 3/16" or 1/4"), pick a cut-out pattern for each wall and add your own lettering. The parts go together with tabs and slots, no jigs needed.</p>
+    <p>Downloads: a DXF file at 1:1 scale in millimetres or inches, a paper model (PDF, A4 or US Letter) and small test plates for finding the right slot clearance on your own machine. The site also shows a rough cutting price.</p>
     <p>This is a test site: the files are made by a script and come with no warranty – check them before cutting. Licence: free for your own use; commercial use up to 20 finished fire pits per design; do not sell the files. Made by OGI. Contact: info@ogimora.com.</p>
   </div>` },
 };

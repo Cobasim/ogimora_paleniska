@@ -22,7 +22,7 @@ $zakres = function ($w) { $d = new DateTime(); $d->setISODate((int)substr($w, 0,
 $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
 $NAZWY = ['razem' => 'Razem w tym okresie', 'dni_wizyty' => 'Wizyty – dni miesiąca', 'dni_pobrania' => 'Pobrania – dni miesiąca', 'kraj' => 'Wizyty – kraj (ze strefy czasowej)',
   'pobrania_kraj' => 'Pobrania – kraj', 'jezyk' => 'Język przeglądarki', 'urzadzenie' => 'Urządzenie', 'skad' => 'Skąd przyszli', 'kampania' => 'Kampania (?src=)',
-  'wzor' => 'Pobrane wzory', 'napis' => 'Napis w pobranych', 'otwory_dna' => 'Otwory w dnie', 'blacha_mm' => 'Grubość blachy [mm]', 'material' => 'Materiał',
+  'wzor' => 'Pobrane wzory', 'napis' => 'Napis w pobranych', 'otwory_dna' => 'Otwory w dnie', 'blacha_mm' => 'Grubość blachy [mm albo gauge / cale]', 'jednostki' => 'Jednostki projektu (pobrania)', 'plik_dxf' => 'Jednostki pliku DXF', 'material' => 'Materiał',
   'bok_dna_mm' => 'Bok dna [mm, od]', 'wysokosc_mm' => 'Wysokość paleniska [mm, od]', 'kat_stopni' => 'Odchylenie ścianek [°, od]', 'dno_nad_ziemia_mm' => 'Dno nad ziemią [mm, od]',
   'klikniecia' => 'Przyciski i suwaki – ile razy', 'wizyty_z' => 'Przyciski i suwaki – w ilu wizytach', 'ankieta_use' => 'Ankieta: do czego', 'ankieta_license' => 'Ankieta: licencja', 'ankieta_pay' => 'Ankieta: za co by zapłacił'];
 $PO_KLUCZU = ['dni_wizyty', 'dni_pobrania', 'bok_dna_mm', 'wysokosc_mm', 'kat_stopni', 'dno_nad_ziemia_mm', 'blacha_mm', 'otwory_dna'];

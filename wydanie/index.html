@@ -17,7 +17,7 @@
   <meta property="og:image:height" content="630">
   <meta property="og:locale" content="en_US">
   <meta name="twitter:card" content="summary_large_image">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"OGIMORA","url":"https://ogimora.com/","description":"Darmowy generator stalowego paleniska: wymiary, wzór, napis – i gotowy plik DXF do cięcia laserem lub plazmą.","inLanguage":["pl","en"],"applicationCategory":"DesignApplication","operatingSystem":"Any (web browser)","softwareVersion":"0.1.7","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"OGI"},"publisher":{"@type":"Organization","name":"OGIMORA","url":"https://ogimora.com/","logo":"https://ogimora.com/img/logo.svg"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"OGIMORA","url":"https://ogimora.com/","description":"Darmowy generator stalowego paleniska: wymiary, wzór, napis – i gotowy plik DXF do cięcia laserem lub plazmą.","inLanguage":["pl","en"],"applicationCategory":"DesignApplication","operatingSystem":"Any (web browser)","softwareVersion":"0.2.0","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"OGI"},"publisher":{"@type":"Organization","name":"OGIMORA","url":"https://ogimora.com/","logo":"https://ogimora.com/img/logo.svg"}}</script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#ffffff">
   <link rel="icon" href="img/logo.svg" type="image/svg+xml">
@@ -29,14 +29,15 @@
   <link rel="stylesheet" href="style.css?v=e1c7b2">
   <link rel="stylesheet" href="strona.css?v=a66aa9">
   <link rel="stylesheet" href="naglowek.css?v=dceb1d">
-  <link rel="stylesheet" href="prosty.css?v=6ecb5a">
+  <link rel="stylesheet" href="prosty.css?v=b69579">
   <style>/* wersja publiczna: bez narzędzi wewnętrznych */ .proj-id,.saved-wrap,#saveFav,#copyLink{display:none!important}</style>
 </head>
 <body>
   <header class="ob">
     <a class="ob-brand" href="./" aria-label="OGIMORA"><img src="img/logo.svg" alt=""><span>OGIMORA</span></a>
     <button type="button" class="ob-proj" id="pjMenuBtn" aria-haspopup="menu" aria-expanded="false"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2.5h9V19H3z"/></svg><span class="pj-n"></span><span class="pj-ok">✓</span><svg class="i caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
-    <button type="button" class="ob-opinia" id="opBtn"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Napisz, co zmienić</span></button>
+    <button type="button" class="ob-opinia" id="opBtn" title="Napisz, co zmienić"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Napisz, co zmienić</span></button>
+    <div class="ob-jedn" role="group" aria-label="Jednostki: milimetry albo cale"><button type="button" data-j="mm" title="Milimetry: blachy 3 / 4 / 5 mm, wymiary co 5 mm">mm</button><button type="button" data-j="in" title="Cale (USA): blachy 11 ga, 10 ga, 3/16&quot;, 1/4&quot;, wymiary co 1/4&quot;">in</button></div>
     <div class="ob-lang" role="group" aria-label="Język / Language"><button type="button" data-l="pl">PL</button><button type="button" data-l="en">EN</button></div>
     <!-- PROSTY: elementy pełnego generatora (projekty, pliki) – zostają w kodzie, ukryte -->
     <div hidden>
@@ -68,14 +69,14 @@
 
   <div class="opis-tekst">
     <h1>OGIMORA – darmowy generator stalowych palenisk (pliki DXF)</h1>
-    <p>Zaprojektuj stalowe palenisko ogrodowe w przeglądarce i pobierz gotowy plik DXF do cięcia na CNC – laserem albo plazmą. Ustawiasz wymiary, odchylenie ścianek i grubość blachy (3, 4 lub 5 mm), wybierasz wzór na każdą ściankę, dodajesz własny napis. Elementy łączą się na zamki (wypustki i szczeliny), bez przyrządów.</p>
-    <p>Do pobrania: plik DXF w milimetrach w skali 1:1, model papierowy A4 (PDF) oraz płytki próbne do ustawienia luzu szczelin na własnej maszynie. Strona pokazuje też orientacyjną cenę wycięcia.</p>
+    <p>Zaprojektuj stalowe palenisko ogrodowe w przeglądarce i pobierz gotowy plik DXF do cięcia na CNC – laserem albo plazmą. Ustawiasz wymiary, odchylenie ścianek i grubość blachy (3, 4 lub 5 mm; w calach: 11 ga, 10 ga, 3/16" lub 1/4"), wybierasz wzór na każdą ściankę, dodajesz własny napis. Elementy łączą się na zamki (wypustki i szczeliny), bez przyrządów.</p>
+    <p>Do pobrania: plik DXF w skali 1:1 w milimetrach albo w calach, model papierowy A4 albo US Letter (PDF) oraz płytki próbne do ustawienia luzu szczelin na własnej maszynie. Strona pokazuje też orientacyjną cenę wycięcia.</p>
     <p>To strona testowa: pliki tworzy skrypt, bez gwarancji – sprawdź je przed cięciem. Licencja: do własnego użytku bez ograniczeń; komercyjnie do 20 gotowych palenisk z jednego projektu; plików nie wolno sprzedawać. Autor: OGI. Kontakt: info@ogimora.com.</p>
   </div>
   <div class="opis-tekst" lang="en">
     <h1>OGIMORA – free steel fire pit generator (DXF files)</h1>
-    <p>Design a steel fire pit in your browser and download a DXF file ready for CNC cutting – laser or plasma. Set the size, the wall angle and the sheet thickness (3, 4 or 5 mm), pick a cut-out pattern for each wall and add your own lettering. The parts go together with tabs and slots, no jigs needed.</p>
-    <p>Downloads: a DXF file in millimetres at 1:1 scale, an A4 paper model (PDF) and small test plates for finding the right slot clearance on your own machine. The site also shows a rough cutting price.</p>
+    <p>Design a steel fire pit in your browser and download a DXF file ready for CNC cutting – laser or plasma. Set the size, the wall angle and the sheet thickness (3, 4 or 5 mm – or in inches: 11 ga, 10 ga, 3/16" or 1/4"), pick a cut-out pattern for each wall and add your own lettering. The parts go together with tabs and slots, no jigs needed.</p>
+    <p>Downloads: a DXF file at 1:1 scale in millimetres or inches, a paper model (PDF, A4 or US Letter) and small test plates for finding the right slot clearance on your own machine. The site also shows a rough cutting price.</p>
     <p>This is a test site: the files are made by a script and come with no warranty – check them before cutting. Licence: free for your own use; commercial use up to 20 finished fire pits per design; do not sell the files. Made by OGI. Contact: info@ogimora.com.</p>
   </div>
   <main class="workspace">
@@ -224,6 +225,8 @@
     <button type="button" class="dl-x" id="dlX" aria-label="Zamknij">✕</button>
     <h2 id="dlT">Pobierz plik DXF</h2>
     <div class="dl-ostrz" id="dlOstrz"></div>
+    <div class="dl-jedn" id="dlJedn"><span>Jednostki pliku</span><div class="chips"><button type="button" class="chip" data-j="mm">mm</button><button type="button" class="chip" data-j="in">cale (in)</button></div>
+      <small>Program do cięcia musi wczytać plik w tych samych jednostkach. Część wyszła 25,4 × za duża albo za mała? Przy imporcie wybierz drugą jednostkę.</small></div>
     <p class="dl-sub">Pytania poniżej są nieobowiązkowe — robię Ogimorę sam, a to moje badanie rynku.</p>
     <div class="dl-q"><span>Do czego?</span><div class="chips" data-q="use">
       <button type="button" class="chip" data-a="self">Dla siebie</button><button type="button" class="chip" data-a="sell">Na sprzedaż</button>
@@ -257,6 +260,6 @@
       "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
     } }
   </script>
-  <script type="module" src="js/6f42f98c86.js"></script>
+  <script type="module" src="js/0f7a153084.js"></script>
 </body>
 </html>

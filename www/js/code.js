@@ -2,6 +2,7 @@
 // Budowa: [wersja modelu][15 znaków: liczba w systemie mieszanym][2 znaki sumy kontrolnej].
 // Alfabet Crockford base32 (bez I, L, O, U) — nie myli się 0/O ani 1/I/L przy przepisywaniu.
 import { PARAMS, THICKNESSES, PERF_LEVELS } from './geometry.js';
+import { BLACHY_IN, calowa, CAL } from './jednostki.js';
 
 const ALPHA = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 const VERSION = '9'; // PROSTY v9: wysokość ścianek i dna co 5 mm (suwaki mają krok 5 – przy kroku 10 kod zaokrąglał np. 55 → 60);
@@ -43,7 +44,36 @@ function checksum(s) {
   return ALPHA[a % 32] + ALPHA[b % 32];
 }
 
+// ---- PROJEKTY CALOWE (od 0.2.0): osobna wersja kodu 'A' – wymiary zapisane na siatce 1/4", luz co 0,005", blacha z listy calowej.
+// Kody mm (wersja 9) zostają bez zmian. Pola tylko te, które zmienia wersja prosta – resztę ustawia prosty.js (ogranicz).
+const VER_IN = 'A';
+const Q = 0.25 * CAL, QL = 0.005 * CAL;
+const r4 = v => +(+v).toFixed(4);
+const FIELDS_IN = [
+  { id: 'base', n: 160, enc: v => Math.round(v / Q), dec: i => r4(i * Q) },            // 0…39,75"
+  { id: 'height', n: 100, enc: v => Math.round(v / Q), dec: i => r4(i * Q) },
+  { id: 'angle', n: 91, enc: v => Math.round(v) + 45, dec: i => i - 45 },
+  { id: 'legHeight', n: 100, enc: v => Math.round((+v || 0) / Q), dec: i => r4(i * Q) },
+  { id: 'legCut', n: 100, enc: v => Math.round((+v || 0) / Q), dec: i => r4(i * Q) },
+  { id: 'gap', n: 16, enc: v => Math.round(v / QL), dec: i => r4(Math.max(1, i) * QL) },
+  { id: 'tBowl', n: BLACHY_IN.length, enc: v => Math.max(0, BLACHY_IN.findIndex(b => Math.abs(b.t - v) < 1e-3)), dec: i => BLACHY_IN[i].t },
+  { id: 'mat', n: 2, enc: v => v ? 1 : 0, dec: i => i },
+  { id: 'skirtArch', n: 2, enc: v => v ? 1 : 0, dec: i => i },
+];
+// Liczba jest „mieszana” (mnożenie przez stałą nieparzystą modulo 32^18 – odwracalne), żeby kod nie zaczynał się od samych zer.
+const MOD = 1n << 90n, MIX = 0x2545F4914F6CDD1D3A5B7n | 1n;
+const MIX_INV = (() => { let [a, b, x0, x1] = [MIX % MOD, MOD, 1n, 0n]; while (b) { const q = a / b; [a, b] = [b, a - q * b]; [x0, x1] = [x1, x0 - q * x1]; } return ((x0 % MOD) + MOD) % MOD; })();
+function encodeIn(state) {
+  let n = 0n;
+  for (const f of FIELDS_IN) { const i = Math.min(f.n - 1, Math.max(0, f.enc(state[f.id]))); n = n * BigInt(f.n) + BigInt(i); }
+  n = (n * MIX) % MOD;
+  let body = ''; for (let k = 0; k < BODY; k++) { body = ALPHA[Number(n % 32n)] + body; n /= 32n; }
+  const raw = VER_IN + body, full = raw + checksum(raw);
+  return `${full.slice(0, 6)}-${full.slice(6, 12)}-${full.slice(12)}`;
+}
+
 export function encode(state) {
+  if (calowa(state.tBowl)) return encodeIn(state);
   let n = 0n;
   for (const f of FIELDS) {
     const i = Math.min(f.n - 1, Math.max(0, f.enc(state[f.id])));
@@ -60,6 +90,18 @@ export function encode(state) {
 export function decode(code) {
   const s = String(code).toUpperCase().replace(/[^0-9A-Z]/g, '')
     .replace(/O/g, '0').replace(/[IL]/g, '1').replace(/U/g, 'V');
+  if (s[0] === VER_IN) {
+    const B = 18;   // jak BODY (stała modułu jest tu przesłonięta przez zmienną niżej)
+    if (s.length !== 1 + B + 2 || checksum(s.slice(0, 1 + B)) !== s.slice(1 + B)) return null;
+    let n = 0n;
+    for (const ch of s.slice(1, 1 + B)) { const v = ALPHA.indexOf(ch); if (v < 0) return null; n = n * 32n + BigInt(v); }
+    n = (n * MIX_INV) % MOD;
+    const out = {};
+    for (let k = FIELDS_IN.length - 1; k >= 0; k--) { const f = FIELDS_IN[k], i = Number(n % BigInt(f.n)); n /= BigInt(f.n); out[f.id] = f.dec(i); }
+    if (n !== 0n) return null;
+    out.tLeg = out.tBowl; out.skirt = 1;
+    return out;
+  }
   if (!['5', '6', '7', '8', VERSION].includes(s[0])) return null;
   const BODY = s[0] === VERSION ? 18 : s[0] === '8' ? 17 : BODY_STARE;
   if (s.length !== 1 + BODY + 2) return null;

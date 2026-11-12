@@ -109,7 +109,7 @@ export function constrain(input) {
   limits.footBottom = { min: 40, max: maxBottom };
   p.footBottom = clamp(p.footBottom, 40, maxBottom);
 
-  p.gap = Math.round(clamp(+p.gap || 0.3, 0.1, 1.5) * 10) / 10;
+  p.gap = Math.round(clamp(+p.gap || 0.3, 0.1, 1.53) * 1000) / 1000;   // mm co 0,1 albo cale co 0,005" (0,127 mm) – do 0,060" = 1,524 mm
   p.bowlBent = clamp(Math.round(+p.bowlBent) || 0, 0, 2); p.legBent = p.legBent ? 1 : 0;
   if (p.skirt && p.bowlBent === 2) p.bowlBent = 1;   // nogi z boków: dna nie da się zgiąć z bokami – zostają gięte narożniki
   p.perfBowl = clamp(Math.round(p.perfBowl) || 0, 0, 3); p.perfLeg = clamp(Math.round(p.perfLeg) || 0, 0, 3);
