@@ -3,8 +3,7 @@ export const TEKSTY = {
   pl: {
     tytul: 'OGIMORA — darmowe projekty ze stali: palenisko i kostka do spawania (DXF)',
     opis: 'Darmowe generatory projektów z blachy: stalowe palenisko ogrodowe i kostka do nauki spawania. Ustawiasz wymiary i wzór, pobierasz plik DXF do cięcia laserem lub plazmą.',
-    h1: 'Zaprojektuj coś ze stali. Pobierz plik do cięcia.',
-    wstep: 'Dwa darmowe generatory. Ustawiasz wymiary, wzory i napis w przeglądarce, a strona tworzy plik DXF w skali 1:1 – gotowy dla zakładu z laserem albo plazmą.',
+    h1: 'OGIMORA – darmowe projekty ze stali: palenisko i kostka do spawania (pliki DXF)',
     modele: {
       palenisko: { nazwa: 'Palenisko', haslo: 'Stalowe palenisko ogrodowe', opis: 'Cztery ścianki i dno na zamki, bez spawania. Wymiary, pochylenie ścianek, wzór na każdej ściance, własny napis.', przycisk: 'Zaprojektuj palenisko', alt: 'Stalowe palenisko z wyciętymi wzorami – model startowy' },
       kostka: { nazwa: 'Kostka', haslo: 'Kostka do nauki spawania', opis: 'Sześć ścianek do zespawania: ćwiczysz spoiny narożne, zostaje kostka do gry, lampion albo ozdoba. Bok 10–70 cm, kropki, liczby, napis, ścięte narożniki.', przycisk: 'Zaprojektuj kostkę', alt: 'Stalowa kostka ze ściętymi narożnikami i napisem – model startowy' },
@@ -17,8 +16,7 @@ export const TEKSTY = {
   en: {
     tytul: 'OGIMORA — free steel designs: fire pit and welding cube (DXF)',
     opis: 'Free generators of sheet-steel projects: a garden fire pit and a cube for welding practice. Set the size and pattern, download a DXF ready for laser or plasma cutting.',
-    h1: 'Design something in steel. Download the cutting file.',
-    wstep: 'Two free generators. Set the size, patterns and lettering in your browser and the site makes a DXF file at 1:1 scale – ready for a laser or plasma shop.',
+    h1: 'OGIMORA – free steel designs: fire pit and welding cube (DXF files)',
     modele: {
       palenisko: { nazwa: 'Fire pit', haslo: 'Steel garden fire pit', opis: 'Four walls and a floor that slot together, no welding. Size, wall angle, a pattern on every wall, your own lettering.', przycisk: 'Design a fire pit', alt: 'Steel fire pit with cut-out patterns – starter model' },
       kostka: { nazwa: 'Cube', haslo: 'Cube for welding practice', opis: 'Six sides to weld: you practise corner welds and keep a dice, a lantern or a garden piece. Side 4–28 in, dots, numbers, lettering, cut corners.', przycisk: 'Design a cube', alt: 'Steel cube with cut corners and lettering – starter model' },
@@ -39,7 +37,7 @@ export function htmlStartu(j, prefiks = '') {
         <a class="st-btn" href="${prefiks}${STRONY[m]}?nowy=start">${x.przycisk} <span aria-hidden="true">→</span></a>
         <div class="st-twoje" data-twoje="${m}" hidden></div></div>
     </article>`; };
-  return `<section class="st-hero"><h1>${t.h1}</h1><p>${t.wstep}</p></section>
+  return `<h1 class="opis-tekst">${t.h1}</h1>
     <section class="st-modele">${karta('palenisko')}${karta('kostka')}</section>
     <section class="st-jak"><h2>${t.jak}</h2><ol>${t.kroki.map(([a, b]) => `<li><b>${a}</b><span>${b}</span></li>`).join('')}</ol></section>
     <p class="st-stopka">${t.stopka}</p>`;

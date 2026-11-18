@@ -2,6 +2,9 @@
 
 Jedna linijka na każde wgranie na serwer. Numer wersji jest w `www/js/wersja.js`.
 
+## 0.4.1 – 2026-11-18
+Strona startowa: usunięty nagłówek z hasłem i wstępem – zaczyna się od razu od dwóch kart. (Dla wyszukiwarek został jeden niewidoczny tytuł strony.)
+
 ## 0.4.0 – 2026-11-18
 Strona startowa i projekty kostki. (1) Adres główny ogimora.com to teraz strona startowa: dwa modele (palenisko, kostka) i „Twoje ostatnie” – projekty z tej przeglądarki, osobno dla każdego modelu. Palenisko przeniesione pod ogimora.com/firepit/ (stare linki z kodem kształtu i projektem przechodzą tam same). (2) Górny pasek: smok / OGIMORA → strona startowa; obok nazwa modelu (Palenisko / Kostka) → model startowy, z przyciskiem „Wróć do mojego”. (3) Kostka: projekty jak w palenisku – zapisują się same po pierwszej zmianie, menu z nazwą, listą moich kostek, „Od nowa” (kostka OGIMORA, kostka do gry, z otworami, czysta), duplikowaniem, zapisem do pliku i wczytaniem. Cudzy link otwiera się jako osobny podgląd i nie nadpisuje mojego projektu. (4) Nowy projekt startowy kostki (200 mm, ścięcie 40, napis OGI / MORA, otwór u góry) i widok startowy: surowa stal ze spoinami. (5) Każda strona ma adresy /pl/… i /en/…; mapa strony ma 9 adresów.
 
