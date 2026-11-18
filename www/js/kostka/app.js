@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { zbuduj, ogranicz, sciecieMin, zamekDomyslny, zamekTrojkat, ZAMEK_MIN, GESTOSC, LIM, w3 } from './geo.js';
+import { zbuduj, ogranicz, sciecieMin, zamekDomyslny, zamekTrojkat, ukladZe, ZAMEK_MIN, GESTOSC, LIM, w3 } from './geo.js';
 import { tresc, gdyCzcionka, NAPIS_MAX, FONTY, FONT_DOM, wiersze } from './tresc.js';
 import { buildPdf, planPrint, planJedna } from '../print.js';
 import { estimate, CUT_RATES, RYNEK, USA_SERIA, usaCena } from '../pricing.js';
@@ -49,7 +49,7 @@ const luzL = (mm, j = J) => (j === 'in' ? liczba(mm / CAL, 3) : liczba(mm, 1));
 const KLUCZ = 'ogik_stan';
 const kropki = () => Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => [n, { typ: 'kropki', n, tekst: String(n), t1: '', t3: '', font: FONT_DOM, ksztalt: 'kolo', skala: 0.7 }]));
 function startowy(j) {
-  const s = { a: 250, t: 3, c: 0, g: 0.3, zw: zamekDomyslny(3), zt: zamekTrojkat(3), uklad: 'pary', ukladT: 'pary', sc: kropki() };
+  const s = { a: 250, t: 3, c: 0, g: 0.3, zw: zamekDomyslny(3), zt: zamekTrojkat(3), uklad: 'konce', ukladT: 'para', sc: kropki() };
   return j === 'in' ? przelicz(s, 'in') : s;
 }
 function przelicz(s, j) {
@@ -71,8 +71,8 @@ function popraw(s) {            // dane z linku albo z pamięci: tylko znane pol
   if (![...BLACHY.mm, ...BLACHY.in].some(b => Math.abs(b.t - q.t) < 1e-3)) q.t = 3;
   q.zw = s.zamki === false || s.zamki === 0 ? 0 : Number.isFinite(+s.zw) ? +s.zw : zamekDomyslny(q.t);   // stare linki: zamki tak / nie
   q.zt = s.zamki === false || s.zamki === 0 ? 0 : Number.isFinite(+s.zt) ? +s.zt : zamekTrojkat(q.t);
-  q.uklad = ['pary', 'konce', 'srodek'].includes(s.uklad) ? s.uklad : 'pary';       // układ zamków na krawędziach kostki (od 0.3.4)
-  q.ukladT = ['pary', 'konce', 'srodek'].includes(s.ukladT) ? s.ukladT : q.uklad;     // …i osobno przy trójkątach (od 0.3.5; starszy link: jak na krawędziach)
+  q.uklad = s.uklad == null ? 'konce' : ukladZe(s.uklad);            // układ zamków na krawędziach kostki; starsze linki: 'pary' → 'konce'
+  q.ukladT = s.ukladT == null ? (s.uklad == null ? 'para' : q.uklad) : ukladZe(s.ukladT);   // …i osobno przy trójkątach
   q.sc = {};
   for (let n = 1; n <= 6; n++) {
     const x = (s.sc && s.sc[n]) || {}, typ = ['brak', 'kropki', 'napis', 'otwor'].includes(x.typ) ? x.typ : 'brak';
@@ -368,8 +368,10 @@ new ResizeObserver(() => { kadr(); if (view === 'flat') rozkroj(); }).observe(st
 // ---------------------------------------------------------------- rozkrój (SVG)
 function rozkroj() {
   const box = $('kFlat'), items = [];
+  box.style.paddingLeft = Math.max(12, wolne().x0) + 'px';       // rozkrój obok karty „Kształt”, nie pod nią
+  box.style.paddingTop = '46px';
   czesci.forEach(c => { const b = bbox(c.outline); for (let k = 0; k < c.qty; k++) items.push({ c, b, w: b.maxX - b.minX, h: b.maxY - b.minY }); });
-  const Wd = Math.max(200, box.clientWidth - 24), Hd = Math.max(160, box.clientHeight - 24), gap = Math.max(10, state.a * .05);
+  const Wd = Math.max(200, box.clientWidth - 24 - Math.max(0, wolne().x0 - 12)), Hd = Math.max(160, box.clientHeight - 24 - 34 - 30), gap = Math.max(10, state.a * .05);
   let best = null; const total = items.reduce((s, i) => s + i.w + gap, 0), maxW = Math.max(...items.map(i => i.w));
   for (let k = 0; k <= 60; k++) {
     const rowW = maxW + (total - maxW) * k / 60; let x = 0, y = 0, rowH = 0, Wm = 0; const pl = [];
@@ -417,9 +419,9 @@ function ustawSuwak(id, min, max, step, v, wysw) {
 }
 // układy zamków pokazane obrazkami: krawędź, zamki tej ścianki (pełne) i sąsiadki (obrys)
 const UKL = {
-  pary: [T('Pary zamków rozłożone równo wzdłuż krawędzi', 'Pairs of tabs spread evenly along the edge'), [[5, 1], [9.5, 0], [22, 1], [26.5, 0]]],
-  konce: [T('Zamki tylko przy początku i końcu krawędzi – środek wolny na jedną ciągłą spoinę', 'Tabs only near both ends of the edge – the middle stays free for one continuous weld'), [[2, 1], [6.5, 0], [25, 1], [29.5, 0]]],
-  srodek: [T('Jeden zamek na środku krawędzi, łapany przez dwa zamki drugiej ścianki', 'One tab in the middle of the edge, held between two tabs of the other side'), [[11.5, 0], [16, 1], [20.5, 0]]],
+  para: [T('Jeden zamek tej ścianki i jeden sąsiadki, obok siebie na środku krawędzi', 'One tab of this side and one of its neighbour, next to each other in the middle of the edge'), [[13.5, 1], [18.5, 0]]],
+  konce: [T('Zamki przy obu końcach krawędzi: jedna ścianka na zewnątrz, druga dotyka ich od środka – między nimi długa szczelina na jedną ciągłą spoinę', 'Tabs at both ends of the edge: one side outside, the other touching them from the inside – a long gap between for one continuous weld'), [[2, 1], [6.5, 0], [25.5, 0], [30, 1]]],
+  srodek: [T('Jeden zamek na środku krawędzi, obejmowany przez dwa zamki drugiej ścianki', 'One tab in the middle of the edge, held between two tabs of the other side'), [[11.5, 0], [16, 1], [20.5, 0]]],
 };
 const uklady = pole => `<div class="k-ukl" data-pole="${pole}" role="group">${Object.entries(UKL).map(([v, [tt, zeby]]) => `<button type="button" class="chip" data-u="${v}" title="${tt}" aria-label="${tt}"><svg viewBox="0 0 36 16" width="36" height="16" aria-hidden="true"><path d="M1 12.5H35" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>${zeby.map(([x, moj]) => `<rect x="${x}" y="5" width="4" height="7.5" ${moj ? 'fill="#df3434" stroke="#df3434"' : 'fill="none" stroke="currentColor"'} stroke-width="1.1"/>`).join('')}</svg></button>`).join('')}</div>`;
 function panelKsztalt() {

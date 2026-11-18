@@ -2,6 +2,9 @@
 
 Jedna linijka na każde wgranie na serwer. Numer wersji jest w `www/js/wersja.js`.
 
+## 0.3.6 – 2026-11-18
+Kostka: zamki przemyślane od nowa. Na każdej krawędzi jedna ścianka jest „A”, druga „B”. Trzy układy: (1) jeden zamek A i jeden zamek B obok siebie na środku; (2) na końcach – A ma zamek przy każdym końcu krawędzi na zewnątrz, B ma zamki dotykające ich od środka, a między zamkami B zostaje długa szczelina na jedną ciągłą spoinę; (3) jeden zamek A na środku, obejmowany przez dwa zamki B. Suwak ustawia szerokość zamka. Dawny układ „kilka par rozłożonych” usunięty (blokował przesuw tylko w jedną stronę); zapisane projekty z tym układem otwierają się z układem „na końcach”. Nowy projekt: krawędzie „na końcach”, trójkąty „jeden i jeden”. Rozkrój nie chowa się już pod kartą „Kształt”.
+
 ## 0.3.5 – 2026-11-18
 Kostka: układ zamków wybiera się osobno dla krawędzi kostki i osobno dla trójkątów narożników (tak jak szerokość). Zamiast napisów trzy obrazki pod każdym suwakiem: zamki rozłożone, na końcach, jeden w środku (pełny prostokąt = zamek tej ścianki, pusty = sąsiadki); karta „Kształt” już się nie rozjeżdża.
 

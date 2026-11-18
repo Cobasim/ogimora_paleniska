@@ -42,8 +42,8 @@ export function ogranicz(p) {
   if (q.zt > 0 && q.zt < ZAMEK_MIN) q.zt = ZAMEK_MIN;
   if (q.zamki === false) q.zw = q.zt = 0;
   q.zamki = q.zw > 0 || q.zt > 0;
-  q.uklad = UKLADY.includes(q.uklad) ? q.uklad : 'pary';                 // układ zamków na krawędziach kostki
-  q.ukladT = UKLADY.includes(q.ukladT) ? q.ukladT : 'pary';              // …i osobno na krawędziach trójkątów narożnych
+  q.uklad = q.uklad == null ? 'konce' : ukladZe(q.uklad);               // układ zamków na krawędziach kostki
+  q.ukladT = q.ukladT == null ? 'para' : ukladZe(q.ukladT);             // …i osobno na krawędziach trójkątów narożnych
   return q;
 }
 
@@ -52,33 +52,36 @@ export const zamekDomyslny = t => Math.min(14, Math.max(6, 2.5 * t));
 export const ZAMEK_MIN = 3;
 /** Domyślna szerokość ząbka na krawędziach trójkątów (krótsze krawędzie → węższy ząbek). */
 export const zamekTrojkat = t => Math.min(10, Math.max(4, 2 * t));
-export const UKLADY = ['pary', 'konce', 'srodek'];
+export const UKLADY = ['para', 'konce', 'srodek'];
+/** Stare nazwy układów (0.3.4–0.3.5: 'pary' = kilka par rozłożonych) → najbliższy obecny. */
+export const ukladZe = u => (UKLADY.includes(u) ? u : u === 'pary' ? 'konce' : 'para');
 /**
  * Zamki na jednej krawędzi o długości L (współrzędna s od początku krawędzi, obrys przeciwnie do wskazówek zegara).
  * Zwraca { moje: [[s0, s1]], sasiada: [[s0, s1]] } – przedziały ząbków tej ścianki i ząbków sąsiadki.
- *  uklad 'pary'   – pary „mój ząbek, potem sąsiadki” rozłożone równo (1–6 par);
- *        'konce'  – po jednej parze przy początku i przy końcu krawędzi (środek wolny na jedną ciągłą spoinę);
- *        'srodek' – jeden ząbek na środku, łapany przez dwa ząbki drugiej ścianki (rola 'S' – jeden, 'D' – dwa).
- * Ząbek za szeroki na tę krawędź zwęża się do tylu, ile się mieści.
+ * Na każdej krawędzi jedna ścianka jest „A” (rola 'S'), druga „B” (rola 'D').
+ *  'para'   – jeden ząbek A i jeden ząbek B obok siebie, na środku krawędzi;
+ *  'konce'  – A ma ząbek przy każdym końcu krawędzi (na zewnątrz), B ma ząbki dotykające ich od środka;
+ *             między ząbkami B zostaje długa wolna szczelina na jedną ciągłą spoinę;
+ *  'srodek' – A ma jeden ząbek na środku, B dwa ząbki obejmujące go z obu stron.
+ * Wszystkie trzy układy są lustrzane względem środka krawędzi poza 'para' – dlatego blokują przesuw w obie strony.
+ * Regulowana jest szerokość ząbka; za szeroki na tę krawędź zwęża się, a gdy 'konce' się nie mieszczą – zostaje 'para'.
  */
 function zamkiKrawedzi(L, t, g, eMax, zw, uklad, rola) {
-  const m = eMax + t + 3, wolne = L - 2 * m, puste = { moje: [], sasiada: [] };
+  const m = eMax + t + 3, wolne = L - 2 * m, puste = { moje: [], sasiada: [] }, c = L / 2;
   if (!(zw > 0)) return puste;
+  const role = (A, B) => (rola === 'S' ? { moje: A, sasiada: B } : { moje: B, sasiada: A });
   if (uklad === 'srodek') {
-    const w = Math.min(zw, (wolne - 2 * g) / 3); if (w < ZAMEK_MIN - 1e-9) return puste;
-    const c = L / 2, jeden = [[c - w / 2, c + w / 2]], dwa = [[c - w / 2 - g - w, c - w / 2 - g], [c + w / 2 + g, c + w / 2 + g + w]];
-    return rola === 'S' ? { moje: jeden, sasiada: dwa } : { moje: dwa, sasiada: jeden };
+    const w = Math.min(zw, (wolne - 2 * g) / 3);
+    if (w >= ZAMEK_MIN - 1e-9) return role([[c - w / 2, c + w / 2]], [[c - w / 2 - g - w, c - w / 2 - g], [c + w / 2 + g, c + w / 2 + g + w]]);
   }
-  const w = Math.min(zw, (wolne - g) / 2), para = 2 * w + g;
+  if (uklad === 'konce') {
+    const w = Math.min(zw, (wolne - 2 * g - Math.max(12, 2 * t)) / 4);      // w środku zostaje co najmniej kawałek szczeliny
+    if (w >= ZAMEK_MIN - 1e-9) return role([[m, m + w], [L - m - w, L - m]], [[m + w + g, m + 2 * w + g], [L - m - 2 * w - g, L - m - w - g]]);
+  }
+  // 'para' (i zapas, gdy inny układ się nie mieści): ząbek tej ścianki, zaraz za nim ząbek sąsiadki – z obu stron wygląda tak samo
+  const w = Math.min(zw, (wolne - g) / 2);
   if (w < ZAMEK_MIN - 1e-9) return puste;
-  let starty;
-  if (uklad === 'konce') starty = wolne >= 2 * para + 12 ? [m, L - m - para] : [(L - para) / 2];
-  else {
-    let n = Math.min(6, Math.max(2, Math.round(L / 120)));
-    while (n > 1 && n * para + (n - 1) * 12 > wolne) n--;
-    starty = []; for (let k = 0; k < n; k++) starty.push(Math.min(L - m - para, Math.max(m, L * (k + 0.5) / n - para / 2)));
-  }
-  return { moje: starty.map(x => [x, x + w]), sasiada: starty.map(x => [x + w + g, x + 2 * w + g]) };
+  return { moje: [[c - g / 2 - w, c - g / 2]], sasiada: [[c + g / 2, c + g / 2 + w]] };
 }
 
 const pole2 = r => { let s = 0; for (let i = 0; i < r.length; i++) { const a = r[i], b = r[(i + 1) % r.length]; s += a[0] * b[1] - b[0] * a[1]; } return s / 2; };

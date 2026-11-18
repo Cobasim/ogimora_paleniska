@@ -56,3 +56,4 @@
 .kostka .k-ukl .chip svg { display: block; }
 .kostka .k-cena { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "l s" "d d"; align-items: baseline; gap: 2px 10px; cursor: default; }
 .kostka .k-cena > span { grid-area: l; } .kostka .k-cena > b { grid-area: s; } .kostka .k-cena > em { grid-area: d; }
+.kostka .k-flat { padding-bottom: 40px; }
