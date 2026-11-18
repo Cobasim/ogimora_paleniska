@@ -108,20 +108,36 @@ function budujLuz() {
   box.insertAdjacentHTML('afterbegin', `<div class="gap-head"><span>Luz na ząbkach</span><span class="gap-q" tabindex="0" aria-label="Co to jest luz na ząbkach?">?</span></div>`);
   box.insertAdjacentHTML('beforeend', `<div class="gap-pre"></div>`);
   const pop = document.createElement('div'); pop.className = 'gap-pop'; pop.setAttribute('role', 'tooltip'); pop.id = 'gapPop';
-  pop.innerHTML = `<b>Luz na ząbkach</b><svg viewBox="0 0 240 118" id="gapSvg" aria-hidden="true"></svg>
+  pop.innerHTML = `<div class="pop-h"><b>Luz na ząbkach</b><button type="button" class="pop-x" aria-label="Zamknij">✕</button></div><svg viewBox="0 0 240 118" id="gapSvg" aria-hidden="true"></svg>
     <p>Odstęp między ząbkiem jednej blachy a wycięciem w drugiej – <b>z każdej strony</b>. Dzięki niemu elementy wchodzą w siebie bez szlifowania.</p>
     <p class="gap-tab" id="gapTab"></p>
     <p class="gap-note">Za mały – ząbki nie wejdą. Za duży – luźno, więcej spawania.</p>`;
   document.body.appendChild(pop); budujLuz();
-  let hideT = 0;
-  const show = () => { clearTimeout(hideT); const r = box.getBoundingClientRect(); pop.classList.add('on');
+  // Duży ekran: dymek obok panelu (po najechaniu; kliknięcie w „?” go przypina, ✕ albo klik obok zamyka).
+  // Wąski ekran (telefon, tablet): wyjaśnienie rozwija się w miejscu, pod suwakiem, w ramce z ✕ (nic nie zasłania).
+  const waski = matchMedia('(max-width: 1100px)'), q = box.querySelector('.gap-q');
+  let hideT = 0, przyp = false, dotyk = false;
+  const show = (klik = false) => { clearTimeout(hideT); if (klik) przyp = true;
+    if (waski.matches) { if (pop.parentElement !== box) box.appendChild(pop); pop.classList.add('wbud', 'on'); pop.style.top = pop.style.left = '';
+      if (klik) setTimeout(() => pop.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 30); return; }
+    if (pop.parentElement !== document.body) document.body.appendChild(pop); pop.classList.remove('wbud');
+    const r = box.getBoundingClientRect(); pop.classList.add('on');
     pop.style.top = Math.max(8, Math.min(innerHeight - pop.offsetHeight - 8, r.top - 20)) + 'px';
     pop.style.left = Math.max(8, r.left - pop.offsetWidth - 12) + 'px'; };
-  const hide = () => { hideT = setTimeout(() => pop.classList.remove('on'), 120); };
-  box.addEventListener('pointerenter', e => { if (e.pointerType !== 'touch') show(); });
-  box.addEventListener('pointerleave', hide);
-  box.querySelector('.gap-q').addEventListener('focus', show); box.querySelector('.gap-q').addEventListener('blur', hide);
-  box.querySelector('.gap-q').addEventListener('click', () => (pop.classList.contains('on') ? pop.classList.remove('on') : show()));
+  const hide = (teraz = false) => { clearTimeout(hideT);
+    if (teraz) { przyp = false; pop.classList.remove('on'); return; }
+    if (!przyp) hideT = setTimeout(() => pop.classList.remove('on'), 120); };
+  box.addEventListener('pointerenter', e => { if (e.pointerType !== 'touch' && !waski.matches) show(); });
+  box.addEventListener('pointerleave', () => { if (!waski.matches) hide(); });
+  q.addEventListener('pointerdown', () => { dotyk = true; });                 // dotyk / mysz: o otwarciu decyduje kliknięcie
+  q.addEventListener('focus', () => { if (!dotyk) show(); });                 // klawiatura (Tab)
+  q.addEventListener('blur', () => { dotyk = false; if (!waski.matches) hide(); });
+  q.addEventListener('click', () => { dotyk = false; if (pop.classList.contains('on') && (przyp || waski.matches)) hide(true); else show(true); });
+  q.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); q.click(); } });
+  pop.querySelector('.pop-x').addEventListener('click', () => hide(true));
+  document.addEventListener('click', e => { if (przyp && !waski.matches && !box.contains(e.target) && !pop.contains(e.target)) hide(true); });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && pop.classList.contains('on')) hide(true); });
+  waski.addEventListener('change', () => hide(true));
   box.querySelector('.gap-pre').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; set('gap', +b.dataset.g); track('slider', { param: 'gap', value: +b.dataset.g, preset: true }); interacted(); });
 }
 /** Rysunek luzu: ząbek w wycięciu, szczeliny (czerwone) rosną razem z ustawieniem. */
@@ -277,15 +293,21 @@ function renderInfo() {
   const US = RYNEK === 'us';                                 // wersja angielska: osobny szacunek według stawek z USA, w dolarach
   const zl = v => US ? `$${Math.round(v).toLocaleString('en-US')}` : `${fmt(Math.round(v))} zł`;
   // na wierzchu: suma (duża) i pod nią koszt wzorów; szczegóły po kliknięciu
-  if (!$('priceHead')) $('price').innerHTML = `<details><summary class="price-head" id="priceHead"></summary>
-    <div class="price-pop"><table id="priceTable"></table>
+  // szczegóły ceny: na dużym ekranie okienko nad ceną, na wąskim rozwijają się w miejscu (ramka); zawsze z ✕
+  if (!$('priceHead')) { $('price').innerHTML = `<details id="priceDet"><summary class="price-head" id="priceHead"></summary>
+    <div class="price-pop" id="pricePop"><div class="pop-h"><b>${US ? 'Price details' : 'Szczegóły ceny'}</b><button type="button" class="pop-x" id="priceX" aria-label="${US ? 'Close' : 'Zamknij'}">✕</button></div><table id="priceTable"></table>
     <p>${US ? 'Rough test prices.' : 'Ceny orientacyjne, testowe.'}</p></div></details>`;
+    const det = $('priceDet');
+    $('priceX').addEventListener('click', () => { det.open = false; });
+    det.addEventListener('toggle', () => { if (det.open && matchMedia('(max-width: 1100px)').matches) setTimeout(() => $('pricePop').scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 30); });
+    document.addEventListener('click', e => { if (det.open && !matchMedia('(max-width: 1100px)').matches && !$('price').contains(e.target)) det.open = false; });
+    addEventListener('keydown', e => { if (e.key === 'Escape' && det.open) det.open = false; }); }
   const L = Object.fromEntries(est.lines.map(l => [l[0], l]));
   const seria = est.net + dc.cost;                           // PL: cena netto; USA: cena sztuki przy dużej serii
   // suma zaokrąglana w górę do 5 (ceny orientacyjne, własne – nie czyjś cennik)
   const K1 = US ? USA_SERIA[0][1] : 1, total = Math.ceil((US ? usaCena(seria, 1) : seria) / 5) * 5;   // USA: jedna sztuka – przeliczenie dopasowane do dwóch prawdziwych wycen
   $('priceHead').innerHTML = (US ? `<span title="Test price for ONE piece – a rough estimate for the USA. Before sales tax. Ask a shop for a real quote.">Test price, rough <u class="rynek">USA · 1 pc</u></span>` : `<span title="Cena testowa za JEDNĄ sztukę – szacunek orientacyjny dla Polski. Netto. Dokładną cenę poda zakład.">Cena testowa, orientacyjna <u class="rynek">PL · 1 szt.</u></span>`) + `<b>≈ ${zl(total)}</b>` +
-    `<em class="decor-price${dc.cost > 0.5 ? '' : ' none'}">${dc.cost > 0.5 ? (US ? `incl. patterns ${zl(dc.cost * K1)}` : `w tym wzory ${zl(dc.cost)}`) : (US ? 'no patterns' : 'bez wzorów')}</em><i class="price-more">${US ? 'details' : 'szczegóły'}</i>`;
+    `<em class="decor-price${dc.cost > 0.5 ? '' : ' none'}">${dc.cost > 0.5 ? (US ? `incl. patterns ${zl(dc.cost * K1)}` : `w tym wzory ${zl(dc.cost)}`) : (US ? 'no patterns' : 'bez wzorów')}</em><i class="price-more"><span class="pm-o">${US ? 'details' : 'szczegóły'}</span><span class="pm-z">${US ? 'hide' : 'zwiń'}</span></i>`;
   // jedna sztuka: w USA pozycje × K1 + stała obsługa zlecenia (razem = cena jednej sztuki); bez cen za serię
   const row = (k, d, v, cls = '') => `<tr class="${cls}"><td>${k}<small>${d}</small></td><td>${zl(v * K1)}</td></tr>`;
   const sec = t => `<tr class="sec"><td colspan="2">${t}</td></tr>`;
@@ -313,7 +335,8 @@ function renderInfo() {
   maleBlacha(); renderMale();
   // ostrzeżenia w stałym miejscu jednej linii; wszystkie — po najechaniu
   const W = model.warnings.map(w => tekstJ(w));   // cale: wymiary i masa w ostrzeżeniach w calach / funtach
-  $('warnings').innerHTML = W.map(w => `<li>${w}</li>`).join('');
+  $('warnings').innerHTML = `<li class="pop-h"><b>${W.length === 1 ? 'Uwaga' : `Uwagi (${W.length})`}</b><button type="button" class="pop-x" aria-label="Zamknij">✕</button></li>` + W.map(w => `<li>${w}</li>`).join('');
+  if (!W.length) $('warnSlot').classList.remove('open');
   $('warnLine').innerHTML = W.length ? `${ICONS.warn}<span>${W[0]}</span>${W.length > 1 ? `<b>+${W.length - 1}</b>` : ''}` : '';
   $('warnSlot').classList.toggle('has', W.length > 0);
   $('warnSlot').classList.toggle('many', W.length > 1);
@@ -344,6 +367,14 @@ function renderMale() {
   const b = box.querySelector('.male-btn'); b.textContent = showMale ? 'ukryj' : 'pokaż'; b.classList.toggle('active', showMale); b.hidden = !M.n;
   box.querySelector('.male-fix').hidden = !M.n;
 }
+// ostrzeżenia: kliknięcie w linijkę rozwija pełną listę (telefon: w miejscu, pod linijką), ✕ albo ponowne kliknięcie zwija
+$('warnSlot').addEventListener('click', e => {
+  const s = $('warnSlot'); if (!s.classList.contains('has')) return;
+  if (e.target.closest('.pop-x')) { s.classList.remove('open'); s.blur(); return; }
+  if (e.target.closest('.warn-pop')) return;
+  s.classList.toggle('open'); if (!s.classList.contains('open')) s.blur();
+});
+document.addEventListener('click', e => { const s = $('warnSlot'); if (s.classList.contains('open') && !s.contains(e.target) && !matchMedia('(max-width: 1100px)').matches) s.classList.remove('open'); });
 // zmiana grubości blachy: próg wraca do grubości blachy
 let tPrev = null;
 function maleBlacha() { const t = `${state.tBowl}|${state.tLeg}`; if (tPrev !== null && t !== tPrev && wz.decor.minOtw > 0) wz.ustawMinOtw(0); tPrev = t; }
@@ -1041,6 +1072,8 @@ $('download').addEventListener('click', () => {
   $('dl').showModal();
 });
 $('dlX').addEventListener('click', () => { track('download_cancel'); $('dl').close(); });
+$('dl').addEventListener('click', e => { if (e.target === $('dl')) { const r = $('dl').getBoundingClientRect();   // klik w przyciemnione tło (poza oknem) zamyka
+  if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) { track('download_cancel'); $('dl').close(); } } });
 $('dlGo').addEventListener('click', () => {
   const notes = $('dlNotes').value.trim().slice(0, 2000);
   const codes = $('dlCodes').value.split(/\s+/).filter(Boolean).slice(0, 50);
@@ -1508,7 +1541,7 @@ function idzDo(q) { zapiszTeraz(); location.href = location.pathname + q; }   //
   });
   // okno „Nowy projekt”: pusty albo jeden z kształtów
   $('nowyGrid').addEventListener('click', e => { if (e.target.closest('a')) zapiszTeraz(); });
-  $('nowyDlg').addEventListener('click', e => { if (e.target === $('nowyDlg') || e.target.closest('[data-close]')) $('nowyDlg').close(); });
+  $('nowyDlg').addEventListener('click', e => { if ((e.target === $('nowyDlg') && ((r => e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)($('nowyDlg').getBoundingClientRect()))) || e.target.closest('[data-close]')) $('nowyDlg').close(); });
 }
 setCam('iso');
 // PROSTY: projekt startowy – czarny mat, ogień w misie, niski widok na narożnik; projekt czysty – rysunek w izometrii

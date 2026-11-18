@@ -39,6 +39,10 @@ const EN = {
   'Przygotowuję PDF…': 'Preparing the PDF…', 'Nie udało się zrobić PDF (sprawdź internet — biblioteka ładuje się z sieci).': 'Could not make the PDF (check your connection – the PDF library loads from the web).',
   'Nie udało się wygenerować pliku. Odśwież stronę i spróbuj ponownie.': 'Could not generate the file. Reload the page and try again.',
   'Przywrócono ustawienia początkowe': 'Back to the starting settings',
+  // 0.2.1: okienka z ✕
+  'Uwaga': 'Note', 'zwiń': 'hide', 'Szczegóły ceny': 'Price details',
+  'Prawie pionowe nogi z boków przy wysokich stopkach — palenisko może się chwiać.': 'Almost vertical legs and a high floor plate – the fire pit may wobble.',
+  'Mocno zwężona misa — ogień będzie miał mało powietrza.': 'Strongly narrowed bowl – the fire will get little air.',
   // nagłówek, nawigacja
   'Ogimora — konfigurator paleniska': 'Ogimora — fire pit generator', 'Ogimora – strona główna': 'Ogimora – home', 'Pliki DXF': 'DXF files',
   'Generator': 'Generator', 'Projekty': 'Designs', 'Wersja testowa ·': 'Test version ·', 'napisz': 'tell me', 'Strona testowa – napisz, co poprawić': 'Test site – tell me what to improve',
@@ -170,6 +174,7 @@ const WZORY = [
   [/^rozrzut ofert (.+)$/, 'offer range $1'], [/^w tym wzory (.+)$/, 'incl. patterns $1'],
   [/^skala 1:(\d+) · (\d+) kart(?:ki|ek|ka) (A4|Letter)( do sklejenia)?$/, (m, n, k, p, s) => `scale 1:${n} · ${k} ${p} sheet${k === '1' ? '' : 's'}${s ? ' to tape together' : ''}`],
   [/^PDF gotowy: skala 1:(\d+), (\d+) str\. (A4|Letter)\. Drukuj w skali 100%\.$/, 'PDF ready: scale 1:$1, $2 pages $3. Print at 100% scale.'],
+  [/^Uwagi \((\d+)\)$/, 'Notes ($1)'],
   [/^(mały otwór|małe otwory|małych otworów) < (.+)$/, (m, a, b) => `small hole${a === 'mały otwór' ? '' : 's'} < ${b}`],
   [/^(\d+[AB]?) · (.+?) · widok od zewnątrz · (.+) · blacha (\d+) mm$/, (m, n, e, w, t) => `${n} · ${tr(e)} · outside view · ${w} · ${t} mm sheet`],
   [/^(\d+[AB]?) · (.+)$/, (m, n, e) => `${n} · ${tr(e)}`],

@@ -44,7 +44,7 @@ const T = EN ? {
        'The page loads fonts from Google Fonts and the 3D library from jsDelivr. Like any site you visit, those servers see your IP address.'],
   wyl: 'Send anonymous statistics from this browser', wylP: 'Off – your browser asks sites not to track (Do Not Track / Global Privacy Control).',
   kontakt: 'This site is made by one person – OGI. Questions, or want something removed? info@ogimora.com',
-  st: ['by OGI', 'visits', 'DXF', 'PDF', 'since the test started'],
+  st: ['by OGI', 'V', 'D', 'P', 'since the test started'],   // liczniki tylko literami (decyzja użytkownika 2026-11-18): widać, że coś się dzieje, bez objaśniania
   zamknij: 'Close', dlWarn: 'Before you cut – read this',
 } : {
   test: 'STRONA TESTOWA', test2: 'pliki bez gwarancji – przeczytaj, zanim wytniesz', testT: 'Strona testowa – przeczytaj, zanim wytniesz',
@@ -83,7 +83,7 @@ const T = EN ? {
        'Strona pobiera czcionki z Google Fonts i bibliotekę 3D z jsDelivr. Te serwery, jak każda odwiedzana strona, widzą Twój adres IP.'],
   wyl: 'Wysyłaj anonimowe statystyki z tej przeglądarki', wylP: 'Wyłączone – Twoja przeglądarka prosi strony, żeby nie śledziły (Do Not Track / Global Privacy Control).',
   kontakt: 'Autorem strony jest jedna osoba – OGI. Pytania albo chcesz coś usunąć? info@ogimora.com',
-  st: ['autor: OGI', 'wizyty', 'DXF', 'PDF', 'od początku testu'],
+  st: ['autor: OGI', 'V', 'D', 'P', 'od początku testu'],   // V – wizyty, D – pobrania DXF, P – PDF (na stronie bez objaśnienia)
   zamknij: 'Zamknij', dlWarn: 'Zanim wytniesz – przeczytaj',
 };
 const lista = a => '<ul>' + a.map(x => `<li>${x}</li>`).join('') + '</ul>';
@@ -106,7 +106,7 @@ dlg.innerHTML = `<button type="button" class="dl-x" data-close aria-label="${T.z
   <label class="p-same info-wyl"><input type="checkbox" id="infoStat"><span>${T.wyl}</span></label><p class="info-male" id="infoStatP"></p>
   <p class="info-male">${T.kontakt}<br>${T.wer}: ${WERSJA} · ${DATA_WERSJI}</p>`;
 document.body.appendChild(dlg);
-dlg.addEventListener('click', e => { if (e.target === dlg || e.target.closest('[data-close]')) dlg.close(); });
+dlg.addEventListener('click', e => { if ((e.target === dlg && ((r => e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)(dlg.getBoundingClientRect()))) || e.target.closest('[data-close]')) dlg.close(); });
 function otworz(kotwica) {
   const c = $('infoStat'); c.checked = statystykiDzialaja(); c.disabled = wylaczonePrzezPrzegladarke();
   $('infoStatP').textContent = wylaczonePrzezPrzegladarke() ? T.wylP : '';

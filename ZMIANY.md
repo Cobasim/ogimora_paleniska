@@ -2,6 +2,9 @@
 
 Jedna linijka na każde wgranie na serwer. Numer wersji jest w `www/js/wersja.js`.
 
+## 0.2.1 – 2026-11-18
+Okienka: szczegóły ceny, wyjaśnienie „Luz na ząbkach” i lista uwag mają wyraźną ramkę i przycisk ✕. Na telefonie i tablecie (do 1100 px) rozwijają się w miejscu, pod swoim przyciskiem, zamiast zasłaniać ekran; przy cenie „szczegóły ▾” zmienia się w „zwiń ▴”. Poprawione: „?” przy luzie nie otwierał się na telefonie. Okna (pobieranie, płytki, O stronie, Napisz) – ✕ zostaje widoczny przy przewijaniu; zamykają się kliknięciem w tło, ale już nie przypadkowym kliknięciem przy brzegu okna. Stopka: liczniki opisane samymi literami V · D · P. Wersja angielska: przetłumaczone ostrzeżenie o pionowych nogach.
+
 ## 0.2.0 – 2026-11-12
 Cale (USA). Przełącznik `mm | in` w pasku obok PL / EN. W calach: blachy 11 ga (0,120"), 10 ga (0,135"), 3/16" (0,188") i 1/4" (0,250") – zamki liczone z prawdziwej grubości; wymiary co 1/4"; luz na ząbkach 0,005–0,060" co 0,005" (podpowiedzi: laser 0,010", plazma 0,030", stara plazma 0,050"); masa w funtach, długość cięcia w stopach; model papierowy na US Letter. W oknie pobierania wybór jednostek pliku DXF (mm albo cale; domyślnie jak na stronie; jednostka w nazwie pliku i w komentarzu). Płytki próbne calowe (4 grubości, luz cyframi i kropkami po 0,005", grubość cyframi, np. „.135”) i instrukcja PDF po angielsku i po polsku (Letter); płytki mm także w calach. Projekt calowy ma własny kod kształtu (wersja „A”); stare linki i projekty w mm działają jak dotąd (ten sam kod i ten sam plik DXF). Powrót mm → cale → mm bez zmian po drodze przywraca dokładnie poprzedni projekt. Na start: cale, gdy przeglądarka jest w strefie czasowej USA (albo `?j=in` w adresie). Statystyki: jednostki projektu i pliku DXF, blacha jako kod (`5`, `10ga`, `3-16`…). Poprawione przy okazji: kilka komunikatów bez tłumaczenia w wersji angielskiej (PDF gotowy, „Gotowe: mm…”), skala w PDF po angielsku.
 

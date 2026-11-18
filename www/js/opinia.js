@@ -5,7 +5,7 @@ const d = document.getElementById('opDlg'), f = document.getElementById('opForm'
 const EN = document.documentElement.lang === 'en' || /[?&]lang=en/.test(location.search);
 let odKiedy = 0;
 document.getElementById('opBtn').addEventListener('click', () => { odKiedy = Date.now(); d.showModal(); f.tekst.focus(); });
-d.addEventListener('click', e => { if (e.target === d || e.target.closest('[data-close]')) d.close(); });
+d.addEventListener('click', e => { if ((e.target === d && ((r => e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)(d.getBoundingClientRect()))) || e.target.closest('[data-close]')) d.close(); });
 f.addEventListener('submit', async e => {
   e.preventDefault();
   const tx = f.tekst.value.trim(); if (!tx) { f.tekst.focus(); return; }

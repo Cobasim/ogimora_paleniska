@@ -51,7 +51,7 @@ if (btn) {
     const a = document.querySelector('[data-thk="tBowl"] .chip.active'), v = a ? +a.dataset.v : NaN;
     ustaw(LISTA[J].find(g => Math.abs(g.v - v) < 1e-3) || LISTA[J][J === 'in' ? 2 : 1]);
     track('proba', { value: 'okno' }); d.showModal(); });
-  d.addEventListener('click', e => { if (e.target === d || e.target.closest('[data-close]')) d.close(); });
+  d.addEventListener('click', e => { if ((e.target === d && ((r => e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)(d.getBoundingClientRect()))) || e.target.closest('[data-close]')) d.close(); });
   $('probaGr').addEventListener('click', e => { const b = e.target.closest('button'); if (b) ustaw(LISTA[J].find(g => g.k === b.dataset.k)); });
   $('probaU').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { U = b.dataset.u; ustaw(gr); } });
   $('probaA').addEventListener('click', () => track('proba', { value: 'dxf-' + gr.k + (U === 'in' ? '-in' : '') }));

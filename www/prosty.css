@@ -150,3 +150,36 @@ html[data-jedn=in] .p-row:has(output) { grid-template-columns: 22px 1fr 62px; }
 @media (max-width: 1000px) { .ob-opinia span { display: none; } .ob-opinia { padding: 0 9px; } }   /* „Napisz, co zmienić” – sama ikona (podpis w dymku) */
 @media (max-width: 520px) { .ob-jedn button:not(.on) { display: none; } .ob-jedn button.on { background: none; color: #fff; } }   /* telefon: jeden przycisk, kliknięcie zmienia jednostki */
 @media (max-width: 430px) { .ob-brand span { display: none !important; } }
+/* 0.2.1: okienka – wyraźna ramka i widoczny ✕; na wąskich ekranach (≤1100 px) rozwijają się w miejscu i niczego nie zasłaniają */
+.pop-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: -2px -2px 6px 0; color: var(--ink); }
+.pop-h b { font-size: 13px; font-weight: 700; }
+.pop-x { flex: none; display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: #fff; color: var(--ink); font-size: 15px; line-height: 1; cursor: pointer; }
+.pop-x:hover, .pop-x:focus-visible { background: var(--ink); color: #fff; border-color: var(--ink); }
+/* szczegóły ceny */
+.price-pop { border: 2px solid var(--ink) !important; }
+.price-more .pm-z, .price details[open] .price-more .pm-o { display: none; }
+.price details[open] .price-more .pm-z { display: inline; }
+.price-more .pm-o::after { content: ' ▾'; text-decoration: none; display: inline-block; margin-left: 2px; } .price-more .pm-z::after { content: ' ▴'; display: inline-block; margin-left: 2px; }
+/* dymek „luz na ząbkach” */
+.gap-pop .pop-h { margin-bottom: 2px; }
+.gap-pop.on { pointer-events: auto; border: 2px solid var(--ink); }
+.gap-pop.wbud { position: static; width: auto; margin-top: 10px; box-shadow: none; display: none; }
+.gap-pop.wbud.on { display: block; opacity: 1; }
+/* ostrzeżenia: klik rozwija listę */
+.warn-slot.has { cursor: pointer; }
+.warn-pop { border: 2px solid var(--warn) !important; }
+.warn-pop li.pop-h { color: var(--ink); } .warn-pop li.pop-h::before { content: none; }
+.warn-slot.open .warn-pop { display: block; }
+@media (min-width: 1101px) { .warn-pop li.pop-h { display: none; } .warn-slot.open .warn-pop li.pop-h { display: flex; } }   /* po najechaniu: sama lista; po kliknięciu: z ✕ */
+@media (max-width: 1100px) {
+  .price-pop { position: static !important; margin-top: 8px; box-shadow: none !important; }
+  .warn-slot.many:hover .warn-pop, .warn-slot.many:focus .warn-pop { display: none; }
+  .warn-slot.open .warn-pop { display: block; }
+  .warn-slot.has { flex-wrap: wrap; height: auto; min-height: 38px; padding-top: 6px; padding-bottom: 6px; }
+  .warn-slot.open .warn-line span { white-space: normal; }
+  .warn-slot .warn-pop { position: static; width: 100%; margin-top: 8px; box-shadow: none; }
+}
+/* okna (pobieranie, płytki, O stronie…): ✕ zostaje widoczny przy przewijaniu długiego okna na telefonie */
+.dl > .dl-x { position: sticky; top: 0; float: right; z-index: 5; margin: -8px -8px 0 6px; width: 34px; height: 34px; background: #fff; border: 1px solid var(--line); box-shadow: 0 2px 8px #0000001a; color: var(--ink); }
+.warn-slot.open:not(.many) .warn-pop { display: none !important; }   /* jedna uwaga: wystarczy pełny tekst w linijce (bez powtarzania) */
+@media (min-width: 1101px) { .warn-slot.open:not(.many) .warn-line span { white-space: normal; } }
