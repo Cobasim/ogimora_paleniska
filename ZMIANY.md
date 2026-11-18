@@ -2,6 +2,9 @@
 
 Jedna linijka na każde wgranie na serwer. Numer wersji jest w `www/js/wersja.js`.
 
+## 0.3.11 – 2026-11-18
+Przegląd kodu. (1) Usunięta nazwa zastrzeżona z wersji angielskiej („Corten-type” → „weather-resistant”). (2) Kostka dla wyszukiwarek: osobne adresy /pl/cube/ i /en/cube/ (stały język, własny tytuł i opis), /cube/ jako adres domyślny; znaczniki języków, adres kanoniczny, opis schema.org i obrazek podglądu linku; kostka dopisana do sitemap.xml. (3) llms.txt opisuje oba generatory. (4) Z plików na serwerze znikają komentarze HTML (zostaje podpis ©). (5) W „O stronie” dopisane, że biblioteka PDF pobiera się z cdnjs (Cloudflare).
+
 ## 0.3.10 – 2026-11-18
 Wycena kostki poprawiona według prawdziwych wycen pliku ze strony (kostka 120 mm). Polska (profservice): 3 mm – pozycja 28,82 zł, 5 mm – pozycja 47,70 zł, w obu przygotowanie 63 zł i minimum 120 zł netto. Strona pokazywała ok. 175 zł, bo liczyła stałe 150 zł przygotowania i nie znała minimalnego zamówienia. Teraz: przygotowanie 63 zł, suma nie mniej niż 120 zł, z dopiskiem „minimalne zamówienie w zakładzie”. USA (SendCutSend): 76,50 $ za sztukę – współczynniki przeliczenia na jedną sztukę dopasowane do trzech wycen (kostka i dwie wyceny paleniska); dotyczy też ceny paleniska w wersji angielskiej (zmiana do kilku procent). Wycena paleniska w Polsce bez zmian.
 

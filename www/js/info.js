@@ -41,7 +41,7 @@ const T = EN ? {
   h5: 'Where it goes',
   gd: ['To the ogimora.com server (OVH hosting, EU). Only I read it – to decide what to build next. No advertising, nothing sold or shared.',
        'Your designs (the list under the design name in the top bar), language and choices are saved <b>in this browser only</b> (local storage, not cookies) so they are there when you return. They are not sent anywhere. Clearing the browser data removes them – use “Save to file” to keep a copy.',
-       'The page loads fonts from Google Fonts and the 3D library from jsDelivr. Like any site you visit, those servers see your IP address.'],
+       'The page loads fonts from Google Fonts, the 3D library from jsDelivr and – when you make a PDF – the PDF library from cdnjs (Cloudflare). Like any site you visit, those servers see your IP address.'],
   wyl: 'Send anonymous statistics from this browser', wylP: 'Off – your browser asks sites not to track (Do Not Track / Global Privacy Control).',
   kontakt: 'This site is made by one person – OGI. Questions, or want something removed? info@ogimora.com',
   st: ['by OGI', 'V', 'D', 'P', 'since the test started'],   // liczniki tylko literami (decyzja użytkownika 2026-11-18): widać, że coś się dzieje, bez objaśniania
@@ -80,7 +80,7 @@ const T = EN ? {
   h5: 'Gdzie to trafia',
   gd: ['Na serwer ogimora.com (hosting OVH, UE). Czytam to tylko ja – żeby wiedzieć, co budować dalej. Bez reklam, nic nie sprzedaję ani nie przekazuję.',
        'Twoje projekty (lista pod nazwą projektu na górnym pasku), język i wybory zapisują się <b>tylko w tej przeglądarce</b> (pamięć lokalna, nie ciasteczka), żeby były, gdy wrócisz. Nigdzie nie są wysyłane. Wyczyszczenie danych przeglądarki je usuwa – kopię zrobisz przez „Zapisz do pliku”.',
-       'Strona pobiera czcionki z Google Fonts i bibliotekę 3D z jsDelivr. Te serwery, jak każda odwiedzana strona, widzą Twój adres IP.'],
+       'Strona pobiera czcionki z Google Fonts, bibliotekę 3D z jsDelivr, a przy tworzeniu PDF – bibliotekę PDF z cdnjs (Cloudflare). Te serwery, jak każda odwiedzana strona, widzą Twój adres IP.'],
   wyl: 'Wysyłaj anonimowe statystyki z tej przeglądarki', wylP: 'Wyłączone – Twoja przeglądarka prosi strony, żeby nie śledziły (Do Not Track / Global Privacy Control).',
   kontakt: 'Autorem strony jest jedna osoba – OGI. Pytania albo chcesz coś usunąć? info@ogimora.com',
   st: ['autor: OGI', 'V', 'D', 'P', 'od początku testu'],   // V – wizyty, D – pobrania DXF, P – PDF (na stronie bez objaśnienia)

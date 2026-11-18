@@ -55,3 +55,56 @@ export function wersjeJezykowe(html, wersja) {
   }
   return wynik;
 }
+
+// ---- kostka: /cube/ (język według przeglądarki, x-default), /pl/cube/, /en/cube/ ---------------------------------
+const KOSTKA = {
+  pl: { tytul: 'OGIMORA — stalowa kostka do nauki spawania, darmowy DXF',
+        opis: 'Darmowa stalowa kostka do nauki spawania: bok 10–70 cm, kropki, liczby, napis, ścinane narożniki – i gotowy plik DXF do cięcia laserem lub plazmą.' },
+  en: { tytul: 'OGIMORA — steel welding cube, free DXF',
+        opis: 'Free steel cube for welding practice: 4–28 in side, dots, numbers, lettering, cut corners – download a DXF ready for laser or plasma cutting.',
+        blok: `<div class="opis-tekst" id="opisK">
+    <h1>OGIMORA – steel cube for welding practice (free DXF file)</h1>
+    <p>A sheet-steel cube to weld yourself: you practise corner welds and keep the result – a dice, a lantern or a garden piece. Set the side from 4 to 28 in (10–70 cm), sheet from 14 ga (2 mm), dots, numbers or your own lettering on each side, cut corners and an opening in any side.</p>
+    <p>The sides meet at their inner edges, which leaves an open groove for the weld on the outside. Locating tabs hold the sides in place while you tack. DXF at 1:1 scale, in millimetres or inches. Free.</p>
+  </div>` },
+};
+/** html = gotowy cube/index.html (polski). Zwraca { 'cube': …, 'pl/cube': …, 'en/cube': … }. */
+export function wersjeKostki(html, wersja) {
+  const blok = /<div class="opis-tekst" id="opisK">[\s\S]*?<\/div>/.exec(html);
+  if (!blok) throw new Error('cube/index.html: brak bloku opisu (#opisK)');
+  const adres = j => `${ADRES}/${j ? j + '/' : ''}cube/`, wynik = {};
+  for (const j of ['', 'pl', 'en']) {
+    const t = KOSTKA[j || 'pl'], og = j === 'pl' ? KOSTKA.pl : KOSTKA.en, url = adres(j);
+    let h = html.replace(/\s*<link rel="canonical"[^>]*>/, '').replace(/\s*<meta property="og:[^>]*>/g, '');
+    if (j) h = h.replace('<base href="../">', '<base href="/">');
+    if (j === 'en') h = h.replace('<html lang="pl"', '<html lang="en"').replace(/<title>[\s\S]*?<\/title>/, `<title>${t.tytul}</title>`)
+      .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(t.opis)}">`).replace(blok[0], KOSTKA.en.blok);
+    else if (!j) h = h.replace(blok[0], blok[0] + '\n  ' + KOSTKA.en.blok.replace(' id="opisK"', ' lang="en"'));
+    const ld = { '@context': 'https://schema.org', '@type': 'WebApplication', name: j === 'pl' ? 'OGIMORA – kostka do nauki spawania' : 'OGIMORA – welding cube', url, description: t.opis, inLanguage: j || ['pl', 'en'],
+      applicationCategory: 'DesignApplication', operatingSystem: 'Any (web browser)', softwareVersion: wersja, isAccessibleForFree: true,
+      offers: { '@type': 'Offer', price: '0', priceCurrency: j === 'pl' ? 'PLN' : 'USD' },
+      author: { '@type': 'Person', name: 'OGI' }, publisher: { '@type': 'Organization', name: 'OGIMORA', url: ADRES + '/', logo: ADRES + '/img/logo.svg' } };
+    const glowa = `  <link rel="canonical" href="${url}">
+  <link rel="alternate" hreflang="pl" href="${adres('pl')}">
+  <link rel="alternate" hreflang="en" href="${adres('en')}">
+  <link rel="alternate" hreflang="x-default" href="${adres('')}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="OGIMORA">
+  <meta property="og:url" content="${url}">
+  <meta property="og:title" content="${esc(og.tytul)}">
+  <meta property="og:description" content="${esc(og.opis)}">
+  <meta property="og:image" content="${ADRES}/img/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="${j === 'pl' ? 'pl_PL' : 'en_US'}">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">${JSON.stringify(ld)}</script>
+`;
+    h = h.replace(/(<base href="[^"]*">\n)/, `$1${glowa}`);
+    wynik[(j ? j + '/' : '') + 'cube'] = h;
+  }
+  return wynik;
+}
+
+/** Komentarze HTML nie idą na serwer (zostaje tylko podpis ©); komentarze w osadzonym <style> też. */
+export const bezKomentarzy = h => h.replace(/<!--(?!\s*\(c\))[\s\S]*?-->/g, '').replace(/(<style>)\s*\/\*[\s\S]*?\*\/\s*/g, '$1').replace(/\n[ \t]*\n[ \t]*\n/g, '\n\n');

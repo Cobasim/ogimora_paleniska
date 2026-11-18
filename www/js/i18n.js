@@ -101,7 +101,7 @@ const EN = {
   'Cofnięcie od narożnika — Gdy stopka jest cofnięta pod dno dalej niż ścianki, dostaje ząbki wchodzące w otwory w dnie.': 'Inset from corner — a foot set further under the base gets tabs into the base.',
   'Luz ząbków (na stronę)': 'Tab clearance (per side)', 'Luz ząbków (na stronę) — Szczelina między ząbkiem a wycięciem, z każdej strony. Laser zwykle 0,2–0,3 mm, plazma 0,8–1,0 mm.': 'Tab clearance — gap per side. Laser 0.2–0.3 mm, plasma 0.8–1.0 mm.',
   // materiał, cena, pobieranie
-  'Materiał': 'Material', 'Materiał i pobieranie': 'Material and download', 'Stal czarna S235': 'Mild steel S235', 'Stal patynująca S355J2W (odporna na warunki atmosferyczne)': 'Weathering steel S355J2W (Corten-type)',
+  'Materiał': 'Material', 'Materiał i pobieranie': 'Material and download', 'Stal czarna S235': 'Mild steel S235', 'Stal patynująca S355J2W (odporna na warunki atmosferyczne)': 'Weathering steel S355J2W (weather-resistant)',
   'Grubość blachy w milimetrach': 'Sheet thickness in mm', 'Grubość blachy misy (ścianki + dno), mm': 'Bowl sheet thickness (walls + base), mm', 'Grubość blachy stopek, mm': 'Feet sheet thickness, mm',
   'Małe otwory: brak': 'Small holes: none', 'Próg': 'Limit', 'Otwór węższy i krótszy niż ten wymiar jest zgłaszany jako za mały do czystego cięcia (domyślnie grubość blachy)': 'Holes smaller than this are flagged as too small for a clean cut',
   'Cena testowa (orientacyjna)': 'Test price (rough)', 'Ceny testowe, orientacyjne: materiał i cięcie laserem, netto. Dokładna cena po zapytaniu.': 'Test prices, rough: material and laser cutting, net, in USD at KURS. Exact price on request.',

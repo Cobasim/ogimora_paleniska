@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<!-- (c) 2026 OGIMORA - ogimora.com. Wszelkie prawa zastrzezone / All rights reserved. -->
+<html lang="pl" data-model="kostka">
+<head>
+  <meta charset="utf-8">
+  <base href="/">
+  <link rel="canonical" href="https://ogimora.com/pl/cube/">
+  <link rel="alternate" hreflang="pl" href="https://ogimora.com/pl/cube/">
+  <link rel="alternate" hreflang="en" href="https://ogimora.com/en/cube/">
+  <link rel="alternate" hreflang="x-default" href="https://ogimora.com/cube/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="OGIMORA">
+  <meta property="og:url" content="https://ogimora.com/pl/cube/">
+  <meta property="og:title" content="OGIMORA — stalowa kostka do nauki spawania, darmowy DXF">
+  <meta property="og:description" content="Darmowa stalowa kostka do nauki spawania: bok 10–70 cm, kropki, liczby, napis, ścinane narożniki – i gotowy plik DXF do cięcia laserem lub plazmą.">
+  <meta property="og:image" content="https://ogimora.com/img/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="pl_PL">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"OGIMORA – kostka do nauki spawania","url":"https://ogimora.com/pl/cube/","description":"Darmowa stalowa kostka do nauki spawania: bok 10–70 cm, kropki, liczby, napis, ścinane narożniki – i gotowy plik DXF do cięcia laserem lub plazmą.","inLanguage":"pl","applicationCategory":"DesignApplication","operatingSystem":"Any (web browser)","softwareVersion":"0.3.11","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"PLN"},"author":{"@type":"Person","name":"OGI"},"publisher":{"@type":"Organization","name":"OGIMORA","url":"https://ogimora.com/","logo":"https://ogimora.com/img/logo.svg"}}</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+  <meta name="description" content="Darmowa stalowa kostka do nauki spawania: bok 10–70 cm, kropki, liczby, napis, ścinane narożniki – i gotowy plik DXF do cięcia laserem lub plazmą.">
+  <title>OGIMORA — stalowa kostka do nauki spawania, darmowy DXF</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=e1c7b2">
+  <link rel="stylesheet" href="strona.css?v=a66aa9">
+  <link rel="stylesheet" href="naglowek.css?v=dceb1d">
+  <link rel="stylesheet" href="prosty.css?v=9df172">
+  <link rel="stylesheet" href="kostka.css?v=72b948">
+  </head>
+<body class="kostka">
+  <header class="ob">
+    <a class="ob-brand" href="./" aria-label="OGIMORA"><img src="img/logo.svg" alt=""><span>OGIMORA</span></a>
+    <button type="button" class="ob-opinia" id="opBtn" title="Napisz, co zmienić"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Napisz, co zmienić</span></button>
+    <div class="ob-jedn" role="group" aria-label="Jednostki: milimetry albo cale"><button type="button" data-j="mm">mm</button><button type="button" data-j="in">in</button></div>
+    <div class="ob-lang" role="group" aria-label="Język / Language"><button type="button" data-l="pl">PL</button><button type="button" data-l="en">EN</button></div>
+  </header>
+  <div class="opis-tekst" id="opisK">
+    <h1>OGIMORA – stalowa kostka do nauki spawania (darmowy plik DXF)</h1>
+    <p>Sześcian z blachy do samodzielnego zespawania: ćwiczysz spoiny narożne, a zostaje gadżet – kostka do gry, lampion albo ozdoba do ogrodu. Ustawiasz bok od 10 do 70 cm, grubość blachy od 2 mm, kropki, liczby albo własny napis na każdej ściance, ścięcie narożników i otwór w wybranej ściance.</p>
+    <p>Ścianki stykają się wewnętrznymi krawędziami, więc na zewnątrz zostaje rowek na spoinę. Zamki ustalające trzymają ścianki na miejscu przy sczepianiu. Plik DXF w skali 1:1, w milimetrach albo w calach. Za darmo.</p>
+  </div>
+  <main class="workspace">
+    <section class="preview" aria-label="Podgląd">
+      <div class="toolbar">
+        <div class="tabs" role="tablist" id="kTabs">
+          <button role="tab" class="tab active" data-view="model" aria-selected="true">3D</button>
+          <button role="tab" class="tab" data-view="flat" aria-selected="false" id="kTabFlat">Rozkrój</button>
+        </div>
+        <div class="toolbar-model" id="viewTools">
+          <div class="tm-left">
+            <div class="chips small swatches" id="kLook"></div>
+            <div class="chips small" id="kOpcje"></div>
+          </div>
+          <div class="chips small cams" id="kCams"></div>
+        </div>
+      </div>
+      <div class="stage" id="stage">
+        <canvas id="scene" aria-label="Model 3D"></canvas>
+        <div class="k-flat" id="kFlat" hidden></div>
+        <div class="card card-left" id="kKsztalt"></div>
+        <p class="stage-hint" id="stageHint"></p>
+        <div class="stage-ctl" id="stageCtl"><button type="button" id="cardsTgl">Schowaj opcje</button></div>
+      </div>
+      <div class="infobar">
+        <div class="stats" id="stats"></div>
+        <div class="hist-btns"><button type="button" id="histUndo" disabled>↶</button><button type="button" id="histRedo" disabled>↷</button></div>
+        <div class="warn-slot" id="warnSlot" tabindex="0" aria-live="polite">
+          <div class="warn-line" id="warnLine"></div>
+          <ul class="warn-pop" id="warnings"></ul>
+        </div>
+      </div>
+    </section>
+    <aside class="panel" aria-label="Ścianki, blacha i pobieranie">
+      <div class="panel-scroll">
+        <section class="group" id="kBlacha"></section>
+        <section class="group p-panel" id="kScianki"></section>
+      </div>
+      <div class="panel-foot">
+        <p class="plan" id="kPlan"></p>
+        <div class="price" id="price"></div>
+        <button id="download" class="cta" type="button">
+          <span class="cta-icon">↓</span>
+          <span><b id="kDlB">Pobierz plik DXF</b><small id="ctaSub"></small></span>
+        </button>
+        <button id="pdf" class="cta secondary" type="button">
+          <span class="cta-icon">⎙</span>
+          <span><b id="kPdfB">Model papierowy A4 (PDF)</b><small id="pdfSub"></small></span>
+        </button>
+        <div class="k-dol"><div class="k-pdfsk" id="kPdfSk"></div><button id="kLink" class="k-link" type="button"><span id="kLinkB">Kopiuj link do projektu</span></button></div>
+        <small class="k-links" id="kLinkS"></small>
+        <p class="note" id="note" role="status" aria-live="polite"></p>
+      </div>
+    </aside>
+  </main>
+  <footer class="stopka" id="stopka"></footer>
+
+  <dialog id="dl" class="dl" aria-labelledby="dlT">
+    <button type="button" class="dl-x" id="dlX" aria-label="Zamknij">✕</button>
+    <h2 id="dlT">Pobierz plik DXF</h2>
+    <div class="dl-ostrz" id="dlOstrz"></div>
+    <div class="dl-jedn" id="dlJedn"><span>Jednostki pliku</span><div class="chips"><button type="button" class="chip" data-j="mm">mm</button><button type="button" class="chip" data-j="in">cale (in)</button></div>
+      <small>Program do cięcia musi wczytać plik w tych samych jednostkach. Część wyszła 25,4 × za duża albo za mała? Przy imporcie wybierz drugą jednostkę.</small></div>
+    <label class="dl-t"><span>Uwagi i życzenia</span><textarea id="dlNotes" rows="2" placeholder="Czego brakuje? Co zmienić?"></textarea></label>
+    <button type="button" class="cta" id="dlGo" disabled><span class="cta-icon">↓</span><span><b>Pobierz DXF</b><small id="dlHint"></small></span></button>
+  </dialog>
+
+  <dialog id="opDlg" class="dl" aria-labelledby="opT">
+    <button type="button" class="dl-x" data-close aria-label="Zamknij">✕</button>
+    <h2 id="opT">Napisz, co zmienić</h2>
+    <p class="dl-sub">Strona testowa — Twój odzew decyduje, co powstanie dalej.</p>
+    <form id="opForm" novalidate>
+      <label class="dl-t"><span>Kilka słów</span><textarea name="tekst" rows="4" required></textarea></label>
+      <label class="dl-t"><span>E-mail <small>(nieobowiązkowo, jeśli chcesz odpowiedź)</small></span><input type="email" name="email" class="op-mail" autocomplete="email"></label>
+      <label class="hp">www<input name="www" tabindex="-1" autocomplete="off"></label>
+      <button type="submit" class="cta"><span class="cta-icon">→</span><span><b>Wyślij</b><small id="opOk">trafia prosto do mnie</small></span></button>
+    </form>
+  </dialog>
+
+  <script type="importmap">
+    { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    } }
+  </script>
+  <script type="module" src="js/a93327436b.js"></script>
+</body>
+</html>

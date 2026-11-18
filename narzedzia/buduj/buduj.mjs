@@ -7,7 +7,7 @@
 import { build, transform } from 'esbuild';
 import fs from 'node:fs'; import path from 'node:path'; import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { wersjeJezykowe } from './jezyki.mjs';
+import { wersjeJezykowe, wersjeKostki, bezKomentarzy } from './jezyki.mjs';
 const TU = path.dirname(fileURLToPath(import.meta.url));
 const KORZEN = path.resolve(TU, '../..'), SRC = path.join(KORZEN, 'www'), OUT = path.join(KORZEN, 'wydanie');
 const wersja = /WERSJA = '([^']+)'/.exec(fs.readFileSync(path.join(SRC, 'js/wersja.js'), 'utf8'))[1];
@@ -59,11 +59,11 @@ async function strona(plik) {
 const { html, nazwa } = await strona('index.html');
 // kostka (ogimora.com/cube): osobna strona z własnym skryptem; adresy w pliku są względem katalogu głównego (<base href="../">)
 const kostka = await strona('cube/index.html');
-fs.writeFileSync(path.join(OUT, 'cube/index.html'), kostka.html);
+for (const [d, h] of Object.entries(wersjeKostki(kostka.html, wersja))) { fs.mkdirSync(path.join(OUT, d), { recursive: true }); fs.writeFileSync(path.join(OUT, d, 'index.html'), bezKomentarzy(h)); }
 // 4b. wersje językowe: / (według przeglądarki), /pl/, /en/ – patrz jezyki.mjs
 for (const [j, h] of Object.entries(wersjeJezykowe(html, wersja))) {
   if (j) fs.mkdirSync(path.join(OUT, j), { recursive: true });
-  fs.writeFileSync(path.join(OUT, j, 'index.html'), h);
+  fs.writeFileSync(path.join(OUT, j, 'index.html'), bezKomentarzy(h));
 }
 
 // 5. licencje bibliotek obcych (muszą zostać przy kodzie)
