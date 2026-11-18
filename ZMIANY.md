@@ -2,6 +2,9 @@
 
 Jedna linijka na każde wgranie na serwer. Numer wersji jest w `www/js/wersja.js`.
 
+## 0.3.8 – 2026-11-18
+Kostka: nic nie skacze przy zmianie ustawień. Karta „Kształt”: suwak i układ zamków na trójkątach są widoczne cały czas, bez ścięcia tylko wygaszone (karta ma stałą wysokość). Panel „Ścianki”: suwak wielkości zawsze w tym samym miejscu (przy „Brak” wygaszony), komunikat ma stałe miejsce na jedną linijkę, opcje rodzaju (liczba kropek, wiersze napisu, kształt otworu) są na samym dole – pod nimi nic już nie ma, więc nic się nie przesuwa. „Blacha” przeniesiona nad „Ścianki”. Stopka: skala PDF i link do projektu w jednym wierszu, potwierdzenie skopiowania w linijce komunikatów.
+
 ## 0.3.7 – 2026-11-18
 Kostka, układ zamków „na końcach”: zamki ścianki A zaczynają się teraz dokładnie w narożnikach ścianki (wcześniej zostawał odstęp od końca krawędzi). Przy trójkątach narożników zostaje mały odstęp 0,6 grubości blachy – bliżej zamek wchodziłby w trzecią ściankę.
 

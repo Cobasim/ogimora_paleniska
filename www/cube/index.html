@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="strona.css?v=6">
   <link rel="stylesheet" href="naglowek.css?v=2">
   <link rel="stylesheet" href="prosty.css?v=9">
-  <link rel="stylesheet" href="kostka.css?v=4">
+  <link rel="stylesheet" href="kostka.css?v=5">
   <script type="module" src="js/i18n.js"></script>
 </head>
 <body class="kostka">
@@ -68,8 +68,8 @@
     </section>
     <aside class="panel" aria-label="Ścianki, blacha i pobieranie">
       <div class="panel-scroll">
-        <section class="group p-panel" id="kScianki"></section>
         <section class="group" id="kBlacha"></section>
+        <section class="group p-panel" id="kScianki"></section>
       </div>
       <div class="panel-foot">
         <p class="plan" id="kPlan"></p>
@@ -82,8 +82,8 @@
           <span class="cta-icon">⎙</span>
           <span><b id="kPdfB">Model papierowy A4 (PDF)</b><small id="pdfSub"></small></span>
         </button>
-        <div class="k-pdfsk" id="kPdfSk"></div>
-        <button id="kLink" class="k-link" type="button"><span id="kLinkB">Kopiuj link do projektu</span><small id="kLinkS"></small></button>
+        <div class="k-dol"><div class="k-pdfsk" id="kPdfSk"></div><button id="kLink" class="k-link" type="button"><span id="kLinkB">Kopiuj link do projektu</span></button></div>
+        <small class="k-links" id="kLinkS"></small>
         <p class="note" id="note" role="status" aria-live="polite"></p>
       </div>
     </aside>

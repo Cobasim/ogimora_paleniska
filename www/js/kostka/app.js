@@ -457,17 +457,17 @@ function panelScianki() {
   $('kScianki').innerHTML = `<h2>${T('Ścianki', 'Sides')}</h2>
     <div class="k-pre"><span>${T('Zestaw', 'Preset')}</span>${chips([['kropki', T('Kostka do gry', 'Dice dots')], ['liczby', T('Liczby', 'Numbers')], ['czysta', T('Czysta', 'Plain')]], '', 'pre')}</div>
     <div class="p-sc" id="kSc"><span>${T('Ścianka', 'Side')}</span>${chips([1, 2, 3, 4, 5, 6].map(n => [n, n]), wybrana, 'k')}</div>
+    <p class="k-wsk">${T('Kliknij ściankę na modelu. 1 – góra, 6 – spód.', 'Click a side on the model. 1 – top, 6 – bottom.')}</p>
     <div class="k-typ" id="kTyp">${chips(Object.entries(TYPN), sc.typ, 'typ')}</div>
+    <div class="p-row k-skala${sc.typ === 'brak' ? ' off' : ''}"><span class="p-ic" title="${T('Wielkość', 'Size')}">${ik.rozmiar}</span><input type="range" id="kSkala" min="20" max="100" step="1" value="${Math.round(sc.skala * 100)}"${sc.typ === 'brak' ? ' disabled' : ''} aria-label="${T('Wielkość', 'Size')}" style="--p:${(sc.skala * 100 - 20) / 0.8}%"></div>
+    <p class="p-kom" id="kKom" role="status" aria-live="polite"></p>
     <div class="k-opc" id="kOpc">${
       sc.typ === 'kropki' ? `<div class="p-sc"><span>${T('Ile', 'Count')}</span>${chips([1, 2, 3, 4, 5, 6].map(n => [n, n]), sc.n, 'n')}</div>` :
       sc.typ === 'napis' ? `<div class="k-wiersze">${[['t1', T('wiersz górny', 'top line')], ['tekst', T('np. 6 albo imię', 'e.g. 6 or a name')], ['t3', T('wiersz dolny', 'bottom line')]].map(([k, ph]) =>
           `<input type="text" class="p-text${k === 'tekst' ? ' gl' : ''}" data-w="${k}" maxlength="${NAPIS_MAX}" placeholder="${ph}" spellcheck="false" autocomplete="off" aria-label="${ph}">`).join('')}</div>
         <div class="k-fonty" id="kFonty">${FONTY.map(f => `<button type="button" class="chip${f.id === sc.font ? ' active' : ''}" data-font="${f.id}" title="${f.nazwa}${f.szablon ? T(' – szablonowa: przerwy są w rysunku liter', ' – stencil: the breaks are part of the letters') : ''}" style="font-family:'ogik-${f.id}'">${T('Ab12', 'Ab12')}</button>`).join('')}</div>` :
       sc.typ === 'otwor' ? `<div class="p-sc"><span>${T('Kształt', 'Shape')}</span>${chips([['kolo', T('Okrągły', 'Round')], ['kwadrat', T('Kwadrat', 'Square')], ['sciety', T('Ścięte rogi', 'Cut corners'), T('Kwadrat ze ściętymi rogami: rogi otworu ścinają się tak samo jak narożniki kostki (suwak ścięcia w panelu Kształt)', 'Square with cut corners: the opening follows the corner cut of the cube (corner cut slider in the Shape panel)')]], sc.ksztalt, 'ksz')}</div>` : ''}
-      ${sc.typ !== 'brak' ? `<div class="p-row"><span class="p-ic" title="${T('Wielkość', 'Size')}">${ik.rozmiar}</span><input type="range" id="kSkala" min="20" max="100" step="1" value="${Math.round(sc.skala * 100)}" aria-label="${T('Wielkość', 'Size')}" style="--p:${(sc.skala * 100 - 20) / 0.8}%"></div>` : ''}
-    </div>
-    <p class="p-kom" id="kKom" role="status" aria-live="polite"></p>
-    <p class="k-wsk">${T('Kliknij ściankę na modelu, żeby ją wybrać. 1 – góra, 6 – spód.', 'Click a side on the model to select it. 1 – top, 6 – bottom.')}</p>`;
+    </div>`;
   document.querySelectorAll('#kOpc [data-w]').forEach(t => { const k = t.dataset.w; t.value = sc[k] || '';
     t.addEventListener('input', () => { sc[k] = t.value.slice(0, NAPIS_MAX); trackDebounced('k_tekst', 'k_napis', { value: k }); odswiez(false); }); });
   const s = $('kSkala'); if (s) s.addEventListener('input', () => { sc.skala = +s.value / 100; s.style.setProperty('--p', `${(+s.value - 20) / 0.8}%`); trackDebounced('k_skala', 'k_suwak', { param: 'skala' }); odswiez(false); });
@@ -480,13 +480,15 @@ $('kScianki').addEventListener('click', e => {
     else for (let n = 1; n <= 6; n++) state.sc[n] = { ...state.sc[n], typ: d.pre === 'liczby' ? 'napis' : 'brak', tekst: String(n), t1: '', t3: '', n, skala: 0.7 };
     track('k_zestaw', { value: d.pre });
   } else if (d.k) { wybrana = +d.k; }
-  else if (d.typ) { sc.typ = d.typ; track('k_typ', { value: d.typ }); }
+  else if (d.typ) { sc.typ = d.typ; track('k_typ', { value: d.typ }); przewin = true; }
   else if (d.n) sc.n = +d.n;
   else if (d.ksz) { sc.ksztalt = d.ksz; track('k_otwor', { value: d.ksz }); }
   else if (d.font) { sc.font = d.font; track('k_font', { value: d.font }); }
   else return;
   odswiez();
+  if (przewin) { przewin = false; const o = $('kOpc'); if (o && o.firstElementChild) o.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }   // opcje rodzaju są na dole panelu – pokaż je
 });
+let przewin = false;
 
 function panelBlacha() {
   const lista = BLACHY[J];
@@ -540,6 +542,7 @@ function komunikat() {
   el.textContent = sc.typ === 'otwor' && sc.ksztalt === 'sciety' && !(state.c > 0) ? T('Rogi otworu ścinają się razem z narożnikami kostki – ustaw ścięcie w panelu „Kształt”.', 'The corners of the opening follow the corner cut of the cube – set it in the “Shape” panel.')
     : u.includes('wyspy') ? T('W tym napisie zostaje kawałek metalu bez podparcia – zmień wielkość albo tekst.', 'A piece of metal in this text is left unsupported – change the size or the text.')
     : u.includes('male') ? T('Za drobne do wycięcia przy tej blasze – powiększ albo skróć.', 'Too fine to cut in this sheet – make it bigger or shorter.') : '';
+  el.title = el.textContent;
 }
 function statystyki() {
   const s = model.stat2, st = (ikona, tt, w) => `<div class="stat" title="${tt}">${ikona}<b>${w}</b></div>`;
@@ -612,7 +615,7 @@ function odswiez(panel = true) {
   ustawSuwak('zw', 0, ZW_MAX[J], S.zw, state.zw, pole(state.zw, J === 'in' ? 3 : 0)); $('n-zw').step = J === 'in' ? 0.0625 : 1;
   $('kZwOpis').textContent = model.zamki.razem > 0 ? T(`zamków: ${model.zamki.razem}`, `tabs: ${model.zamki.razem}`) : T('bez zamków', 'no tabs');
   ustawSuwak('zt', 0, ZW_MAX[J], S.zw, state.zt, pole(state.zt, J === 'in' ? 3 : 0)); $('n-zt').step = J === 'in' ? 0.0625 : 1;
-  $('kZtRow').classList.toggle('off', !(state.c > 0));
+  $('kZtRow').classList.toggle('off', !(state.c > 0)); $('kZtRow').querySelectorAll('input, button').forEach(el => { el.disabled = !(state.c > 0); });
   document.querySelectorAll('#kKsztalt .k-ukl').forEach(box => box.querySelectorAll('[data-u]').forEach(b => { const on = b.dataset.u === state[box.dataset.pole]; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on); }));
   $('kLuz').classList.toggle('off', !(state.zw > 0 || (state.c > 0 && state.zt > 0)));
   document.querySelectorAll('#kBlacha [data-g]').forEach(b => b.classList.toggle('active', Math.abs(+b.dataset.g - state.g) < 1e-3));
@@ -653,8 +656,8 @@ $('dlGo').addEventListener('click', () => {
 $('kLink').addEventListener('click', async () => {
   const url = location.origin + location.pathname + doLinku();
   let ok = false; try { await navigator.clipboard.writeText(url); ok = true; } catch {}
-  $('kLinkS').textContent = ok ? T('Skopiowano – wklej, gdzie chcesz', 'Copied – paste it anywhere') : T('Skopiuj adres z paska przeglądarki', 'Copy the address from the browser bar');
-  track('k_link'); setTimeout(() => { $('kLinkS').textContent = T('ten adres odtwarza kostkę', 'this address restores the cube'); }, 2600);
+  $('note').textContent = ok ? T('Link skopiowany – ten adres odtwarza kostkę. Wklej, gdzie chcesz.', 'Link copied – this address restores the cube. Paste it anywhere.') : T('Skopiuj adres z paska przeglądarki – odtwarza kostkę.', 'Copy the address from the browser bar – it restores the cube.');
+  $('note').className = 'note ok'; track('k_link');
 });
 
 // ---------------------------------------------------------------- model papierowy (PDF)
@@ -732,7 +735,7 @@ setProjektSource(() => ({ model: 'kostka', wym: { bok: Math.round(state.a), wys:
 $('kPlan').innerHTML = T('<b>Plik DXF — za darmo.</b> Ćwiczysz spoiny, zostaje kostka.', '<b>DXF file — free.</b> Practise your welds, keep the cube.');
 $('kDlB').textContent = T('Pobierz plik DXF', 'Download the DXF file');
 $('kLinkB').textContent = T('Kopiuj link do projektu', 'Copy a link to this design');
-$('kLinkS').textContent = T('ten adres odtwarza kostkę', 'this address restores the cube');
+$('kLink').title = T('Ten adres odtwarza kostkę – możesz go zapisać albo komuś wysłać', 'This address restores the cube – save it or send it to someone');
 $('kTabFlat').textContent = T('Rozkrój', 'Flat parts');
 $('stageHint').textContent = T('Przeciągnij – obrót · Shift + przeciągnij – przesuń · kółko – przybliż · kliknij ściankę, aby ją zmienić', 'Drag – rotate · Shift + drag – pan · wheel – zoom · click a side to edit it');
 const HINT_FLAT = T('Przeciągnij – przesuń · kółko – przybliż · dwuklik – cały rozkrój · kliknij ściankę, aby ją zmienić', 'Drag – pan · wheel – zoom · double-click – show all · click a side to edit it'), HINT_3D = $('stageHint').textContent;
