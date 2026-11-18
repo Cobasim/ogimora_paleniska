@@ -137,7 +137,7 @@ renderer.shadowMap.enabled = true; renderer.shadowMap.autoUpdate = false;
 const scene = new THREE.Scene();
 const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 20000);
 const orbit = new OrbitControls(camera, canvas);
-Object.assign(orbit, { enableDamping: true, dampingFactor: .09, enablePan: true, screenSpacePanning: true, rotateSpeed: .7, minZoom: .4, maxZoom: 6, minPolarAngle: .01, maxPolarAngle: Math.PI - .01 });
+Object.assign(orbit, { enableDamping: true, dampingFactor: .09, enablePan: false, screenSpacePanning: true, rotateSpeed: .7, minZoom: .4, maxZoom: 6, minPolarAngle: .01, maxPolarAngle: Math.PI - .01 });
 scene.add(new THREE.HemisphereLight(0xf6f0df, 0x3a3c33, 1.9));
 const key = new THREE.DirectionalLight(0xfff0dc, 2.6); key.position.set(-900, 1500, 1100); key.castShadow = true;
 key.shadow.mapSize.set(2048, 2048); Object.assign(key.shadow.camera, { left: -1200, right: 1200, top: 1200, bottom: -1200, near: 10, far: 5000 });
@@ -246,38 +246,85 @@ function scena() {
   ground.position.y = -state.a / 2 - 0.5; ground.material.opacity = real ? .2 : .1;
   key.target.position.set(0, 0, 0);
   const R = state.a * 0.87;
-  if (Math.abs(R - promien) > 1) { promien = R; kadr(); }
+  if (Math.abs(R - promien) > 1) { const skok = R > promien * 1.12 || R < promien * 0.7; promien = R; if (K.auto || skok) { K.auto = true; dopasuj(); } }   // duża zmiana boku: dopasuj od nowa (jak w palenisku)
   renderer.shadowMap.needsUpdate = true; needsRender = true;
 }
 
+// ---- kadr: jak w palenisku (js/app.js) – własne przesuwanie kadru, obrót ZAWSZE wokół środka kostki.
+// K.x / K.y – przesunięcie kadru [mm], wpp – mm na piksel przy zoom = 1, auto – model sam wypełnia wolne miejsce
+// (do pierwszego ręcznego obrotu, przybliżenia albo przesunięcia; przyciski widoku włączają auto z powrotem).
+const K = { x: 0, y: 0, wpp: 1, auto: true };
 function wolne() {
   const w = stage.clientWidth, H = canvas.clientHeight || stage.clientHeight, karta = $('kKsztalt');
   const obok = matchMedia('(min-width: 1101px)').matches && !document.body.classList.contains('cards-off') && karta.offsetWidth;
   const x0 = obok ? karta.getBoundingClientRect().right - stage.getBoundingClientRect().left + 14 : 10;
-  return { w, H, x0, x1: w - 10, y0: 16, y1: H - 40 };
+  return { w, H, x0, x1: w - 10, y0: 44, y1: H - 40 };
 }
-function kadr() {
+/** Kadr tak, żeby kostka była jak największa w wolnym miejscu (dla bieżącego kierunku patrzenia). */
+function dopasuj() {
   const F = wolne(); if (!F.w || !F.H) return;
-  renderer.setSize(F.w, F.H, false);
+  orbit.update(); camera.updateMatrixWorld();
+  const R = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0), U = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 1), h = state.a / 2;
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (let i = 0; i < 8; i++) {
+    const q = new THREE.Vector3(i & 1 ? h : -h, i & 2 ? h : -h, i & 4 ? h : -h).sub(camera.position), px = q.dot(R), py = q.dot(U);
+    x0 = Math.min(x0, px); x1 = Math.max(x1, px); y0 = Math.min(y0, py); y1 = Math.max(y1, py);
+  }
   const fw = Math.max(120, F.x1 - F.x0), fh = Math.max(120, F.y1 - F.y0);
-  const wpp = 2 * promien * 1.06 / Math.min(fw, fh);
-  const dx = ((F.x0 + F.x1) / 2 - F.w / 2) * wpp, dy = (F.H / 2 - (F.y0 + F.y1) / 2) * wpp;
-  camera.left = -F.w / 2 * wpp - dx; camera.right = F.w / 2 * wpp - dx; camera.top = F.H / 2 * wpp - dy; camera.bottom = -F.H / 2 * wpp - dy;
+  K.wpp = Math.max((x1 - x0) / fw, (y1 - y0) / fh) * 1.1;
+  K.x = (x0 + x1) / 2 - ((F.x0 + F.x1) / 2 - F.w / 2) * K.wpp;
+  K.y = (y0 + y1) / 2 - (F.H / 2 - (F.y0 + F.y1) / 2) * K.wpp;
+  camera.zoom = 1; K.auto = true;
+  ustawKadr();
+}
+function ustawKadr() {
+  const w = stage.clientWidth, H = canvas.clientHeight || stage.clientHeight, k = K.wpp;
+  camera.left = K.x - w / 2 * k; camera.right = K.x + w / 2 * k; camera.top = K.y + H / 2 * k; camera.bottom = K.y - H / 2 * k;
   camera.updateProjectionMatrix(); needsRender = true;
+}
+/** Zmiana wielkości okna / karty: w trybie auto kostka dopasowuje się od nowa, inaczej widok zostaje, jak ustawił użytkownik. */
+function kadr() {
+  const w = stage.clientWidth, H = canvas.clientHeight || stage.clientHeight; if (!w || !H) return;
+  renderer.setSize(w, H, false);
+  if (K.auto) dopasuj(); else ustawKadr();
 }
 function kamera(rodzaj) {
   const dirs = { iso: [1, .62, 1.25], front: [0, .0001, 1], top: [0, 1, .001], bottom: [.3, -1, .6] };
-  orbit.target.set(0, 0, 0);                                  // przyciski widoku cofają też przesunięcie
+  orbit.target.set(0, 0, 0);
   camera.position.copy(new THREE.Vector3(...dirs[rodzaj]).normalize().multiplyScalar(5000)); camera.zoom = 1; camera.updateProjectionMatrix();
-  orbit.update(); needsRender = true;
+  orbit.update(); K.auto = true; dopasuj(); needsRender = true;
 }
 orbit.addEventListener('change', () => { needsRender = true; });
+// po pierwszym obrocie / przybliżeniu / przesunięciu widok należy do użytkownika – nic samo nie zmienia skali
+orbit.addEventListener('start', () => { K.auto = false; });
+canvas.addEventListener('wheel', () => { K.auto = false; }, { passive: true, capture: true });
+// przesuwanie kadru: Shift + przeciągnięcie, prawy / środkowy przycisk (środek obrotu zostaje w środku kostki)
+{
+  let pr = null;
+  canvas.addEventListener('pointerdown', e => {
+    if (!(e.shiftKey || e.button === 1 || e.button === 2)) return;
+    pr = { x: e.clientX, y: e.clientY, kx: K.x, ky: K.y, ruch: false };
+    orbit.enabled = false;                                   // w tym czasie OrbitControls nie obraca
+    try { canvas.setPointerCapture(e.pointerId); } catch {}
+  }, true);
+  canvas.addEventListener('pointermove', e => {
+    if (!pr) return;
+    const dx = e.clientX - pr.x, dy = e.clientY - pr.y;
+    if (!pr.ruch && Math.hypot(dx, dy) < 4) return;
+    pr.ruch = true; K.auto = false;
+    const k = K.wpp / camera.zoom;
+    K.x = pr.kx - dx * k; K.y = pr.ky + dy * k; ustawKadr();
+  });
+  const koniec = () => { if (pr) { pr = null; orbit.enabled = true; } };
+  canvas.addEventListener('pointerup', koniec); canvas.addEventListener('pointercancel', koniec);
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+}
 new ResizeObserver(() => { kadr(); if (view === 'flat') rozkroj(); }).observe(stage);
 (function petla() { requestAnimationFrame(petla); if (view !== 'model') return; orbit.update(); if (needsRender) { needsRender = false; renderer.render(scene, camera); } })();
 
 // kliknięcie ścianki na modelu → wybór w panelu
 { let d0 = null; const ray = new THREE.Raycaster(), v = new THREE.Vector2();
-  canvas.addEventListener('pointerdown', e => { d0 = [e.clientX, e.clientY]; });
+  canvas.addEventListener('pointerdown', e => { d0 = e.shiftKey || e.button ? null : [e.clientX, e.clientY]; });
   canvas.addEventListener('pointerup', e => {
     if (!d0 || Math.hypot(e.clientX - d0[0], e.clientY - d0[1]) > 5 || !group) return;
     const r = canvas.getBoundingClientRect(); v.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
@@ -300,13 +347,29 @@ function rozkroj() {
   }
   const d = r => tessellate(r, 16).map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(2)} ${(-y).toFixed(2)}`).join('') + 'Z';
   const sw = 1.3 / best.sc;
-  box.innerHTML = `<svg viewBox="${-gap / 2} ${-gap / 2} ${best.Wm + gap} ${best.Hm + gap}" preserveAspectRatio="xMidYMid meet">` + best.pl.map(it => {
+  FV.baza = [-gap / 2, -gap / 2, best.Wm + gap, best.Hm + gap];
+  box.innerHTML = `<svg viewBox="${fvBox()}" preserveAspectRatio="xMidYMid meet">` + best.pl.map(it => {
     const ox = it.x - it.b.minX, oy = it.y + it.b.maxY, wyb = it.c.nr === wybrana;
     return `<g transform="translate(${ox.toFixed(2)} ${oy.toFixed(2)})" data-nr="${it.c.nr || ''}"><path d="${d(it.c.outline)}${it.c.holes.map(d).join('')}" fill-rule="evenodd" fill="${wyb ? '#f6c9a8' : '#f7f5ef'}" stroke="#14130f" stroke-width="${sw}" stroke-linejoin="round"/>` +
       (it.c.nr ? `<text x="${(it.b.minX + sw * 9).toFixed(1)}" y="${(-it.b.maxY + sw * 16).toFixed(1)}" font-size="${sw * 9}" font-weight="700" fill="#8a857c" font-family="DM Sans, sans-serif">${it.c.nr}</text>` : '') + '</g>';
   }).join('') + '</svg>';
 }
-$('kFlat').addEventListener('click', e => { const g = e.target.closest('g[data-nr]'); if (g && g.dataset.nr) { wybrana = +g.dataset.nr; panelScianki(); rozkroj(); } });
+// rozkrój jak w palenisku: przeciągnięcie przesuwa, kółko przybliża; kliknięcie ścianki ją wybiera
+const FV = { k: 1, x: 0, y: 0, baza: [0, 0, 1, 1] };
+const fvBox = () => `${FV.baza[0] + FV.x} ${FV.baza[1] + FV.y} ${FV.baza[2] / FV.k} ${FV.baza[3] / FV.k}`;
+const fvUstaw = () => { const sv = $('kFlat').querySelector('svg'); if (sv) sv.setAttribute('viewBox', fvBox()); };
+{ const box = $('kFlat'); let pr = null;
+  const naMm = e => { const sv = box.querySelector('svg'); if (!sv) return null; const m = sv.getScreenCTM(); if (!m) return null; const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse()); return { p, sk: 1 / m.a }; };
+  box.addEventListener('wheel', e => { const q = naMm(e); if (!q) return; e.preventDefault();
+    const k2 = Math.min(12, Math.max(1, FV.k * (e.deltaY < 0 ? 1.15 : 1 / 1.15))), vx = FV.baza[0] + FV.x, vy = FV.baza[1] + FV.y, f = FV.k / k2;
+    FV.x += (q.p.x - vx) * (1 - f); FV.y += (q.p.y - vy) * (1 - f); FV.k = k2; if (k2 === 1) { FV.x = 0; FV.y = 0; } fvUstaw(); }, { passive: false });
+  box.addEventListener('pointerdown', e => { const q = naMm(e); if (!q) return; pr = { x: e.clientX, y: e.clientY, fx: FV.x, fy: FV.y, sk: q.sk, ruch: false, cel: e.target }; });
+  box.addEventListener('pointermove', e => { if (!pr) return; const dx = e.clientX - pr.x, dy = e.clientY - pr.y; if (!pr.ruch && Math.hypot(dx, dy) < 4) return;
+    if (!pr.ruch) { pr.ruch = true; try { box.setPointerCapture(e.pointerId); } catch {} } FV.x = pr.fx - dx * pr.sk; FV.y = pr.fy - dy * pr.sk; fvUstaw(); });
+  const koniec = e => { if (!pr) return; const p = pr; pr = null; if (p.ruch) return;
+    const g = p.cel.closest && p.cel.closest('g[data-nr]'); if (g && g.dataset.nr) { wybrana = +g.dataset.nr; panelScianki(); rozkroj(); } };
+  box.addEventListener('pointerup', koniec); box.addEventListener('pointercancel', () => { pr = null; });
+  box.addEventListener('dblclick', () => { FV.k = 1; FV.x = 0; FV.y = 0; fvUstaw(); }); }
 
 // ---------------------------------------------------------------- panele
 const ikZamek = `<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="k" d="M2 15H8V8H16V15H22"/><path stroke="#df3434" stroke-width="2.4" d="M8 4.5H16M8 3V6M16 3V6"/></svg>`;
@@ -411,10 +474,10 @@ function pasek() {
 document.querySelector('.toolbar').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return; const d = b.dataset;
   if (d.view) { view = d.view; document.querySelectorAll('#kTabs .tab').forEach(t => { const on = t.dataset.view === view; t.classList.toggle('active', on); t.setAttribute('aria-selected', on); });
-    $('kFlat').hidden = view !== 'flat'; stage.classList.toggle('plasko', view === 'flat'); canvas.style.visibility = view === 'flat' ? 'hidden' : ''; $('viewTools').classList.toggle('off', view === 'flat'); track('k_widok', { value: view }); odswiez(false); }
+    $('kFlat').hidden = view !== 'flat'; stage.classList.toggle('plasko', view === 'flat'); FV.k = 1; FV.x = 0; FV.y = 0; $('stageHint').textContent = view === 'flat' ? HINT_FLAT : HINT_3D; canvas.style.visibility = view === 'flat' ? 'hidden' : ''; $('viewTools').classList.toggle('off', view === 'flat'); track('k_widok', { value: view }); odswiez(false); }
   if (d.shade) { shading = d.shade; track('k_wyglad', { value: shading }); pasek(); scena(); }
   if (d.opc === 'spoiny') { spoinyOn = !spoinyOn; track('k_spoiny'); pasek(); scena(); }
-  if (d.cam) { kamera(d.cam); kadr(); track('k_kamera', { value: d.cam }); }
+  if (d.cam) { kamera(d.cam); track('k_kamera', { value: d.cam }); }
 });
 
 // jednostki (pasek górny)
@@ -450,9 +513,32 @@ function statystyki() {
   const zle = [...new Set(uwagiTresci.map(([nr]) => nr))];
   if (zle.length) uw.push(T(`Sprawdź ściankę ${zle.join(', ')}: treść jest za drobna albo zostaje wyspa.`, `Check side ${zle.join(', ')}: the content is too fine or leaves an island.`));
   $('warnLine').innerHTML = uw.length ? `${ICONS.warn || ''}<span>${uw[0]}</span>${uw.length > 1 ? `<b>+${uw.length - 1}</b>` : ''}` : '';
-  $('warnings').innerHTML = uw.map(x => `<li>${x}</li>`).join('');
-  $('warnSlot').classList.toggle('has', uw.length > 0);
+  $('warnings').innerHTML = `<li class="pop-h"><b>${uw.length === 1 ? T('Uwaga', 'Note') : T(`Uwagi (${uw.length})`, `Notes (${uw.length})`)}</b><button type="button" class="pop-x" aria-label="${T('Zamknij', 'Close')}">✕</button></li>` + uw.map(x => `<li>${x}</li>`).join('');
+  if (!uw.length) $('warnSlot').classList.remove('open');
+  $('warnSlot').classList.toggle('has', uw.length > 0); $('warnSlot').classList.toggle('many', uw.length > 1);
   $('ctaSub').textContent = T(`${s.sztuk} elementów · gotowy do cięcia CNC`, `${s.sztuk} parts · ready for CNC cutting`);
+}
+
+// uwagi jak w palenisku: kliknięcie w linijkę rozwija pełną listę (telefon: w miejscu), ✕ albo ponowne kliknięcie zwija
+$('warnSlot').addEventListener('click', e => {
+  const s = $('warnSlot'); if (!s.classList.contains('has')) return;
+  if (e.target.closest('.pop-x')) { s.classList.remove('open'); s.blur(); return; }
+  if (e.target.closest('.warn-pop')) return;
+  s.classList.toggle('open'); if (!s.classList.contains('open')) s.blur();
+});
+document.addEventListener('click', e => { const s = $('warnSlot'); if (s.classList.contains('open') && !s.contains(e.target) && !matchMedia('(max-width: 1100px)').matches) s.classList.remove('open'); });
+
+// wąskie ekrany jak w palenisku: gdy podgląd wyjeżdża poza ekran przy przewijaniu, przypinamy go u góry (mniejszy)
+{ const mq = matchMedia('(max-width: 1100px)'); let pin = false, czeka = false;
+  const sprawdz = () => { czeka = false;
+    const r = stage.getBoundingClientRect(), pole = mq.matches ? (innerWidth <= 760 ? 340 : 420) : 0;
+    const wys = Math.round(Math.min(innerWidth <= 760 ? 300 : 360, innerHeight * 0.38));
+    const chce = mq.matches && view === 'model' && r.top + pole < wys && stage.closest('.workspace').getBoundingClientRect().bottom > wys + 80;
+    if (chce) { const st = document.body.style; st.setProperty('--pin-l', Math.round(r.left) + 'px'); st.setProperty('--pin-w', Math.round(r.width) + 'px'); st.setProperty('--pin-h', wys + 'px'); }
+    if (chce !== pin) { pin = chce; document.body.classList.toggle('pin', pin); kadr(); needsRender = true; }
+  };
+  const pytaj = () => { if (!czeka) { czeka = true; requestAnimationFrame(sprawdz); } };
+  addEventListener('scroll', pytaj, { passive: true }); addEventListener('resize', pytaj); mq.addEventListener('change', pytaj);
 }
 
 // ---------------------------------------------------------------- odświeżanie
@@ -526,7 +612,7 @@ function pdfOpis() {
 $('kPdfSk').addEventListener('click', e => { const b = e.target.closest('[data-n]'); if (!b) return; pdfN = +b.dataset.n; track('k_pdf_skala', { value: pdfN }); pdfOpis(); });
 /** Zdjęcia modelu do PDF: dwa widoki z przeciwległych narożników + widok w „pudełku” z narożnikami gabarytu (do wymiarów). */
 function migawki() {
-  const keep = { shading, spoinyOn, cam: camera.position.clone(), zoom: camera.zoom, target: orbit.target.clone() };
+  const keep = { shading, spoinyOn, cam: camera.position.clone(), zoom: camera.zoom, target: orbit.target.clone(), K: { ...K } };
   shading = 'draw'; spoinyOn = false; bezWyboru = true; przelicz3D(); scena();
   ground.visible = false;
   const h = state.a / 2, out = [], rogi = [...Array(8).keys()].map(i => new THREE.Vector3(i & 1 ? h : -h, i & 2 ? h : -h, i & 4 ? h : -h));
@@ -549,7 +635,7 @@ function migawki() {
   ground.visible = true; bezWyboru = false;
   ({ shading, spoinyOn } = keep);
   camera.position.copy(keep.cam); camera.zoom = keep.zoom; orbit.target.copy(keep.target);
-  scena(); kadr(); orbit.update(); needsRender = true;
+  scena(); orbit.update(); Object.assign(K, keep.K); kadr(); needsRender = true;
   return { views: out, box };
 }
 /** Logo smoka jako PNG do PDF. */
@@ -589,6 +675,7 @@ $('kLinkB').textContent = T('Kopiuj link do projektu', 'Copy a link to this desi
 $('kLinkS').textContent = T('ten adres odtwarza kostkę', 'this address restores the cube');
 $('kTabFlat').textContent = T('Rozkrój', 'Flat parts');
 $('stageHint').textContent = T('Przeciągnij – obrót · Shift + przeciągnij – przesuń · kółko – przybliż · kliknij ściankę, aby ją zmienić', 'Drag – rotate · Shift + drag – pan · wheel – zoom · click a side to edit it');
+const HINT_FLAT = T('Przeciągnij – przesuń · kółko – przybliż · dwuklik – cały rozkrój · kliknij ściankę, aby ją zmienić', 'Drag – pan · wheel – zoom · double-click – show all · click a side to edit it'), HINT_3D = $('stageHint').textContent;
 if (EN) { document.title = 'OGIMORA — steel welding cube, free DXF'; document.documentElement.lang = 'en';
   $('opisK').innerHTML = `<h1>OGIMORA – steel cube for welding practice (free DXF file)</h1>
     <p>A sheet-steel cube to weld yourself: you practise corner welds and keep the result – a dice, a lantern or a garden piece. Set the side from 4 to 28 in, sheet from 14 ga, dots, numbers or your own lettering on each side, cut corners and an opening in any side.</p>
@@ -597,5 +684,5 @@ try { if (localStorage.getItem('ogi_cards') === 'off') document.body.classList.a
 const kartyTxt = () => { $('cardsTgl').textContent = document.body.classList.contains('cards-off') ? T('Pokaż opcje', 'Show options') : T('Schowaj opcje', 'Hide options'); };
 $('cardsTgl').addEventListener('click', () => { const off = document.body.classList.toggle('cards-off'); try { localStorage.setItem('ogi_cards', off ? 'off' : 'on'); } catch {} kartyTxt(); track('schowaj_opcje'); kadr(); });
 kartyTxt();
-pasek(); panelKsztalt(); kamera('iso'); odswiez(); kadr();
+pasek(); panelKsztalt(); odswiez(); kadr(); kamera('iso');
 track('strona', { value: 'cube' });

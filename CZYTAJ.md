@@ -41,6 +41,7 @@ Zasada: na serwerze jest zawsze to, co w gałęzi `main` z ostatnim znacznikiem.
 - W pliku `cube/index.html` adresy są liczone od katalogu głównego (`<base href="../">`).
 - Projekt kostki jest zapisany w adresie (`#k=…`) i w pamięci przeglądarki (`ogik_stan`). Starych adresów nie wolno psuć: nowe pola dopisuje się z wartością domyślną.
 - Skrypt budujący robi dla kostki osobny plik w `wydanie/js/` – po wgraniu w `js/` na serwerze mają być **trzy** pliki: dwa skrypty i `LICENCJE.txt`.
+- **Zasada:** zachowanie podglądu i okienek w kostce ma być takie samo jak w palenisku (kadr i przesuwanie, przypinanie podglądu, lista uwag, chowanie karty). Zanim powstanie coś nowego w `js/kostka/app.js`, sprawdź, czy `js/app.js` już tego nie rozwiązuje, i przenieś to rozwiązanie.
 - Strona startowa i link do kostki z paleniska – jeszcze nie ma (do zrobienia później).
 
 ## Wyszukiwarki

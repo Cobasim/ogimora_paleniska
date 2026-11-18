@@ -2,6 +2,9 @@
 
 Jedna linijka na każde wgranie na serwer. Numer wersji jest w `www/js/wersja.js`.
 
+## 0.3.3 – 2026-11-18
+Kostka: podgląd przeniesiony na rozwiązania z paleniska. Przesuwanie (Shift + przeciągnięcie, prawy albo środkowy przycisk) przesuwa kadr, a obrót zostaje zawsze wokół środka kostki (w 0.3.2 po przesunięciu obracało się wokół złego punktu). Model sam wypełnia wolne miejsce do pierwszego ręcznego obrotu, przybliżenia albo przesunięcia; potem nic samo nie zmienia skali, a przyciski widoku dopasowują od nowa. Rozkrój: przeciągnięcie przesuwa, kółko przybliża, dwuklik pokazuje całość. Wąskie ekrany: podgląd przypina się u góry przy przewijaniu. Lista uwag z nagłówkiem i ✕, rozwijana kliknięciem. Palenisko: bez zmian.
+
 ## 0.3.2 – 2026-11-18
 Kostka. Naprawione: suwaki szerokości zamka i luzu nie dawały się przeciągać (panel przebudowywał się pod palcem). Zamki przeniesione do karty „Kształt”: osobny suwak dla krawędzi kostki i osobny dla trójkątów narożników (widoczny, gdy jest ścięcie; domyślnie węższy). Kartę „Kształt” można schować przyciskiem „Schowaj opcje” (jak w palenisku). Podgląd: Shift + przeciągnięcie przesuwa model (przyciski widoku cofają przesunięcie); stal surowa jaśniejsza i z połyskiem (odbicia otoczenia), wnętrze widoczne przez wycięcia ciemniejsze; spoiny szersze, wypukłe, w kolorach nalotowych (słomkowy, złoty, purpura, niebieski). Model papierowy PDF jak w palenisku: pierwsza kartka z logo smoka, nagłówkiem OGIMORA, opisem i adresem generatora, widokiem w pudełku z wymiarami całej kostki i drugim widokiem z przeciwnej strony; smok i adres w stopce każdej kartki. Palenisko: bez zmian.
 
