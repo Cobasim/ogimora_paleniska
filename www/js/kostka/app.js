@@ -6,7 +6,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { zbuduj, ogranicz, sciecieMin, zamekDomyslny, zamekTrojkat, ukladZe, UKLADY_T, GESTOSC, LIM, w3 } from './geo.js';
 import { tresc, gdyCzcionka, NAPIS_MAX, FONTY, FONT_DOM, wiersze } from './tresc.js';
 import { buildPdf, planPrint, planJedna } from '../print.js';
-import { estimate, CUT_RATES, RYNEK, USA_SERIA, usaCena } from '../pricing.js';
+import { estimate, CUT_RATES, PRICE_DEFAULTS, RYNEK, USA_SERIA, usaCena } from '../pricing.js';
 import { tessellate, polygonArea, perimeter, bbox } from '../geometry.js';
 import { buildDxf } from '../dxf.js';
 import { makeMaterial } from '../textures.js';
@@ -601,10 +601,15 @@ function wycena() {
   const parts = czesci.map(c => { const hp = c.holes.reduce((s, h) => s + perimeter(h), 0), P = perimeter(c.outline) + hp; ciecie += P * c.qty;
     const [zaM, zaPrzeb] = CUT_RATES[c.t] || CUT_RATES[3]; wyc += (hp / 1000 * zaM + c.holes.length * zaPrzeb) * c.qty;       // same wycięcia w ściankach (bez obrysów)
     return { t: CUT_RATES[c.t] ? c.t : 3, qty: c.qty, area: polygonArea(c.outline) - c.holes.reduce((s, h) => s + polygonArea(h), 0), perimeter: P, pierces: 1 + c.holes.length }; });
-  const est = estimate({ parts, stats: { cut: ciecie } }, 's235');
-  const K1 = US ? USA_SERIA[0][1] : 1, razem = Math.ceil((US ? usaCena(est.net, 1) : est.net) / 5) * 5;       // suma w górę do 5, jak w palenisku
+  // Polska – dwie prawdziwe wyceny pliku ze strony (profservice, 18 XI 2026), kostka 120 mm, te same wycięcia:
+  //   3 mm: pozycja 28,82 zł + przygotowanie zlecenia 63 zł;  5 mm: pozycja 47,70 zł + przygotowanie 63 zł;  oba: minimalna wartość zamówienia 120 zł netto.
+  // Przygotowanie jest więc stałe (63 zł), a nie 150 zł jak przyjęte w palenisku (tam z wycen innego zlecenia wyszło 143 zł – nie wiadomo, czy z tego samego zakładu).
+  // Sama pozycja wychodzi u nas ok. 4,5 zł taniej niż w zakładzie (24,4 i 43,0 zł) – nie poprawiane, przy tych kwotach i tak decyduje minimum.
+  const est = estimate({ parts, stats: { cut: ciecie } }, 's235', { ...PRICE_DEFAULTS, setup: 0 });
+  const MIN_PL = 120, PRZYG_PL = 63, plCena = poz => Math.max(MIN_PL, poz + PRZYG_PL);
+  const K1 = US ? USA_SERIA[0][1] : 1, razem = Math.ceil((US ? usaCena(est.net, 1) : plCena(est.net)) / 5 - 1e-9) * 5;       // suma w górę do 5, jak w palenisku
   $('price').innerHTML = `<div class="price-head k-cena"><span title="${US ? 'Test price for ONE cube cut from steel – a rough estimate for the USA. Before sales tax. Ask a shop for a real quote.' : 'Cena testowa za wycięcie JEDNEJ kostki ze stali – szacunek orientacyjny dla Polski. Netto. Dokładną cenę poda zakład.'}">${US ? 'Test price, rough' : 'Cena testowa, orientacyjna'} <u class="rynek">${US ? 'USA · 1 pc' : 'PL · 1 szt.'}</u></span><b>≈ ${zl(razem)}</b>
-    <em class="decor-price${wyc * K1 > 0.5 ? '' : ' none'}">${wyc * K1 > 0.5 ? (US ? `incl. cut-outs ${zl(wyc * K1)}` : `w tym wycięcia w ściankach ${zl(wyc)}`) : (US ? 'no cut-outs' : 'bez wycięć w ściankach')}</em></div>`;
+    <em class="decor-price${wyc * K1 > 0.5 ? '' : ' none'}">${wyc * K1 > 0.5 ? (US ? `incl. cut-outs ${zl(wyc * K1)}` : `w tym wycięcia w ściankach ${zl(wyc)}`) : (US ? 'no cut-outs' : 'bez wycięć w ściankach')}${!US && razem <= MIN_PL ? ' <span title="Zakłady mają minimalną wartość zamówienia – w prawdziwej wycenie tej kostki było to 120 zł netto. Dwie takie kostki w jednym zleceniu wyjdą niewiele drożej niż jedna." style="color:var(--ink-3);font-weight:600">· minimum zakładu</span>' : ''}</em></div>`;
 }
 
 // ---------------------------------------------------------------- odświeżanie

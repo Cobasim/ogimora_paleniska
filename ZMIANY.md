@@ -2,6 +2,9 @@
 
 Jedna linijka na każde wgranie na serwer. Numer wersji jest w `www/js/wersja.js`.
 
+## 0.3.10 – 2026-11-18
+Wycena kostki poprawiona według prawdziwych wycen pliku ze strony (kostka 120 mm). Polska (profservice): 3 mm – pozycja 28,82 zł, 5 mm – pozycja 47,70 zł, w obu przygotowanie 63 zł i minimum 120 zł netto. Strona pokazywała ok. 175 zł, bo liczyła stałe 150 zł przygotowania i nie znała minimalnego zamówienia. Teraz: przygotowanie 63 zł, suma nie mniej niż 120 zł, z dopiskiem „minimalne zamówienie w zakładzie”. USA (SendCutSend): 76,50 $ za sztukę – współczynniki przeliczenia na jedną sztukę dopasowane do trzech wycen (kostka i dwie wyceny paleniska); dotyczy też ceny paleniska w wersji angielskiej (zmiana do kilku procent). Wycena paleniska w Polsce bez zmian.
+
 ## 0.3.9 – 2026-11-18
 Kostka, zamki od strony przypadków brzegowych. (1) Zamki przy trójkątach są dłuższe (1,22 grubości blachy zamiast 0,52): dochodzą do lica sąsiedniej ścianki na całej grubości i trochę wystają – do zeszlifowania, nic nie trzeba dospawywać. (2) Nowy układ dla trójkątów: sam zamek trójkąta w gnieździe ścianki (trójkąt bez wcięć) – wybierany też automatycznie, gdy trójkąt jest za mały na inne układy. (3) Program pilnuje, żeby w trójkącie nie zostawało miejsce węższe niż 2 grubości blachy (min. 6 mm), a w ściance – niż 1,5 grubości (min. 4 mm); układ, który by to złamał albo się nie mieści, jest wygaszony. (4) Układ „na końcach” przy trójkątach nie zostawia już ostrza w rogu. (5) Suwak szerokości zamka kończy się tam, gdzie kończy się miejsce – każdy ruch coś zmienia; gdy zamki w ogóle się nie mieszczą, suwak jest wygaszony. (6) Najwęższy zamek = grubość blachy (min. 3 mm). (7) Przy dużym ścięciu krótkie krawędzie kostki dostają zamki do samych końców zamiast żadnych.
 

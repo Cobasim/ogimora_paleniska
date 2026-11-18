@@ -77,7 +77,14 @@ export const WALUTA = RYNEK === 'us' ? '$' : 'zł';
 // (podział między metry a przebicia według czasu: 5,2 m/min i 0,55 s na przebicie – ze źródeł powyżej).
 // Reszta ceny seryjnej kształtu (115,60 − cięcie 29 $) to stal: wychodzi 2,94 $/kg z 25% odpadu – zgodnie z ceną ze źródeł (2,90).
 // Przy dużej serii nie ma opłaty za przygotowanie. Cena przy q sztukach = a × cena seryjna + b (a, b dopasowane do obu wycen):
-export const USA_SERIA = [[1, 2.2, 50], [2, 1.75, 13], [10, 1.6, -38], [50, 1, 3]];   // dopasowane: (2,192; 47,7) (1,725; 12,3) (1,578; −37,8) (0,992; 2,6) – tu lekko zaokrąglone w górę
+// TRZECIA WYCENA Z TEGO SAMEGO RODZAJU SERWISU (18 XI 2026, podana przez użytkownika): kostka 120 mm, 3 mm, 37 konturów, 4,9 m cięcia, 1,58 kg ($/szt.):
+//   sztuk:   1       2       10      50      100     1000
+//           76,50   53,18   40,29   30,80   25,69   19,29
+// Model (stal + cięcie + przebicia, bez narzutów) daje dla niej 19,2 $ – tyle, co cena przy 1000 szt. Współczynniki a, b dopasowane teraz
+// do trzech punktów (kostka 19,3; palenisko bez wzorów 115,6; ze wzorami 151,4) – błąd do ok. 5%:
+//   1 szt.: 76,2 / 297,9 / 380,1 (prawdziwe 76,50 / 301,12 / 379,51);  10 szt.: 40,1 / 150,9 / 192,1 (40,29 / 144,64 / 201,07).
+// Uwaga: przy małych elementach cena spada jeszcze między 50 a 1000 szt. (30,80 → 19,29); przy palenisku od 50 szt. już nie spadała.
+export const USA_SERIA = [[1, 2.3, 32], [2, 1.67, 21], [10, 1.15, 18], [50, 0.92, 13]];   // poprzednio (dwa punkty, samo palenisko): [1, 2.2, 50], [2, 1.75, 13], [10, 1.6, -38], [50, 1, 3]
 export const usaCena = (seryjna, q = 1) => { const w = USA_SERIA.find(x => x[0] === q) || USA_SERIA[0]; return Math.max(0, w[1] * seryjna + w[2]); };
 // Sprawdzenie na projekcie startowym (stal 3,0 $/kg): patrz claude/STRONA_prosta_v11… – model odtwarza obie wyceny z dokładnością ok. 1%.
 // Grubości 3 i 4 mm (oraz 8, 10) NIE mają własnej wyceny: stawka 5 mm przeliczona czasem cięcia (prędkości i czasy przebicia ze źródeł).
