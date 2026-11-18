@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="strona.css?v=6">
   <link rel="stylesheet" href="naglowek.css?v=2">
   <link rel="stylesheet" href="prosty.css?v=9">
-  <link rel="stylesheet" href="kostka.css?v=1">
+  <link rel="stylesheet" href="kostka.css?v=2">
   <script type="module" src="js/i18n.js"></script>
 </head>
 <body class="kostka">
@@ -75,10 +75,12 @@
           <span class="cta-icon">↓</span>
           <span><b id="kDlB">Pobierz plik DXF</b><small id="ctaSub"></small></span>
         </button>
-        <button id="kLink" class="cta secondary" type="button">
-          <span class="cta-icon">⧉</span>
-          <span><b id="kLinkB">Kopiuj link do projektu</b><small id="kLinkS"></small></span>
+        <button id="pdf" class="cta secondary" type="button">
+          <span class="cta-icon">⎙</span>
+          <span><b id="kPdfB">Model papierowy A4 (PDF)</b><small id="pdfSub"></small></span>
         </button>
+        <div class="k-pdfsk" id="kPdfSk"></div>
+        <button id="kLink" class="k-link" type="button"><span id="kLinkB">Kopiuj link do projektu</span><small id="kLinkS"></small></button>
         <p class="note" id="note" role="status" aria-live="polite"></p>
       </div>
     </aside>

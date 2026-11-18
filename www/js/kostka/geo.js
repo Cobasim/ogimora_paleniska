@@ -36,15 +36,22 @@ export function ogranicz(p) {
   q.g = Math.min(LIM.g[1], Math.max(0.05, +q.g || 0.3));
   q.c = Math.max(0, +q.c || 0);
   if (q.c > 0) q.c = Math.min(q.a / 2, Math.max(sciecieMin(q.t), q.c));
-  q.zamki = q.zamki !== false;
+  q.zw = Number.isFinite(+q.zw) && +q.zw >= 0 ? Math.min(120, +q.zw) : zamekDomyslny(q.t);   // szerokość ząbka; 0 = bez zamków
+  if (q.zw > 0 && q.zw < ZAMEK_MIN) q.zw = ZAMEK_MIN;
+  q.zamki = q.zamki !== false && q.zw > 0;
   return q;
 }
 
+/** Domyślna szerokość ząbka dla blachy t i najmniejsza, jaką robimy [mm]. */
+export const zamekDomyslny = t => Math.min(14, Math.max(6, 2.5 * t));
+export const ZAMEK_MIN = 3;
 /** Pary zamków na krawędzi o długości L: początki par (od początku krawędzi), szerokość ząbka w. */
-function pary(L, t, g, eMax) {
-  const w = Math.min(14, Math.max(6, 2.5 * t));
-  const para = 2 * w + g, m = eMax + t + 3, wolne = L - 2 * m;
-  if (wolne < para) return { w, starty: [] };
+function pary(L, t, g, eMax, zw) {
+  const m = eMax + t + 3, wolne = L - 2 * m;
+  // szerokość ząbka: ustawiona (zw) albo domyślna; za szeroka na tę krawędź → tyle, ile się mieści (jedna para)
+  const w = Math.min(zw > 0 ? zw : zamekDomyslny(t), (wolne - g) / 2);
+  const para = 2 * w + g;
+  if (w < ZAMEK_MIN - 1e-9) return { w, starty: [] };
   let n = Math.min(6, Math.max(2, Math.round(L / 120)));
   while (n > 1 && n * para + (n - 1) * 12 > wolne) n--;
   const starty = [];
@@ -58,7 +65,7 @@ const pole2 = r => { let s = 0; for (let i = 0; i < r.length; i++) { const a = r
  * Obrys z zamkami: wielokąt bazowy (CCW) z ząbkami i wcięciami wpisanymi wprost w każdą krawędź
  * (bez działań na wielokątach – same proste odcinki). krawedzie[i] = { kat } dla krawędzi i → i+1.
  */
-function obrysZamki(baza, krawedzie, t, g, zamki) {
+function obrysZamki(baza, krawedzie, t, g, zamki, zw) {
   const ring = []; let ile = 0;
   baza.forEach((P0, i) => {
     const P1 = baza[(i + 1) % baza.length], dx = P1[0] - P0[0], dy = P1[1] - P0[1], L = Math.hypot(dx, dy);
@@ -68,7 +75,7 @@ function obrysZamki(baza, krawedzie, t, g, zamki) {
     krawedzie[i].L = L; krawedzie[i].pary = 0;
     if (!zamki) return;
     const th = krawedzie[i].kat, e = t / Math.tan(th / 2), r = th > Math.PI / 2 + 1e-6 ? t * Math.abs(Math.cos(th)) / Math.sin(th) : 0;
-    const { w, starty } = pary(L, t, g, e);
+    const { w, starty } = pary(L, t, g, e, zw);
     krawedzie[i].pary = starty.length;
     for (const s of starty) {
       P(s, 0); P(s, e); P(s + w, e); ile++;                                    // mój ząbek
@@ -91,7 +98,7 @@ export const SCIANY = [
 
 /**
  * Model kostki. p = { a: bok zewnętrzny, t: blacha, c: ścięcie narożnika (0 = brak; mierzone wzdłuż krawędzi od wierzchołka),
- *                     g: luz zamków na stronę, zamki: true/false }
+ *                     g: luz zamków na stronę, zw: szerokość ząbka (0 = bez zamków; brak = domyślna dla blachy) }
  * Zwraca { p, plyty: [{ key, rodzaj: 'kw'|'tr', nr, ring (obrys z zamkami, CCW, [x,y]), baza (bez zamków), o, u, v, n, t,
  *                       pole: { s (pół boku kwadratu na treść) } }], spoiny: [{ a, b, nA, nB, kat }], ... }
  */
@@ -107,12 +114,13 @@ export function zbuduj(p0) {
     ? [[-k, -h], [k, -h], [h, -k], [h, k], [k, h], [-k, h], [-h, k], [-h, -k]]
     : [[-h, -h], [h, -h], [h, h], [-h, h]];
   const kraw = baza.map((_, i) => ({ kat: cp > 0 && i % 2 === 1 ? KAT_TROJKAT : Math.PI / 2 }));
-  const kw = obrysZamki(baza, kraw, t, g, p.zamki);
+  const kw = obrysZamki(baza, kraw, t, g, p.zamki, p.zw);
   const margines = Math.max(8, 2 * t + 4) + (p.zamki ? 0 : 0);
   const s = cp > 0 ? Math.min(h - margines, h - cp / 2 - 0.71 * margines) : h - margines;
+  const wpisPelny = cp > 0 ? Math.min(h, (2 * h - cp) / Math.SQRT2) : h;      // środek ścianki → najbliższa krawędź
   for (const f of SCIANY) {
     const u = cross(f.V, f.N);
-    plyty.push({ key: 's' + f.nr, rodzaj: 'kw', nr: f.nr, ring: kw.ring, baza, o: mul(f.N, h), u, v: f.V, n: f.N, t, pole: { s: Math.max(0, s) } });
+    plyty.push({ key: 's' + f.nr, rodzaj: 'kw', nr: f.nr, ring: kw.ring, baza, o: mul(f.N, h), u, v: f.V, n: f.N, t, pole: { s: Math.max(0, s), baza, wpisPelny, wpis: Math.max(0, wpisPelny - margines) } });
   }
   // spoiny kwadrat–kwadrat: 12 krawędzi
   if (k > 0.01) for (let i = 0; i < SCIANY.length; i++) for (let j = i + 1; j < SCIANY.length; j++) {
@@ -126,7 +134,7 @@ export function zbuduj(p0) {
   if (cp > 0) {
     const bok = cp * Math.SQRT2, R = bok / S3;            // promień okręgu opisanego
     const bazaT = [0, 1, 2].map(i => { const f = Math.PI / 2 + i * 2 * Math.PI / 3; return [R * Math.cos(f), R * Math.sin(f)]; });
-    tr = obrysZamki(bazaT, bazaT.map(() => ({ kat: KAT_TROJKAT })), t, g, p.zamki);
+    tr = obrysZamki(bazaT, bazaT.map(() => ({ kat: KAT_TROJKAT })), t, g, p.zamki, p.zw);
     let nr = 0;
     for (const sx of [1, -1]) for (const sy of [1, -1]) for (const sz of [1, -1]) {
       const N = norm([sx, sy, sz]);

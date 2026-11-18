@@ -57,7 +57,7 @@ function pack(list, s, AW = AREA.w, AH = AREA.h) {
   return pages;
 }
 
-export function planPrint(model, withBox = true, j = akt()) {
+export function planPrint(model, withBox = true, j = akt(), wymusN = 0) {   // wymusN > 0: skala 1:N narzucona (kostka)
   ustawPapier(j);
   const list = items(model, withBox);
   // największa skala mieszcząca wszystko na 1 stronie (bisekcja)
@@ -65,8 +65,9 @@ export function planPrint(model, withBox = true, j = akt()) {
   for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2; const r = pack(list, mid); if (r && r.length === 1) lo = mid; else hi = mid; }
   let N = Math.ceil(1 / lo); // ładna skala 1:N
   const minArea = Math.min(...list.map(i => i.area));
-  if (minArea / (N * N) < MIN_AREA) N = Math.floor(Math.sqrt(minArea / MIN_AREA)); // powiększ do ≥3 cm²
+  if (wymusN !== -1 && minArea / (N * N) < MIN_AREA) N = Math.floor(Math.sqrt(minArea / MIN_AREA)); // powiększ do ≥3 cm²  (wymusN = −1: zawsze jedna kartka – kostka)
   N = Math.max(1, N);
+  if (wymusN > 0) N = wymusN;
   const minAreaCm2 = minArea / (N * N) / 100;
   const pages = pack(list, 1 / N);
   if (pages) return { N, mode: 'pages', pages, minAreaCm2 };
@@ -186,7 +187,7 @@ export async function buildPdf(model, extras = {}) {
   const jsPDF = await loadJsPDF();
   CALE = extras.jedn === 'in';
   const EN = extras.lang === 'en';
-  const plan = planPrint(model, !!extras.box, CALE ? 'in' : 'mm');
+  const plan = planPrint(model, !!extras.box, CALE ? 'in' : 'mm', extras.N || 0);
   // compress: strumienie (linie rozkroju) skompresowane – plik kilka razy mniejszy, rysunek bez zmian
   const doc = new jsPDF({ unit: 'mm', format: CALE ? 'letter' : 'a4', compress: true });
   const s = 1 / plan.N;

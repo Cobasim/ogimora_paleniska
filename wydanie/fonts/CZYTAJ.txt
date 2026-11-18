@@ -1,2 +1,7 @@
 Czcionki: SIL Open Font License 1.1 (Google Fonts): Saira Stencil One, Archivo Black, Alfa Slab One, Lobster, Sancreek, Pirata One.
 Wolno używać w produktach (także wycinanych napisach) i rozpowszechniać ze stroną.
+
+Kostka (od 0.3.1) – czcionki do liczb i napisow, wszystkie SIL Open Font License 1.1, pobrane z github.com/google/fonts:
+Black Ops One (OFL_BlackOpsOne.txt), Saira Stencil One (OFL_SairaStencilOne.txt), Plaster (OFL_Plaster.txt),
+Emblema One (OFL_EmblemaOne.txt), Bungee (OFL_Bungee.txt), Russo One (OFL_RussoOne.txt). Wszystkie maja polskie znaki.
+Pliki licencji musza zostac obok czcionek.

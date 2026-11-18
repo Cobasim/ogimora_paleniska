@@ -127,7 +127,7 @@ if ($typ === 'pobranie') {
   $w = (array)($d['wym'] ?? []);
   // wymiary zawsze w mm (także projekty calowe); blacha: '3' / '4' / '5' (mm) albo '11ga' / '10ga' / '3-16' / '1-4' (cale, od 0.2.0)
   $wym = ['bok' => (int)($w['bok'] ?? 0), 'wys' => (int)($w['wys'] ?? 0), 'kat' => (int)($w['kat'] ?? 0), 'dno' => (int)($w['dno'] ?? 0), 'nogi' => (int)($w['nogi'] ?? 0), 'blacha' => slowo($w['blacha'] ?? '', 6, '/[^0-9a-z\-]/') ?: '0'];
-  $model = ($d['model'] ?? '') === 'kostka' ? 'kostka' : 'palenisko';   // od 0.3.0: który model (kostka: bok = wysokość, „dno” = ścięcie narożnika, „nozki” = 1, gdy są zamki)
+  $model = ($d['model'] ?? '') === 'kostka' ? 'kostka' : 'palenisko';   // od 0.3.0: który model (kostka: bok = wysokość, „dno” = ścięcie narożnika, „nozki” = szerokość zamka w mm, 0 = bez zamków)
   $jedn = ($d['jedn'] ?? '') === 'in' ? 'in' : 'mm';           // jednostki projektu na stronie
   $plik = ($d['plik'] ?? '') === 'in' ? 'in' : 'mm';           // jednostki pobranego pliku DXF
   $mat = slowo($d['mat'] ?? '', 12); $ciecie = slowo($d['luz'] ?? '', 6, '/[^0-9.]/');
@@ -154,7 +154,7 @@ if ($typ === 'pobranie') {
     if ($model === 'kostka') {   // kostka: własne liczniki, żeby nie mieszać z paleniskiem
       foreach (array_unique($wz) as $w) plus($t, 'kostka_scianka', $w === '-' ? 'brak' : $w);
       plus($t, 'kostka_blacha', (string)$wym['blacha']); plus($t, 'kostka_bok_mm', (string)(intdiv($wym['bok'], 50) * 50));
-      plus($t, 'kostka_sciecie', $wym['dno'] > 0 ? 'jest' : 'brak'); plus($t, 'kostka_zamki', $wym['nogi'] > 0 ? 'sa' : 'brak');
+      plus($t, 'kostka_sciecie', $wym['dno'] > 0 ? 'jest' : 'brak'); plus($t, 'kostka_zamek_mm', (string)(intdiv($wym['nogi'], 5) * 5));   // szerokość zamka w przedziałach co 5 mm; 0 = bez zamków
       plus($t, 'jednostki', $jedn); plus($t, 'plik_dxf', $plik);
       return;
     }
