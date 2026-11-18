@@ -2,6 +2,9 @@
 
 Jedna linijka na każde wgranie na serwer. Numer wersji jest w `www/js/wersja.js`.
 
+## 0.3.9 – 2026-11-18
+Kostka, zamki od strony przypadków brzegowych. (1) Zamki przy trójkątach są dłuższe (1,22 grubości blachy zamiast 0,52): dochodzą do lica sąsiedniej ścianki na całej grubości i trochę wystają – do zeszlifowania, nic nie trzeba dospawywać. (2) Nowy układ dla trójkątów: sam zamek trójkąta w gnieździe ścianki (trójkąt bez wcięć) – wybierany też automatycznie, gdy trójkąt jest za mały na inne układy. (3) Program pilnuje, żeby w trójkącie nie zostawało miejsce węższe niż 2 grubości blachy (min. 6 mm), a w ściance – niż 1,5 grubości (min. 4 mm); układ, który by to złamał albo się nie mieści, jest wygaszony. (4) Układ „na końcach” przy trójkątach nie zostawia już ostrza w rogu. (5) Suwak szerokości zamka kończy się tam, gdzie kończy się miejsce – każdy ruch coś zmienia; gdy zamki w ogóle się nie mieszczą, suwak jest wygaszony. (6) Najwęższy zamek = grubość blachy (min. 3 mm). (7) Przy dużym ścięciu krótkie krawędzie kostki dostają zamki do samych końców zamiast żadnych.
+
 ## 0.3.8 – 2026-11-18
 Kostka: nic nie skacze przy zmianie ustawień. Karta „Kształt”: suwak i układ zamków na trójkątach są widoczne cały czas, bez ścięcia tylko wygaszone (karta ma stałą wysokość). Panel „Ścianki”: suwak wielkości zawsze w tym samym miejscu (przy „Brak” wygaszony), komunikat ma stałe miejsce na jedną linijkę, opcje rodzaju (liczba kropek, wiersze napisu, kształt otworu) są na samym dole – pod nimi nic już nie ma, więc nic się nie przesuwa. „Blacha” przeniesiona nad „Ścianki”. Stopka: skala PDF i link do projektu w jednym wierszu, potwierdzenie skopiowania w linijce komunikatów.
 

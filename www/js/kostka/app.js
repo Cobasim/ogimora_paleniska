@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { zbuduj, ogranicz, sciecieMin, zamekDomyslny, zamekTrojkat, ukladZe, ZAMEK_MIN, GESTOSC, LIM, w3 } from './geo.js';
+import { zbuduj, ogranicz, sciecieMin, zamekDomyslny, zamekTrojkat, ukladZe, UKLADY_T, GESTOSC, LIM, w3 } from './geo.js';
 import { tresc, gdyCzcionka, NAPIS_MAX, FONTY, FONT_DOM, wiersze } from './tresc.js';
 import { buildPdf, planPrint, planJedna } from '../print.js';
 import { estimate, CUT_RATES, RYNEK, USA_SERIA, usaCena } from '../pricing.js';
@@ -72,7 +72,7 @@ function popraw(s) {            // dane z linku albo z pamięci: tylko znane pol
   q.zw = s.zamki === false || s.zamki === 0 ? 0 : Number.isFinite(+s.zw) ? +s.zw : zamekDomyslny(q.t);   // stare linki: zamki tak / nie
   q.zt = s.zamki === false || s.zamki === 0 ? 0 : Number.isFinite(+s.zt) ? +s.zt : zamekTrojkat(q.t);
   q.uklad = s.uklad == null ? 'konce' : ukladZe(s.uklad);            // układ zamków na krawędziach kostki; starsze linki: 'pary' → 'konce'
-  q.ukladT = s.ukladT == null ? (s.uklad == null ? 'para' : q.uklad) : ukladZe(s.ukladT);   // …i osobno przy trójkątach
+  q.ukladT = s.ukladT == null ? (s.uklad == null ? 'para' : q.uklad) : ukladZe(s.ukladT, UKLADY_T);   // …i osobno przy trójkątach
   q.sc = {};
   for (let n = 1; n <= 6; n++) {
     const x = (s.sc && s.sc[n]) || {}, typ = ['brak', 'kropki', 'napis', 'otwor'].includes(x.typ) ? x.typ : 'brak';
@@ -419,11 +419,12 @@ function ustawSuwak(id, min, max, step, v, wysw) {
 }
 // układy zamków pokazane obrazkami: krawędź, zamki tej ścianki (pełne) i sąsiadki (obrys)
 const UKL = {
+  jeden: [T('Sam zamek trójkąta na środku krawędzi – siedzi w gnieździe ścianki i trzyma w obie strony; trójkąt nie ma żadnych wcięć (najlepsze dla małych trójkątów)', 'Just one tab of the triangle in the middle of the edge – it sits in a pocket of the side and holds both ways; the triangle has no notches (best for small triangles)'), [[16, 1]]],
   para: [T('Jeden zamek tej ścianki i jeden sąsiadki, obok siebie na środku krawędzi', 'One tab of this side and one of its neighbour, next to each other in the middle of the edge'), [[13.5, 1], [18.5, 0]]],
   konce: [T('Zamki przy obu końcach krawędzi: jedna ścianka na zewnątrz, druga dotyka ich od środka – między nimi długa szczelina na jedną ciągłą spoinę', 'Tabs at both ends of the edge: one side outside, the other touching them from the inside – a long gap between for one continuous weld'), [[2, 1], [6.5, 0], [25.5, 0], [30, 1]]],
   srodek: [T('Jeden zamek na środku krawędzi, obejmowany przez dwa zamki drugiej ścianki', 'One tab in the middle of the edge, held between two tabs of the other side'), [[11.5, 0], [16, 1], [20.5, 0]]],
 };
-const uklady = pole => `<div class="k-ukl" data-pole="${pole}" role="group">${Object.entries(UKL).map(([v, [tt, zeby]]) => `<button type="button" class="chip" data-u="${v}" title="${tt}" aria-label="${tt}"><svg viewBox="0 0 36 16" width="36" height="16" aria-hidden="true"><path d="M1 12.5H35" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>${zeby.map(([x, moj]) => `<rect x="${x}" y="5" width="4" height="7.5" ${moj ? 'fill="#df3434" stroke="#df3434"' : 'fill="none" stroke="currentColor"'} stroke-width="1.1"/>`).join('')}</svg></button>`).join('')}</div>`;
+const uklady = pole => `<div class="k-ukl" data-pole="${pole}" role="group">${Object.entries(UKL).filter(([v]) => pole === 'ukladT' || v !== 'jeden').map(([v, [tt, zeby]]) => `<button type="button" class="chip" data-u="${v}" title="${tt}" aria-label="${tt}"><svg viewBox="0 0 36 16" width="36" height="16" aria-hidden="true"><path d="M1 12.5H35" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>${zeby.map(([x, moj]) => `<rect x="${x}" y="5" width="4" height="7.5" ${moj ? 'fill="#df3434" stroke="#df3434"' : 'fill="none" stroke="currentColor"'} stroke-width="1.1"/>`).join('')}</svg></button>`).join('')}</div>`;
 function panelKsztalt() {
   const u = J === 'in' ? 'in' : 'mm';
   $('kKsztalt').innerHTML = `<h2>${T('Kształt', 'Shape')}</h2>
@@ -439,14 +440,18 @@ function panelKsztalt() {
     n.addEventListener('change', () => { const v = parseFloat(String(n.value).replace(',', '.')); if (Number.isFinite(v)) ustaw(id, J === 'in' ? v * CAL : v); else odswiez(); track('k_pole', { param: id }); });
   };
   zm('a'); zm('c'); zm('zw'); zm('zt');
-  $('kKsztalt').querySelectorAll('.k-ukl').forEach(box => box.addEventListener('click', e => { const b = e.target.closest('[data-u]'); if (!b) return; const pole = box.dataset.pole; state[pole] = b.dataset.u; track('k_' + pole.toLowerCase(), { value: b.dataset.u }); odswiez(false); }));
+  $('kKsztalt').querySelectorAll('.k-ukl').forEach(box => box.addEventListener('click', e => { const b = e.target.closest('[data-u]'); if (!b || b.disabled) return; const pole = box.dataset.pole; state[pole] = b.dataset.u; track('k_' + pole.toLowerCase(), { value: b.dataset.u }); odswiez(false); }));
 }
 function ustaw(id, v) {
   const S = SIATKA[J], Z = ZAKRES[J];
   if (id === 'a') { state.a = Math.min(Z.a[1], Math.max(Z.a[0], naSiatke(v, S.a))); if (state.c > state.a / 2) state.c = state.a / 2; }
   if (id === 'c') { const min = sciecieMin(state.t); v = naSiatke(v, S.c); state.c = v <= 0 ? 0 : v < min ? (v > state.c ? Math.ceil(min / S.c) * S.c : 0) : Math.min(state.a / 2, v); }
   if (id === 'g') state.g = Math.min(Z.g[1], Math.max(Z.g[0], naSiatke(v, S.g)));
-  if (id === 'zw' || id === 'zt') { v = Math.min(ZW_MAX[J], naSiatke(v, S.zw)); state[id] = v <= 0 ? 0 : v < ZAMEK_MIN ? (v > state[id] ? ZAMEK_MIN : 0) : v; }
+  if (id === 'zw' || id === 'zt') {       // suwak chodzi tylko po szerokościach, które przy tych wymiarach naprawdę się mieszczą (zakres liczy geo.js)
+    const z = model.zamki[id === 'zw' ? 'krawedzie' : 'trojkaty'], lo = z.lo, hi = Math.min(ZW_MAX[J], z.hi), bylo = z.w;
+    v = naSiatke(v, S.zw);
+    state[id] = !(hi > 0) || v <= 0 ? 0 : v < lo ? (v > bylo ? lo : 0) : Math.min(hi, v);
+  }
   odswiez(false);        // suwaki nie przebudowują paneli – inaczej suwak znikałby spod palca w trakcie przeciągania
 }
 
@@ -612,11 +617,16 @@ function odswiez(panel = true) {
   ustawSuwak('c', 0, r4(Math.floor(state.a / 2 / S.c) * S.c), S.c, state.c, pole(state.c, d));
   if (panel) { panelScianki(); panelBlacha(); } else komunikat();
   ustawSuwak('g', Z.g[0], Z.g[1], S.g, state.g, pole(state.g, J === 'in' ? 3 : 1));
-  ustawSuwak('zw', 0, ZW_MAX[J], S.zw, state.zw, pole(state.zw, J === 'in' ? 3 : 0)); $('n-zw').step = J === 'in' ? 0.0625 : 1;
+  // zamki: suwak pokazuje szerokość faktycznie użytą i kończy się tam, gdzie kończy się miejsce; gdy nic się nie mieści – jest wygaszony
+  for (const [id, z, wl] of [['zw', model.zamki.krawedzie, true], ['zt', model.zamki.trojkaty, state.c > 0]]) {
+    const hi = Math.min(ZW_MAX[J], z.hi), da = wl && hi > 0, w = z.uklad ? Math.min(z.w, hi) : 0;
+    ustawSuwak(id, 0, da ? hi : 1, 'any', w, pole(w, J === 'in' ? 3 : (w % 1 ? 1 : 0))); $('n-' + id).step = J === 'in' ? 0.0625 : 1;
+    const wiersz = $('r-' + id).closest('.row'); wiersz.classList.toggle('nic', wl && !da); $('r-' + id).disabled = $('n-' + id).disabled = !da;
+    const box = document.querySelector(`#kKsztalt .k-ukl[data-pole="${id === 'zw' ? 'uklad' : 'ukladT'}"]`), akt = z.uklad || z.mozliwy || z.chciany;
+    box.querySelectorAll('[data-u]').forEach(b => { const on = b.dataset.u === akt && da; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on); b.disabled = !wl || !z.dostepne[b.dataset.u]; });
+  }
   $('kZwOpis').textContent = model.zamki.razem > 0 ? T(`zamków: ${model.zamki.razem}`, `tabs: ${model.zamki.razem}`) : T('bez zamków', 'no tabs');
-  ustawSuwak('zt', 0, ZW_MAX[J], S.zw, state.zt, pole(state.zt, J === 'in' ? 3 : 0)); $('n-zt').step = J === 'in' ? 0.0625 : 1;
-  $('kZtRow').classList.toggle('off', !(state.c > 0)); $('kZtRow').querySelectorAll('input, button').forEach(el => { el.disabled = !(state.c > 0); });
-  document.querySelectorAll('#kKsztalt .k-ukl').forEach(box => box.querySelectorAll('[data-u]').forEach(b => { const on = b.dataset.u === state[box.dataset.pole]; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on); }));
+  $('kZtRow').classList.toggle('off', !(state.c > 0));
   $('kLuz').classList.toggle('off', !(state.zw > 0 || (state.c > 0 && state.zt > 0)));
   document.querySelectorAll('#kBlacha [data-g]').forEach(b => b.classList.toggle('active', Math.abs(+b.dataset.g - state.g) < 1e-3));
   $('n-a').step = J === 'in' ? 0.5 : 10; $('n-c').step = J === 'in' ? 0.25 : 5; $('n-g').step = J === 'in' ? 0.005 : 0.1;

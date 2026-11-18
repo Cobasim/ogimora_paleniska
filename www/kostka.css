@@ -72,3 +72,6 @@
 .kostka .panel-foot .price { margin-bottom: 6px; padding: 6px 12px; }
 .kostka .k-dol { flex-wrap: wrap; row-gap: 6px; }
 .kostka .k-dol .k-link { min-width: 0; white-space: nowrap; }
+/* 0.3.9: układ, który przy tych wymiarach się nie mieści, jest wygaszony; suwak bez żadnego miejsca na zamki też */
+.kostka .k-ukl .chip:disabled { opacity: .3; cursor: default; filter: grayscale(1); }
+.kostka #kKsztalt .row.nic { opacity: .32; pointer-events: none; }
