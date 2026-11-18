@@ -116,9 +116,16 @@ function viewsPage(doc, model, extras) {
   doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(27, 29, 25);
   doc.text('OGIMORA', tx, PAGE.m + 10);
   if (extras.code) { doc.setFont('courier', 'bold'); doc.setFontSize(12); doc.text(extras.code, PAGE.w - PAGE.m, PAGE.m + 9, { align: 'right' }); }
-  const top = PAGE.m + 22, bottom = PAGE.h - PAGE.m - 10, gap = 4, AW = PAGE.w - 2 * PAGE.m;
+  let top = PAGE.m + 22; const bottom = PAGE.h - PAGE.m - 10, gap = 4, AW = PAGE.w - 2 * PAGE.m;
+  // kostka: pod nagłówkiem kilka linijek opisu (co to jest, wymiary, adres generatora)
+  (extras.opis || []).forEach((l, i) => { doc.setFont('helvetica', i ? 'normal' : 'bold'); doc.setFontSize(i ? 10 : 12); doc.setTextColor(i ? 70 : 27); doc.text(ascii(l), PAGE.m, top + 2); top += i ? 5 : 6.5; });
+  if ((extras.opis || []).length) top += 3;
   const slotH = (bottom - top - gap) / 2;
-  (extras.views || []).forEach((v, i) => {
+  // kostka: na pierwszej kartce, u góry, widok w pudełku z wymiarami całości (extras.boxTop)
+  const przes = extras.boxTop && extras.box ? 1 : 0, obrazy = (extras.views || []).slice(przes && (extras.views || []).length > 1 ? 1 : 0, 2);   // z pudełkiem: drugi widok (z przeciwnej strony)
+  if (przes) boxView(doc, extras.box, PAGE.m, top, AW, slotH);
+  obrazy.forEach((v, n) => {
+    const i = n + przes;
     const y0 = top + i * (slotH + gap), k = Math.min(AW / v.w, slotH / v.h), w = v.w * k, h = v.h * k;
     doc.addImage(v.img, 'PNG', PAGE.m + (AW - w) / 2, y0 + (slotH - h) / 2, w, h, undefined, 'MEDIUM');
   });
@@ -187,7 +194,7 @@ export async function buildPdf(model, extras = {}) {
   const jsPDF = await loadJsPDF();
   CALE = extras.jedn === 'in';
   const EN = extras.lang === 'en';
-  const plan = planPrint(model, !!extras.box, CALE ? 'in' : 'mm', extras.N || 0);
+  const plan = planPrint(model, !!extras.box && !extras.boxTop, CALE ? 'in' : 'mm', extras.N || 0);
   // compress: strumienie (linie rozkroju) skompresowane – plik kilka razy mniejszy, rysunek bez zmian
   const doc = new jsPDF({ unit: 'mm', format: CALE ? 'letter' : 'a4', compress: true });
   const s = 1 / plan.N;

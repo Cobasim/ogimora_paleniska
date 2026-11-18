@@ -2,7 +2,8 @@
 // Geometria: ./geo.js · treść ścianek: ./tresc.js · zapis DXF: ../dxf.js (wspólny z paleniskiem).
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { zbuduj, ogranicz, sciecieMin, zamekDomyslny, ZAMEK_MIN, GESTOSC, LIM, w3 } from './geo.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { zbuduj, ogranicz, sciecieMin, zamekDomyslny, zamekTrojkat, ZAMEK_MIN, GESTOSC, LIM, w3 } from './geo.js';
 import { tresc, gdyCzcionka, NAPIS_MAX, FONTY, FONT_DOM, wiersze } from './tresc.js';
 import { buildPdf, planPrint } from '../print.js';
 import { tessellate, polygonArea, perimeter, bbox } from '../geometry.js';
@@ -47,7 +48,7 @@ const luzL = (mm, j = J) => (j === 'in' ? liczba(mm / CAL, 3) : liczba(mm, 1));
 const KLUCZ = 'ogik_stan';
 const kropki = () => Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => [n, { typ: 'kropki', n, tekst: String(n), t1: '', t3: '', font: FONT_DOM, ksztalt: 'kolo', skala: 0.7 }]));
 function startowy(j) {
-  const s = { a: 250, t: 3, c: 0, g: 0.3, zw: zamekDomyslny(3), sc: kropki() };
+  const s = { a: 250, t: 3, c: 0, g: 0.3, zw: zamekDomyslny(3), zt: zamekTrojkat(3), sc: kropki() };
   return j === 'in' ? przelicz(s, 'in') : s;
 }
 function przelicz(s, j) {
@@ -59,6 +60,7 @@ function przelicz(s, j) {
   q.c = s.c > 0 ? naSiatke(s.c, SIATKA[j].c) : 0;
   q.g = Math.min(ZAKRES[j].g[1], Math.max(ZAKRES[j].g[0], naSiatke(s.g, SIATKA[j].g)));
   q.zw = s.zw > 0 ? (Math.abs(s.zw - zamekDomyslny(s.t)) < 0.6 ? zamekDomyslny(q.t) : Math.min(ZW_MAX[j], naSiatke(s.zw, SIATKA[j].zw))) : 0;
+  q.zt = s.zt > 0 ? (Math.abs(s.zt - zamekTrojkat(s.t)) < 0.6 ? zamekTrojkat(q.t) : Math.min(ZW_MAX[j], naSiatke(s.zt, SIATKA[j].zw))) : 0;
   return q;
 }
 function popraw(s) {            // dane z linku albo z pamięci: tylko znane pola, w granicach
@@ -67,6 +69,7 @@ function popraw(s) {            // dane z linku albo z pamięci: tylko znane pol
   for (const k of ['a', 't', 'c', 'g']) if (Number.isFinite(+s[k])) q[k] = +s[k];
   if (![...BLACHY.mm, ...BLACHY.in].some(b => Math.abs(b.t - q.t) < 1e-3)) q.t = 3;
   q.zw = s.zamki === false || s.zamki === 0 ? 0 : Number.isFinite(+s.zw) ? +s.zw : zamekDomyslny(q.t);   // stare linki: zamki tak / nie
+  q.zt = s.zamki === false || s.zamki === 0 ? 0 : Number.isFinite(+s.zt) ? +s.zt : zamekTrojkat(q.t);
   q.sc = {};
   for (let n = 1; n <= 6; n++) {
     const x = (s.sc && s.sc[n]) || {}, typ = ['brak', 'kropki', 'napis', 'otwor'].includes(x.typ) ? x.typ : 'brak';
@@ -77,7 +80,7 @@ function popraw(s) {            // dane z linku albo z pamięci: tylko znane pol
   }
   return { ...q, ...wGranicach(q) };
 }
-function wGranicach(q) { const o = ogranicz(q); return { a: o.a, t: o.t, c: o.c, g: o.g, zw: o.zw }; }
+function wGranicach(q) { const o = ogranicz(q); return { a: o.a, t: o.t, c: o.c, g: o.g, zw: o.zw, zt: o.zt }; }
 
 const b64 = { na: s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
               z: s => decodeURIComponent(escape(atob(s.replace(/-/g, '+').replace(/_/g, '/')))) };
@@ -134,7 +137,7 @@ renderer.shadowMap.enabled = true; renderer.shadowMap.autoUpdate = false;
 const scene = new THREE.Scene();
 const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 20000);
 const orbit = new OrbitControls(camera, canvas);
-Object.assign(orbit, { enableDamping: true, dampingFactor: .09, enablePan: false, rotateSpeed: .7, minZoom: .4, maxZoom: 6, minPolarAngle: .01, maxPolarAngle: Math.PI - .01 });
+Object.assign(orbit, { enableDamping: true, dampingFactor: .09, enablePan: true, screenSpacePanning: true, rotateSpeed: .7, minZoom: .4, maxZoom: 6, minPolarAngle: .01, maxPolarAngle: Math.PI - .01 });
 scene.add(new THREE.HemisphereLight(0xf6f0df, 0x3a3c33, 1.9));
 const key = new THREE.DirectionalLight(0xfff0dc, 2.6); key.position.set(-900, 1500, 1100); key.castShadow = true;
 key.shadow.mapSize.set(2048, 2048); Object.assign(key.shadow.camera, { left: -1200, right: 1200, top: 1200, bottom: -1200, near: 10, far: 5000 });
@@ -148,12 +151,25 @@ const drawMat = new THREE.MeshLambertMaterial({ color: 0xf7f5ef, side: THREE.Dou
 const selMat = new THREE.MeshLambertMaterial({ color: 0xf6c9a8, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
 const lineMat = new THREE.LineBasicMaterial({ color: 0x000000 });
 const lineReal = new THREE.LineBasicMaterial({ color: 0xfff6e8, transparent: true, opacity: .45 });
-const spoinaDraw = new THREE.MeshLambertMaterial({ color: 0xe0262f, side: THREE.DoubleSide });
-const spoinaReal = new THREE.MeshStandardMaterial({ color: 0x9aa0a6, metalness: .75, roughness: .38, side: THREE.DoubleSide });
+// spoina: kolory nalotowe jak na nierdzewce (słomkowy → złoty → purpura → niebieski), zapisane w wierzchołkach
+const spoinaDraw = new THREE.MeshBasicMaterial({ vertexColors: true, color: 0xb4b4b4, toneMapped: false, side: THREE.DoubleSide });
+const spoinaReal = new THREE.MeshStandardMaterial({ vertexColors: true, color: 0x8c8c8c, metalness: .55, roughness: .34, envMapIntensity: .45, side: THREE.DoubleSide });
+const NALOT = [[0.95, 0.74, 0.20], [0.90, 0.42, 0.05], [0.80, 0.10, 0.16], [0.52, 0.08, 0.60], [0.08, 0.20, 0.85], [0.10, 0.55, 0.95]];
+const nalot = f => { const x = Math.min(0.9999, Math.max(0, f)) * (NALOT.length - 1), i = Math.floor(x), k = x - i; return NALOT[i].map((v, j) => v + (NALOT[i + 1][j] - v) * k); };
+// odbicia otoczenia: bez nich metal jest matowy i ciemny
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
 const matCache = {};
-const material = () => (matCache[shading] ||= makeMaterial(shading, renderer));
+/** Materiały stali: zewnętrzny (jaśniejszy, z połyskiem) i wewnętrzny (ciemniejszy – to, co widać przez wycięcia). */
+function material() {
+  if (matCache[shading]) return matCache[shading];
+  const baza = makeMaterial(shading, renderer), zew = baza.clone(), wew = baza.clone();
+  const U = { mill: { jasno: 3.4, szorst: 0.36, metal: 0.8, odb: 1.5 }, flash: { jasno: 1.25, szorst: 0.8, metal: 0.55, odb: 0.7 }, paint: { jasno: 1.5, szorst: 0.62, metal: 0.35, odb: 0.8 } }[shading] || { jasno: 1, szorst: 1, metal: 0.5, odb: 0.6 };
+  zew.color.setScalar(U.jasno); zew.roughness = U.szorst; zew.metalness = U.metal; zew.envMapIntensity = U.odb;
+  wew.color.setScalar(0.42); wew.roughness = 1; wew.envMapIntensity = 0.12;
+  return (matCache[shading] = { zew, wew });
+}
 const W = a => new THREE.Vector3(a[0], a[2], -a[1]);       // z-góra → y-góra (obrót, nie lustro)
-let group = null, needsRender = true, promien = 300;
+let group = null, needsRender = true, promien = 300, bezWyboru = false;
 
 function krawedzie(loops, depth) {
   const pos = [];
@@ -172,33 +188,63 @@ function krawedzie(loops, depth) {
 function scena() {
   if (group) { scene.remove(group); group.traverse(o => o.geometry && o.geometry.dispose()); }
   group = new THREE.Group();
-  const real = shading !== 'draw', mat = real ? material() : drawMat;
+  const real = shading !== 'draw', mat = real ? material() : null;
   for (const pl of model.plyty) {
     const outer = pl.ring.map(([x, y]) => new THREE.Vector2(x, y));
     const holes = (pl.holes || []).map(h => tessellate(h, 14).map(([x, y]) => new THREE.Vector2(x, y)));
     const shape = new THREE.Shape(outer); shape.holes = holes.map(h => new THREE.Path(h));
-    const geo = new THREE.ExtrudeGeometry(shape, { depth: pl.t, bevelEnabled: false, curveSegments: 1 });
+    let geo = new THREE.ExtrudeGeometry(shape, { depth: pl.t, bevelEnabled: false, curveSegments: 1 });
+    if (geo.index) geo = geo.toNonIndexed();
     const m4 = new THREE.Matrix4().makeBasis(W(pl.u), W(pl.v), W(pl.n)).setPosition(W(pl.o));
-    geo.applyMatrix4(m4); geo.computeVertexNormals();
-    const mesh = new THREE.Mesh(geo, !real && pl.rodzaj === 'kw' && pl.nr === wybrana ? selMat : mat);
-    mesh.userData.nr = pl.rodzaj === 'kw' ? pl.nr : 0; mesh.castShadow = true; mesh.receiveShadow = real;
-    group.add(mesh);
+    const wyb = !real && pl.rodzaj === 'kw' && pl.nr === wybrana && !bezWyboru;
+    // dwie siatki: wewnętrzna powierzchnia ścianki (z = 0) osobno – w widoku stali jest ciemniejsza
+    const P = geo.attributes.position.array, UV = geo.attributes.uv.array, cz = [{ p: [], u: [] }, { p: [], u: [] }];
+    for (let i = 0; i < P.length; i += 9) {
+      const wewn = real && P[i + 2] < 1e-6 && P[i + 5] < 1e-6 && P[i + 8] < 1e-6, c = cz[wewn ? 1 : 0], j = i / 3 * 2;
+      for (let k = 0; k < 9; k++) c.p.push(P[i + k]); for (let k = 0; k < 6; k++) c.u.push(UV[j + k]);
+    }
+    geo.dispose();
+    cz.forEach((c, kt) => {
+      if (!c.p.length) return;
+      const g = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(c.p, 3)).setAttribute('uv', new THREE.Float32BufferAttribute(c.u, 2));
+      g.applyMatrix4(m4); g.computeVertexNormals();
+      const mesh = new THREE.Mesh(g, real ? (kt ? mat.wew : mat.zew) : wyb ? selMat : drawMat);
+      mesh.userData.nr = pl.rodzaj === 'kw' ? pl.nr : 0; mesh.castShadow = true; mesh.receiveShadow = real;
+      group.add(mesh);
+    });
     group.add(new THREE.LineSegments(krawedzie([outer, ...holes], pl.t).applyMatrix4(m4), real ? lineReal : lineMat));
   }
   if (spoinyOn) {
-    // spoina: graniastosłup wypełniający rowek (krawędź wewnętrzna + zewnętrzne krawędzie obu ścianek)
-    const pos = [], t = state.t, add = (p, n, k) => [p[0] + n[0] * k, p[1] + n[1] * k, p[2] + n[2] * k];
+    // spoina: wałek wypełniający rowek, lekko wypukły (grzbiet), podzielony na krótkie odcinki (łuski);
+    // kolor: grzbiet niebieski / purpurowy, brzegi złote i słomkowe – z niewielką zmianą wzdłuż spoiny
+    const pos = [], col = [], t = state.t, add = (p, n, k) => [p[0] + n[0] * k, p[1] + n[1] * k, p[2] + n[2] * k];
+    const tri = (p, q, r, cp, cq, cr) => { pos.push(p.x, p.y, p.z, q.x, q.y, q.z, r.x, r.y, r.z); col.push(...cp, ...cq, ...cr); };
+    let ziarno = 7; const los = () => (ziarno = (ziarno * 16807) % 2147483647) / 2147483647;
     for (const s of model.spoiny) {
-      const A = [s.a, add(s.a, s.nA, t), add(s.a, s.nB, t)].map(W), B = [s.b, add(s.b, s.nA, t), add(s.b, s.nB, t)].map(W);
-      const tri = (p, q, r) => pos.push(p.x, p.y, p.z, q.x, q.y, q.z, r.x, r.y, r.z);
-      tri(A[1], B[1], B[2]); tri(A[1], B[2], A[2]); tri(A[0], A[1], A[2]); tri(B[0], B[2], B[1]);
+      const d = [s.b[0] - s.a[0], s.b[1] - s.a[1], s.b[2] - s.a[2]], L = Math.hypot(...d), n = Math.max(2, Math.round(L / Math.max(5, 1.6 * t)));
+      const wyp = [s.nA[0] + s.nB[0], s.nA[1] + s.nB[1], s.nA[2] + s.nB[2]], wl = Math.hypot(...wyp);
+      // wałek zachodzi na obie ścianki (jak prawdziwa spoina) – na podglądzie szerszy niż rowek, żeby był widoczny
+      const dAB = s.nA[0] * s.nB[0] + s.nA[1] * s.nB[1] + s.nA[2] * s.nB[2], zak = Math.max(0.9 * t, state.a * 0.011);
+      const poA = [0, 1, 2].map(k => -s.nB[k] + dAB * s.nA[k]), poB = [0, 1, 2].map(k => -s.nA[k] + dAB * s.nB[k]), lA = Math.hypot(...poA), lB = Math.hypot(...poB);
+      const przekroj = f => { const o = [s.a[0] + d[0] * f, s.a[1] + d[1] * f, s.a[2] + d[2] * f], kA = add(o, s.nA, t), kB = add(o, s.nB, t);
+        const eA = add(add(kA, poA, zak / lA), s.nA, 0.06 * t), eB = add(add(kB, poB, zak / lB), s.nB, 0.06 * t);
+        const g = add([(kA[0] + kB[0]) / 2, (kA[1] + kB[1]) / 2, (kA[2] + kB[2]) / 2], wyp, (0.3 * t + 0.25 * zak) / wl); return [W(eA), W(g), W(eB), W(o)]; };
+      let A = przekroj(0), fa = 0.55 + los() * 0.3;
+      tri(A[3], A[0], A[1], nalot(.1), nalot(.1), nalot(fa)); tri(A[3], A[1], A[2], nalot(.1), nalot(fa), nalot(.1));
+      for (let i = 1; i <= n; i++) {
+        const B = przekroj(i / n), fb = 0.55 + los() * 0.42, ba = 0.04 + los() * 0.2, bb = 0.04 + los() * 0.2;
+        tri(A[0], B[0], B[1], nalot(ba), nalot(bb), nalot(fb)); tri(A[0], B[1], A[1], nalot(ba), nalot(fb), nalot(fa));
+        tri(A[1], B[1], B[2], nalot(fa), nalot(fb), nalot(bb)); tri(A[1], B[2], A[2], nalot(fa), nalot(bb), nalot(ba));
+        A = B; fa = fb;
+      }
+      tri(A[3], A[1], A[0], nalot(.1), nalot(fa), nalot(.1)); tri(A[3], A[2], A[1], nalot(.1), nalot(.1), nalot(fa));
     }
-    const g = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals();
+    const g = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)).setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals();
     const m = new THREE.Mesh(g, real ? spoinaReal : spoinaDraw); m.castShadow = true; group.add(m);
   }
   scene.add(group);
   ground.position.y = -state.a / 2 - 0.5; ground.material.opacity = real ? .2 : .1;
-  key.target.position.set(0, 0, 0); orbit.target.set(0, 0, 0);
+  key.target.position.set(0, 0, 0);
   const R = state.a * 0.87;
   if (Math.abs(R - promien) > 1) { promien = R; kadr(); }
   renderer.shadowMap.needsUpdate = true; needsRender = true;
@@ -206,7 +252,7 @@ function scena() {
 
 function wolne() {
   const w = stage.clientWidth, H = canvas.clientHeight || stage.clientHeight, karta = $('kKsztalt');
-  const obok = matchMedia('(min-width: 1101px)').matches && karta.offsetWidth;
+  const obok = matchMedia('(min-width: 1101px)').matches && !document.body.classList.contains('cards-off') && karta.offsetWidth;
   const x0 = obok ? karta.getBoundingClientRect().right - stage.getBoundingClientRect().left + 14 : 10;
   return { w, H, x0, x1: w - 10, y0: 16, y1: H - 40 };
 }
@@ -221,6 +267,7 @@ function kadr() {
 }
 function kamera(rodzaj) {
   const dirs = { iso: [1, .62, 1.25], front: [0, .0001, 1], top: [0, 1, .001], bottom: [.3, -1, .6] };
+  orbit.target.set(0, 0, 0);                                  // przyciski widoku cofają też przesunięcie
   camera.position.copy(new THREE.Vector3(...dirs[rodzaj]).normalize().multiplyScalar(5000)); camera.zoom = 1; camera.updateProjectionMatrix();
   orbit.update(); needsRender = true;
 }
@@ -263,6 +310,7 @@ $('kFlat').addEventListener('click', e => { const g = e.target.closest('g[data-n
 
 // ---------------------------------------------------------------- panele
 const ikZamek = `<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="k" d="M2 15H8V8H16V15H22"/><path stroke="#df3434" stroke-width="2.4" d="M8 4.5H16M8 3V6M16 3V6"/></svg>`;
+const ikZamekT = `<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="k" d="M4 20L12 5L20 20Z"/><path stroke="#df3434" stroke-width="2.4" d="M9.5 20V17H14.5V20"/></svg>`;
 const ik = { bok: ICONS.base, sciecie: `<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="k" d="M4 4H14M20 10V20H4V4"/><path stroke="#df3434" stroke-width="2.4" d="M14 4L20 10"/></svg>`,
   rozmiar: `<svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="8" height="8"/><path d="M11 3h6v6M17 3l-6 6"/></svg>` };
 const suwak = (id, tytul, ikona, jedn) => `<div class="row ctl" title="${tytul}"><label for="r-${id}" class="ctl-ic">${ikona}</label>
@@ -277,21 +325,23 @@ function panelKsztalt() {
   $('kKsztalt').innerHTML = `<h2>${T('Kształt', 'Shape')}</h2>
     ${suwak('a', T('Bok kostki (wymiar zewnętrzny)', 'Cube side (outside size)'), ik.bok, u)}
     ${suwak('c', T('Ścięcie narożników: 0 = brak; największe sięga połowy boku', 'Corner cut: 0 = none; the largest reaches the middle of each edge'), ik.sciecie, u)}
-    <div class="row derived" title="${T('Wymiar jednej ścianki do wycięcia (bez zamków)', 'Size of one side plate to cut (without tabs)')}"><span>${ICONS.sheet || ''}</span><output id="kPlyta"></output></div>`;
+    ${suwak('zw', T('Szerokość zamków na krawędziach kostki: 0 = bez zamków', 'Tab width on the cube edges: 0 = no tabs'), ikZamek, u)}
+    <div id="kZtRow">${suwak('zt', T('Szerokość zamków przy trójkątach narożników: 0 = bez zamków', 'Tab width at the corner triangles: 0 = no tabs'), ikZamekT, u)}</div>
+    <div class="row derived" title="${T('Wymiar jednej ścianki do wycięcia (bez zamków) i liczba zamków na całej kostce', 'Size of one side plate to cut (without tabs) and the number of tabs on the whole cube')}"><span>${ICONS.sheet || ''}</span><output id="kPlyta"></output></div><p class="k-zwopis" id="kZwOpis"></p>`;
   const zm = (id, zZdarzenia) => {
     const r = $('r-' + id), n = $('n-' + id);
-    r.addEventListener('input', () => { ustaw(id, +r.value); trackDebounced('k_' + id, 'k_suwak', { param: id }); });
+    r.addEventListener('input', () => { ustaw(id, +r.value); trackDebounced('k_' + id, 'k_suwak', { param: id === 'zw' ? 'zamek' : id === 'zt' ? 'zamek_trojkat' : id }); });
     n.addEventListener('change', () => { const v = parseFloat(String(n.value).replace(',', '.')); if (Number.isFinite(v)) ustaw(id, J === 'in' ? v * CAL : v); else odswiez(); track('k_pole', { param: id }); });
   };
-  zm('a'); zm('c');
+  zm('a'); zm('c'); zm('zw'); zm('zt');
 }
 function ustaw(id, v) {
   const S = SIATKA[J], Z = ZAKRES[J];
   if (id === 'a') { state.a = Math.min(Z.a[1], Math.max(Z.a[0], naSiatke(v, S.a))); if (state.c > state.a / 2) state.c = state.a / 2; }
   if (id === 'c') { const min = sciecieMin(state.t); v = naSiatke(v, S.c); state.c = v <= 0 ? 0 : v < min ? (v > state.c ? Math.ceil(min / S.c) * S.c : 0) : Math.min(state.a / 2, v); }
   if (id === 'g') state.g = Math.min(Z.g[1], Math.max(Z.g[0], naSiatke(v, S.g)));
-  if (id === 'zw') { v = Math.min(ZW_MAX[J], naSiatke(v, S.zw)); state.zw = v <= 0 ? 0 : v < ZAMEK_MIN ? (v > state.zw ? ZAMEK_MIN : 0) : v; }
-  odswiez();
+  if (id === 'zw' || id === 'zt') { v = Math.min(ZW_MAX[J], naSiatke(v, S.zw)); state[id] = v <= 0 ? 0 : v < ZAMEK_MIN ? (v > state[id] ? ZAMEK_MIN : 0) : v; }
+  odswiez(false);        // suwaki nie przebudowują paneli – inaczej suwak znikałby spod palca w trakcie przeciągania
 }
 
 const TYPN = { brak: T('Brak', 'None'), kropki: T('Kropki', 'Dots'), napis: T('Napis / liczba', 'Text / number'), otwor: T('Otwór', 'Opening') };
@@ -336,21 +386,16 @@ function panelBlacha() {
   const lista = BLACHY[J];
   $('kBlacha').innerHTML = `<h2>${T('Blacha', 'Sheet')}</h2>
     <div class="thk-box"><div class="row thk" title="${T('Grubość blachy', 'Sheet thickness')}"><span>${ICONS.thk}</span><div class="chips" id="kThk" data-thk="t">${lista.map(b => `<button type="button" class="chip${Math.abs(b.t - state.t) < 1e-3 ? ' active' : ''}" data-t="${b.t}" title="${b.opis}">${b.n}</button>`).join('')}</div></div></div>
-    <div class="gap-head k-zamki"><span>${T('Szerokość zamka', 'Tab width')}</span><small id="kZwOpis"></small></div>
-    ${suwak('zw', T('Szerokość zamka ustalającego: 0 = bez zamków', 'Width of a locating tab: 0 = no tabs'), ikZamek, J === 'in' ? 'in' : 'mm')}
     <div id="kLuz"${state.zw > 0 ? '' : ' class="off"'}><div class="gap-head"><span>${T('Luz na zamkach', 'Tab clearance')}</span></div>
     ${suwak('g', T('Luz zamków (na stronę)', 'Tab clearance (per side)'), ICONS.gap, J === 'in' ? 'in' : 'mm')}
     <div class="gap-pre">${LUZY[J].map(([n, g]) => `<button type="button" class="chip${Math.abs(g - state.g) < 1e-3 ? ' active' : ''}" data-g="${g}">${n} <small>${luzL(g)}</small></button>`).join('')}</div></div>`;
-  for (const id of ['zw']) { const r2 = $('r-' + id), n2 = $('n-' + id);
-    r2.addEventListener('input', () => { ustaw(id, +r2.value); $('kLuz').classList.toggle('off', !(state.zw > 0)); trackDebounced('k_' + id, 'k_suwak', { param: 'zamek' }); });
-    n2.addEventListener('change', () => { const v = parseFloat(String(n2.value).replace(',', '.')); if (Number.isFinite(v)) ustaw(id, J === 'in' ? v * CAL : v); else odswiez(); }); }
   const r = $('r-g'), n = $('n-g');
   r.addEventListener('input', () => { ustaw('g', +r.value); trackDebounced('k_g', 'k_suwak', { param: 'luz' }); });
   n.addEventListener('change', () => { const v = parseFloat(String(n.value).replace(',', '.')); if (Number.isFinite(v)) ustaw('g', J === 'in' ? v * CAL : v); else odswiez(); });
 }
 $('kBlacha').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
-  if (b.dataset.t) { if (state.zw > 0 && Math.abs(state.zw - zamekDomyslny(state.t)) < 0.6) state.zw = zamekDomyslny(+b.dataset.t); state.t = +b.dataset.t; if (state.c > 0) state.c = Math.max(state.c, Math.ceil(sciecieMin(state.t) / SIATKA[J].c) * SIATKA[J].c); track('k_blacha', { value: blacha(state.t).kod }); odswiez(); }
+  if (b.dataset.t) { if (state.zw > 0 && Math.abs(state.zw - zamekDomyslny(state.t)) < 0.6) state.zw = zamekDomyslny(+b.dataset.t); if (state.zt > 0 && Math.abs(state.zt - zamekTrojkat(state.t)) < 0.6) state.zt = zamekTrojkat(+b.dataset.t); state.t = +b.dataset.t; if (state.c > 0) state.c = Math.max(state.c, Math.ceil(sciecieMin(state.t) / SIATKA[J].c) * SIATKA[J].c); track('k_blacha', { value: blacha(state.t).kod }); odswiez(); }
   if (b.dataset.g) { state.g = +b.dataset.g; track('k_luz', { value: b.textContent.trim().split(' ')[0] }); odswiez(); }
 });
 
@@ -399,9 +444,9 @@ function statystyki() {
   $('kPlyta').textContent = `${dlL(model.wym.kw)} × ${dl(model.wym.kw)}`;
   const uw = [];
   if (s.masa > 25) uw.push(T(`Kostka waży ${liczba(s.masa, 0)} kg – do przenoszenia potrzebne dwie osoby albo wózek.`, `The cube weighs ${liczba(s.masa * 2.20462, 0)} lb – moving it takes two people or a cart.`));
-  if (!(state.zw > 0)) uw.push(T('Bez zamków ścianki trzeba ustawić i przytrzymać samemu (kątownik, magnesy).', 'Without tabs you need to position and hold the sides yourself (angle, magnets).'));
-  else if (model.zamki.kw === 0) uw.push(T('Przy tym ścięciu krawędzie są za krótkie na zamki.', 'With this corner cut the edges are too short for tabs.'));
-  if (state.c > 0 && model.zamki.tr === 0 && state.zw > 0) uw.push(T('Trójkąty narożników są za małe na zamki – sczep je punktowo.', 'The corner triangles are too small for tabs – tack them in place.'));
+  if (model.zamki.razem === 0) uw.push(T('Bez zamków ścianki trzeba ustawić i przytrzymać samemu (kątownik, magnesy).', 'Without tabs you need to position and hold the sides yourself (angle, magnets).'));
+  else if (model.zamki.kw === 0 && state.zw > 0) uw.push(T('Przy tym ścięciu krawędzie są za krótkie na zamki.', 'With this corner cut the edges are too short for tabs.'));
+  if (state.c > 0 && model.zamki.tr === 0 && state.zt > 0) uw.push(T('Trójkąty narożników są za małe na zamki – sczep je punktowo.', 'The corner triangles are too small for tabs – tack them in place.'));
   const zle = [...new Set(uwagiTresci.map(([nr]) => nr))];
   if (zle.length) uw.push(T(`Sprawdź ściankę ${zle.join(', ')}: treść jest za drobna albo zostaje wyspa.`, `Check side ${zle.join(', ')}: the content is too fine or leaves an island.`));
   $('warnLine').innerHTML = uw.length ? `${ICONS.warn || ''}<span>${uw[0]}</span>${uw.length > 1 ? `<b>+${uw.length - 1}</b>` : ''}` : '';
@@ -421,7 +466,11 @@ function odswiez(panel = true) {
   if (panel) { panelScianki(); panelBlacha(); } else komunikat();
   ustawSuwak('g', Z.g[0], Z.g[1], S.g, state.g, pole(state.g, J === 'in' ? 3 : 1));
   ustawSuwak('zw', 0, ZW_MAX[J], S.zw, state.zw, pole(state.zw, J === 'in' ? 3 : 0)); $('n-zw').step = J === 'in' ? 0.0625 : 1;
-  $('kZwOpis').textContent = state.zw > 0 ? T(`${model.zamki.razem} szt. na całej kostce`, `${model.zamki.razem} on the whole cube`) : T('bez zamków', 'no tabs');
+  $('kZwOpis').textContent = model.zamki.razem > 0 ? T(`zamków: ${model.zamki.razem}`, `tabs: ${model.zamki.razem}`) : T('bez zamków', 'no tabs');
+  ustawSuwak('zt', 0, ZW_MAX[J], S.zw, state.zt, pole(state.zt, J === 'in' ? 3 : 0)); $('n-zt').step = J === 'in' ? 0.0625 : 1;
+  $('kZtRow').classList.toggle('off', !(state.c > 0));
+  $('kLuz').classList.toggle('off', !(state.zw > 0 || (state.c > 0 && state.zt > 0)));
+  document.querySelectorAll('#kBlacha [data-g]').forEach(b => b.classList.toggle('active', Math.abs(+b.dataset.g - state.g) < 1e-3));
   $('n-a').step = J === 'in' ? 0.5 : 10; $('n-c').step = J === 'in' ? 0.25 : 5; $('n-g').step = J === 'in' ? 0.005 : 0.1;
   statystyki(); syncJedn(); pdfOpis();
   if (view === 'flat') rozkroj(); else scena();
@@ -475,12 +524,54 @@ function pdfOpis() {
   $('kPdfSk').innerHTML = `<span>${T('Skala', 'Scale')}</span>` + [[0, 'auto'], [2, '1:2'], [1, '1:1']].map(([n, t]) => `<button type="button" class="chip${n === pdfN ? ' active' : ''}" data-n="${n}">${t}</button>`).join('');
 }
 $('kPdfSk').addEventListener('click', e => { const b = e.target.closest('[data-n]'); if (!b) return; pdfN = +b.dataset.n; track('k_pdf_skala', { value: pdfN }); pdfOpis(); });
+/** Zdjęcia modelu do PDF: dwa widoki z przeciwległych narożników + widok w „pudełku” z narożnikami gabarytu (do wymiarów). */
+function migawki() {
+  const keep = { shading, spoinyOn, cam: camera.position.clone(), zoom: camera.zoom, target: orbit.target.clone() };
+  shading = 'draw'; spoinyOn = false; bezWyboru = true; przelicz3D(); scena();
+  ground.visible = false;
+  const h = state.a / 2, out = [], rogi = [...Array(8).keys()].map(i => new THREE.Vector3(i & 1 ? h : -h, i & 2 ? h : -h, i & 4 ? h : -h));
+  let box = null;
+  for (const sh of [{ dir: [1, 0.7, 1.15] }, { dir: [-1, -0.55, -1.15] }, { dir: [1, 0.75, 1.15], box: true }]) {
+    const Wi = sh.box ? 1400 : 1600, Hi = 1100;
+    renderer.setSize(Wi, Hi, false);
+    camera.position.copy(new THREE.Vector3(...sh.dir).normalize().multiplyScalar(5000)); camera.up.set(0, 1, 0); camera.lookAt(0, 0, 0); camera.zoom = 1; camera.updateMatrixWorld();
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const p of rogi) { const q = p.clone().applyMatrix4(camera.matrixWorldInverse); x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); }
+    const k = Math.max((x1 - x0) / Wi, (y1 - y0) / Hi) * (sh.box ? 1.03 : 1.06), cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+    camera.left = cx - Wi / 2 * k; camera.right = cx + Wi / 2 * k; camera.top = cy + Hi / 2 * k; camera.bottom = cy - Hi / 2 * k; camera.updateProjectionMatrix();
+    renderer.render(scene, camera);
+    const img = renderer.domElement.toDataURL('image/png');
+    if (!sh.box) { out.push({ img, w: Wi, h: Hi }); continue; }
+    const px = rogi.map(r => { const q = r.clone().project(camera); return [(q.x + 1) / 2 * Wi, (1 - q.y) / 2 * Hi]; });
+    const cm = +(state.a / 10).toFixed(1);
+    box = { img, w: Wi, h: Hi, px, cm: { x: cm, y: cm, z: cm }, mm: { x: state.a, y: state.a, z: state.a } };
+  }
+  ground.visible = true; bezWyboru = false;
+  ({ shading, spoinyOn } = keep);
+  camera.position.copy(keep.cam); camera.zoom = keep.zoom; orbit.target.copy(keep.target);
+  scena(); kadr(); orbit.update(); needsRender = true;
+  return { views: out, box };
+}
+/** Logo smoka jako PNG do PDF. */
+function logoPng() {
+  return new Promise(ok => {
+    const img = new Image();
+    img.onload = () => { const w = 600, h = Math.round(600 * (img.naturalHeight || 1) / (img.naturalWidth || 1)), cv = document.createElement('canvas'); cv.width = w; cv.height = h; cv.getContext('2d').drawImage(img, 0, 0, w, h); try { ok({ img: cv.toDataURL('image/png'), w, h }); } catch { ok(null); } };
+    img.onerror = () => ok(null);
+    img.src = 'img/logo.svg';
+  });
+}
 $('pdf').addEventListener('click', async () => {
   try {
     $('note').textContent = T('Przygotowuję PDF…', 'Preparing the PDF…'); $('note').className = 'note';
     track('pdf');
-    const plan = await buildPdf({ parts: czesci }, { url: 'ogimora.com/cube', code: `cube-${J === 'in' ? liczba(state.a / CAL, 1, true).replace(/[.,]/, '_') + 'in' : state.a + 'mm'}`, jedn: J, lang: LANG, N: pdfN || -1 });
-    $('note').textContent = T(`PDF gotowy: skala 1:${plan.N}, ${plan.pages.length} str. ${papier()}. Drukuj w skali 100%. Sklej z kartonu i sprawdź, czy ścianki pasują.`, `PDF ready: scale 1:${plan.N}, ${plan.pages.length} p. ${papier()}. Print at 100%. Build it from card and check the fit.`);
+    const { views, box } = migawki(), logo = await logoPng(), s2 = model.stat2;
+    const masa = J === 'in' ? `${liczba(s2.masa * 2.20462, 1)} lb` : `${liczba(s2.masa, 1)} kg`, dlm = mm => (J === 'in' ? `${liczba(mm / 304.8, 1)} ft` : `${liczba(mm / 1000, 1)} m`);
+    const opis = [T('Stalowa kostka do nauki spawania', 'Steel cube for welding practice'),
+      T(`Bok ${dl(state.a)} · blacha ${blacha(state.t).opis} · ${s2.sztuk} elementów · stal ok. ${masa} · spoiny ok. ${dlm(model.stat.spoiny)}`, `Side ${dl(state.a)} · sheet ${blacha(state.t).opis} · ${s2.sztuk} parts · steel approx. ${masa} · welds approx. ${dlm(model.stat.spoiny)}`),
+      T('Darmowy generator i plik DXF do cięcia: ogimora.com/cube', 'Free generator and DXF file for cutting: ogimora.com/cube')];
+    const plan = await buildPdf({ parts: czesci }, { views, box, boxTop: true, logo, opis, url: 'ogimora.com/cube', code: `cube-${J === 'in' ? liczba(state.a / CAL, 1, true).replace(/[.,]/, '_') + 'in' : state.a + 'mm'}`, jedn: J, lang: LANG, N: pdfN || -1 });
+    $('note').textContent = T(`PDF gotowy: skala 1:${plan.N}, ${plan.pages.length + 1} str. ${papier()}. Drukuj w skali 100%. Sklej z kartonu i sprawdź, czy ścianki pasują.`, `PDF ready: scale 1:${plan.N}, ${plan.pages.length + 1} p. ${papier()}. Print at 100%. Build it from card and check the fit.`);
     $('note').className = 'note ok';
   } catch (err) { console.error(err); $('note').textContent = T('Nie udało się zrobić PDF (sprawdź internet — biblioteka ładuje się z sieci).', 'Could not make the PDF (check your connection – the PDF library loads from the web).'); }
 });
@@ -497,10 +588,14 @@ $('kDlB').textContent = T('Pobierz plik DXF', 'Download the DXF file');
 $('kLinkB').textContent = T('Kopiuj link do projektu', 'Copy a link to this design');
 $('kLinkS').textContent = T('ten adres odtwarza kostkę', 'this address restores the cube');
 $('kTabFlat').textContent = T('Rozkrój', 'Flat parts');
-$('stageHint').textContent = T('Przeciągnij – obrót · kółko – przybliż · kliknij ściankę, aby ją zmienić', 'Drag – rotate · wheel – zoom · click a side to edit it');
+$('stageHint').textContent = T('Przeciągnij – obrót · Shift + przeciągnij – przesuń · kółko – przybliż · kliknij ściankę, aby ją zmienić', 'Drag – rotate · Shift + drag – pan · wheel – zoom · click a side to edit it');
 if (EN) { document.title = 'OGIMORA — steel welding cube, free DXF'; document.documentElement.lang = 'en';
   $('opisK').innerHTML = `<h1>OGIMORA – steel cube for welding practice (free DXF file)</h1>
     <p>A sheet-steel cube to weld yourself: you practise corner welds and keep the result – a dice, a lantern or a garden piece. Set the side from 4 to 28 in, sheet from 14 ga, dots, numbers or your own lettering on each side, cut corners and an opening in any side.</p>
     <p>The sides meet at their inner edges, which leaves an open groove for the weld on the outside. Locating tabs hold the sides in place while you tack. DXF at 1:1 scale, in millimetres or inches. Free.</p>`; }
+try { if (localStorage.getItem('ogi_cards') === 'off') document.body.classList.add('cards-off'); } catch {}
+const kartyTxt = () => { $('cardsTgl').textContent = document.body.classList.contains('cards-off') ? T('Pokaż opcje', 'Show options') : T('Schowaj opcje', 'Hide options'); };
+$('cardsTgl').addEventListener('click', () => { const off = document.body.classList.toggle('cards-off'); try { localStorage.setItem('ogi_cards', off ? 'off' : 'on'); } catch {} kartyTxt(); track('schowaj_opcje'); kadr(); });
+kartyTxt();
 pasek(); panelKsztalt(); kamera('iso'); odswiez(); kadr();
 track('strona', { value: 'cube' });
