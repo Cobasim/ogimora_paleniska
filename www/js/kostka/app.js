@@ -866,7 +866,12 @@ $('pdf').addEventListener('click', async () => {
 setCodeSource(() => `K${Math.round(state.a)}-${blacha(state.t).kod}-${Math.round(state.c)}`);
 setProjektSource(() => ({ model: 'kostka', wym: { bok: Math.round(state.a), wys: Math.round(state.a), kat: 0, dno: Math.round(state.c), nogi: Math.round(state.zw), uklad: state.uklad + (state.c > 0 ? '-' + state.ukladT : ''), blacha: blacha(state.t).kod },
   wz: [1, 2, 3, 4, 5, 6].map(n => { const s = state.sc[n]; return 'k-' + (s.typ === 'kropki' ? 'kropki' + s.n : s.typ === 'otwor' ? 'otwor-' + s.ksztalt : s.typ === 'napis' ? 'napis-' + s.font.toLowerCase() : s.typ); }),
-  nap: [1, 2, 3, 4, 5, 6].map(n => (state.sc[n].typ === 'napis' ? wiersze(state.sc[n]).join('').length : 0)), otw: 0, mat: 's235', luz: state.g.toFixed(2), jedn: J }));
+  nap: [1, 2, 3, 4, 5, 6].map(n => (state.sc[n].typ === 'napis' ? wiersze(state.sc[n]).join('').length : 0)), otw: 0, mat: 's235', luz: state.g.toFixed(2), jedn: J,
+  // opis do statystyk (bez treści napisu): rodzaj ścianki, liczba kropek / kształt otworu / liczba liter w każdym wierszu i czcionka, wielkość w %
+  kostka: { zt: state.c > 0 ? Math.round(state.zt) : 0,
+    sc: [1, 2, 3, 4, 5, 6].map(n => { const s = state.sc[n]; return { t: s.typ, s: Math.round(s.skala * 100), ...(s.typ === 'kropki' ? { n: s.n } : s.typ === 'otwor' ? { k: s.ksztalt } : s.typ === 'napis' ? { w: [s.t1, s.tekst, s.t3].map(x => String(x || '').trim().length), f: s.font } : {}) }; }),
+    opis: `c${Math.round(state.c)},zw${Math.round(state.zw)},zt${state.c > 0 ? Math.round(state.zt) : 0},${state.uklad}-${state.ukladT},g${state.g.toFixed(2)}|` + [1, 2, 3, 4, 5, 6].map(n => { const s = state.sc[n], p = Math.round(s.skala * 100);
+      return n + ':' + (s.typ === 'kropki' ? `kropki${s.n}-${p}` : s.typ === 'otwor' ? `otwor-${s.ksztalt}-${p}` : s.typ === 'napis' ? `napis-${[s.t1, s.tekst, s.t3].map(x => String(x || '').trim().length).join('+')}-${s.font}-${p}` : 'brak'); }).join('|') } }));
 
 // ---------------------------------------------------------------- start
 $('kPlan').innerHTML = T('<b>Plik DXF — za darmo.</b> Ćwiczysz spoiny, zostaje kostka.', '<b>DXF file — free.</b> Practise your welds, keep the cube.');

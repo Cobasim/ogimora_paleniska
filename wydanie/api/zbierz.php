@@ -97,13 +97,15 @@ $jez  = strtolower(slowo($d['lang'] ?? '', 2, '/[^A-Za-z]/'));
 $urz  = in_array($d['dev'] ?? '', ['mobile', 'tablet', 'desktop'], true) ? $d['dev'] : '';
 $dzien = date('d');
 $wer   = slowo($d['v'] ?? '', 12, '/[^0-9.]/') ?: 'brak';   // wersja strony (js/wersja.js)
+$strona = in_array($d['m'] ?? '', ['kostka', 'start'], true) ? $d['m'] : 'palenisko';   // od 0.4.3: która strona wysłała dane
+$pre = ['palenisko' => '', 'kostka' => 'k', 'start' => 's'][$strona];                    // sumy w razem.json: w/d/p (palenisko), kw/kd/kp (kostka), sw (strona startowa – nie jest pokazywana)
 
 if ($typ === 'wizyta') {
-  if (!empty($d['nowa'])) razem($dir, 'w');
-  $pdf = (int)(((array)($d['k'] ?? []))['pdf'] ?? 0); if ($pdf > 0) razem($dir, 'p', min(200, $pdf));
-  licznik($dir, function (&$t) use ($d, $kraj, $jez, $urz, $dzien, $wer) {
+  if (!empty($d['nowa'])) razem($dir, $pre . 'w');
+  $pdf = (int)(((array)($d['k'] ?? []))['pdf'] ?? 0); if ($pdf > 0) razem($dir, $pre . 'p', min(200, $pdf));
+  licznik($dir, function (&$t) use ($d, $kraj, $jez, $urz, $dzien, $wer, $strona) {
     if (!empty($d['nowa'])) {
-      plus($t, 'razem', 'wizyty'); plus($t, 'dni_wizyty', $dzien); plus($t, 'wizyty_wersja', $wer);
+      plus($t, 'razem', 'wizyty'); plus($t, 'wizyty_strona', $strona); plus($t, 'dni_wizyty', $dzien); plus($t, 'wizyty_wersja', $wer);
       plus($t, 'kraj', $kraj); plus($t, 'jezyk', $jez); plus($t, 'urzadzenie', $urz);
       plus($t, 'skad', strtolower(slowo($d['ref'] ?? '', 40, '/[^A-Za-z0-9.\-]/')) ?: 'bezposrednio');
       if (!empty($d['src'])) plus($t, 'kampania', slowo($d['src'], 30));
@@ -120,14 +122,16 @@ if ($typ === 'wizyta') {
 }
 
 if ($typ === 'pobranie') {
-  razem($dir, 'd');
+  $model = ($d['model'] ?? '') === 'kostka' ? 'kostka' : 'palenisko';
+  razem($dir, $model === 'kostka' ? 'kd' : 'd');
   $kod = slowo($d['kod'] ?? '', 24, '/[^A-Za-z0-9\-]/');
   $wz = []; foreach (array_slice((array)($d['wz'] ?? []), 0, 6) as $w) $wz[] = slowo($w, 48, '/[^a-z0-9\-]/') ?: '-';
   $nap = []; foreach (array_slice((array)($d['nap'] ?? []), 0, 6) as $n) $nap[] = max(0, min(40, (int)$n));
   $w = (array)($d['wym'] ?? []);
   // wymiary zawsze w mm (także projekty calowe); blacha: '3' / '4' / '5' (mm) albo '11ga' / '10ga' / '3-16' / '1-4' (cale, od 0.2.0)
   $wym = ['bok' => (int)($w['bok'] ?? 0), 'wys' => (int)($w['wys'] ?? 0), 'kat' => (int)($w['kat'] ?? 0), 'dno' => (int)($w['dno'] ?? 0), 'nogi' => (int)($w['nogi'] ?? 0), 'blacha' => slowo($w['blacha'] ?? '', 6, '/[^0-9a-z\-]/') ?: '0'];
-  $model = ($d['model'] ?? '') === 'kostka' ? 'kostka' : 'palenisko';
+  // kostka, od 0.4.3: opis ścianek i zamków (bez treści napisu) – jedna kolumna „kostka” w rejestrze + liczniki
+  $ko = (array)($d['kostka'] ?? []); $ko_opis = slowo($ko['opis'] ?? '', 220, '/[^A-Za-z0-9_:.,|+\-]/');
   $wym_uklad = (string)(($d['wym'] ?? [])['uklad'] ?? 'pary');   // od 0.3.0: który model (kostka: bok = wysokość, „dno” = ścięcie narożnika, „nozki” = szerokość zamka w mm, 0 = bez zamków)
   $jedn = ($d['jedn'] ?? '') === 'in' ? 'in' : 'mm';           // jednostki projektu na stronie
   $plik = ($d['plik'] ?? '') === 'in' ? 'in' : 'mm';           // jednostki pobranego pliku DXF
@@ -135,7 +139,7 @@ if ($typ === 'pobranie') {
   $otw = max(0, min(8, (int)($d['otw'] ?? 0)));
   $poza = false;
   $csv = "$dir/pobrania-" . date('Y-m') . '.csv';
-  $NAGL = "czas;kraj;jezyk;urzadzenie;kod;bok;wysokosc;kat;dno;nozki;blacha;material;luz;wzory;napis_znakow;otwory_dna;wersja;jednostki;plik_dxf;model\n";
+  $NAGL = "czas;kraj;jezyk;urzadzenie;kod;bok;wysokosc;kat;dno;nozki;blacha;material;luz;wzory;napis_znakow;otwory_dna;wersja;jednostki;plik_dxf;model;kostka\n";
   if (!is_file($csv)) file_put_contents($csv, $NAGL, LOCK_EX);
   else {   // rejestr założony przed 0.2.0: nowy nagłówek (dwie kolumny na końcu – starsze wiersze mają je puste)
     $f = fopen($csv, 'r+');
@@ -146,10 +150,10 @@ if ($typ === 'pobranie') {
   }
   if (filesize($csv) < MAX_CSV) {
     $linia = [date('Y-m-d H:i'), $kraj, $jez, $urz, $kod, $wym['bok'], $wym['wys'], $wym['kat'], $wym['dno'], $wym['nogi'], $wym['blacha'], $mat, $ciecie,
-              implode('|', $wz), implode('|', $nap), $otw, $wer, $jedn, $plik, $model];
+              implode('|', $wz), implode('|', $nap), $otw, $wer, $jedn, $plik, $model, $ko_opis];
     file_put_contents($csv, implode(';', $linia) . "\n", FILE_APPEND | LOCK_EX);
   } else $poza = true;
-  licznik($dir, function (&$t) use ($wz, $nap, $wym, $mat, $kraj, $dzien, $d, $otw, $poza, $wer, $jedn, $plik, $model, $wym_uklad) {
+  licznik($dir, function (&$t) use ($wz, $nap, $wym, $mat, $kraj, $dzien, $d, $otw, $poza, $wer, $jedn, $plik, $model, $wym_uklad, $ko) {
     plus($t, 'razem', 'pobrania'); plus($t, 'pobrania_wersja', $wer); plus($t, 'model', $model); plus($t, 'dni_pobrania', $dzien); plus($t, 'pobrania_kraj', $kraj);
     if ($poza) plus($t, 'razem', 'pobrania_poza_rejestrem');
     if ($model === 'kostka') {   // kostka: własne liczniki, żeby nie mieszać z paleniskiem
@@ -157,6 +161,18 @@ if ($typ === 'pobranie') {
       plus($t, 'kostka_blacha', (string)$wym['blacha']); plus($t, 'kostka_bok_mm', (string)(intdiv($wym['bok'], 50) * 50));
       plus($t, 'kostka_sciecie', $wym['dno'] > 0 ? 'jest' : 'brak'); plus($t, 'kostka_zamek_mm', (string)(intdiv($wym['nogi'], 5) * 5));   // szerokość zamka w przedziałach co 5 mm; 0 = bez zamków
       plus($t, 'kostka_uklad_zamkow', slowo($wym_uklad ?? 'pary', 16));
+      // od 0.4.3: ścięcie w przedziałach, zamki trójkątów, luz; dla każdej ścianki z napisem: ile wierszy, ile liter, jaka czcionka; kropki i otwory
+      plus($t, 'kostka_sciecie_mm', (string)(intdiv(max(0, (int)$wym['dno']), 10) * 10));
+      plus($t, 'kostka_zamek_trojkat_mm', (string)(intdiv(max(0, min(200, (int)($ko['zt'] ?? 0))), 5) * 5)); plus($t, 'kostka_luz', slowo($d['luz'] ?? '', 6, '/[^0-9.]/'));
+      $ile_nap = 0;
+      foreach (array_slice((array)($ko['sc'] ?? []), 0, 6) as $s) { $s = (array)$s; $typ = slowo($s['t'] ?? '', 8, '/[^a-z]/');
+        if ($typ === 'napis') { $ile_nap++; $w = array_slice(array_map('intval', (array)($s['w'] ?? [])), 0, 3); $rz = count(array_filter($w));
+          plus($t, 'kostka_napis_wierszy', (string)$rz); plus($t, 'kostka_napis_liter', (string)min(40, array_sum($w))); plus($t, 'kostka_napis_najdluzszy_wiersz', (string)min(20, $w ? max($w) : 0));
+          plus($t, 'kostka_czcionka', slowo($s['f'] ?? '', 12)); }
+        elseif ($typ === 'kropki') plus($t, 'kostka_kropki', (string)max(1, min(6, (int)($s['n'] ?? 1))));
+        elseif ($typ === 'otwor') plus($t, 'kostka_otwor', slowo($s['k'] ?? '', 8, '/[^a-z]/'));
+        if ($typ !== 'brak' && $typ !== '') plus($t, 'kostka_wielkosc_proc', (string)(intdiv(max(0, min(100, (int)($s['s'] ?? 0))), 10) * 10)); }
+      plus($t, 'kostka_scianek_z_napisem', (string)$ile_nap);
       plus($t, 'jednostki', $jedn); plus($t, 'plik_dxf', $plik);
       return;
     }

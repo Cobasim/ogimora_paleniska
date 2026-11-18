@@ -180,7 +180,11 @@ if (box) {
 { const st = document.getElementById('stopka');
   if (st) {
     const licz = (k, n) => `<span>${n} <b data-k="${k}">··</b></span>`;
-    st.innerHTML = `<span>© ogimora.com</span><i>·</i><span>${T.st[0]}</span><i class="st-w">·</i><span class="st-w">v${WERSJA}</span><span class="st-p">${licz('w', T.st[1])}</span><i>·</i>${licz('d', T.st[2])}<i>·</i>${licz('p', T.st[3])}`;
+    // liczniki osobno dla każdego modelu: palenisko w / d / p (od 0.1.4), kostka kw / kd / kp (od 0.4.3). Strona startowa pokazuje oba: FP i CB.
+    const trzy = (pre, etyk = '') => `${etyk ? `<span class="st-m">${etyk}</span>` : ''}${licz(pre + 'w', T.st[1])}<i>·</i>${licz(pre + 'd', T.st[2])}<i>·</i>${licz(pre + 'p', T.st[3])}`;
+    const model = document.documentElement.dataset.model;
+    st.innerHTML = `<span>© ogimora.com</span><i>·</i><span>${T.st[0]}</span><i class="st-w">·</i><span class="st-w">v${WERSJA}</span><span class="st-p"></span>` +
+      (model === 'kostka' ? trzy('k') : model === 'palenisko' ? trzy('') : `${trzy('', 'FP')}<i class="st-o">|</i>${trzy('k', 'CB')}`);
     fetch('api/licznik.php', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(d => { if (!d) return;
       st.querySelectorAll('b[data-k]').forEach(b => { const n = Math.max(0, +d[b.dataset.k] || 0); b.textContent = n.toString(16).toUpperCase().padStart(2, '0'); b.parentNode.title = `${n} – ${T.st[4]}`; });
     }).catch(() => {});

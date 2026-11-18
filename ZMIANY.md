@@ -2,6 +2,9 @@
 
 Jedna linijka na każde wgranie na serwer. Numer wersji jest w `www/js/wersja.js`.
 
+## 0.4.3 – 2026-11-18
+Liczniki w stopce osobno dla modeli: palenisko zachowuje dotychczasowe liczby (V · D · P), kostka liczy od zera; strona startowa znów ma stopkę i pokazuje oba zestawy (FP i CB). Statystyki pobrań kostki są pełniejsze: ścięcie, zamki krawędzi i trójkątów z układem, luz, a dla każdej ścianki rodzaj, wielkość, liczba kropek, kształt otworu albo liczba liter w każdym wierszu i czcionka (bez treści napisu).
+
 ## 0.4.2 – 2026-11-18
 Kostka dorównuje palenisku: „?” przy luzie na zamkach otwiera to samo okienko z rysunkiem, opisem i tabelką (laser / plazma); przycisk „Płytki próbne” z plikami do wycięcia i instrukcją; przycisk „poprzedni widok” przy widokach. Podgląd linku: osobny obrazek dla kostki i dla strony startowej (wcześniej link do kostki pokazywał obrazek paleniska).
 

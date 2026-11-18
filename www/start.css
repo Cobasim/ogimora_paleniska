@@ -29,3 +29,6 @@ body.start { background: #f6f4f0; }
 .st-jak span { font-size: 14.5px; line-height: 1.5; color: #4a443c; }
 .st-stopka { margin: 34px 0 0; font-size: 13px; color: #8a8378; }
 @media (max-width: 760px) { .start-main { padding: 26px 14px 30px; } .st-modele, .st-jak ol { grid-template-columns: 1fr; } }
+.stopka .st-m { font: 700 11px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #6d655b; letter-spacing: .06em; margin-right: 2px; }
+.stopka .st-o { margin: 0 6px; color: #c9c1b6; }
+body.start .stopka { max-width: 1120px; margin: 0 auto; padding: 0 24px 18px; height: auto; flex-wrap: wrap; row-gap: 4px; }

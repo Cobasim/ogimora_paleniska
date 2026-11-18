@@ -13,6 +13,7 @@ export function ustawStatystyki(on) { try { if (on) localStorage.removeItem(BEZ)
 
 const q = new URLSearchParams(location.search);
 const CONTEXT = {
+  m: document.documentElement.dataset.model || document.documentElement.dataset.strona || 'palenisko',   // która strona: palenisko / kostka / start – liczniki w stopce są osobne
   v: WERSJA,                                                   // wersja strony – żeby odzew dało się przypisać do wydania
   src: (q.get('src') || q.get('utm_source') || '').slice(0, 30),
   ref: (() => { try { const r = new URL(document.referrer); return r.host === location.host ? '' : r.host; } catch { return ''; } })(),
