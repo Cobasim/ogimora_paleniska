@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="strona.css?v=6">
   <link rel="stylesheet" href="naglowek.css?v=2">
   <link rel="stylesheet" href="prosty.css?v=9">
-  <link rel="stylesheet" href="kostka.css?v=3">
+  <link rel="stylesheet" href="kostka.css?v=4">
   <script type="module" src="js/i18n.js"></script>
 </head>
 <body class="kostka">
@@ -59,6 +59,7 @@
       </div>
       <div class="infobar">
         <div class="stats" id="stats"></div>
+        <div class="hist-btns"><button type="button" id="histUndo" disabled>↶</button><button type="button" id="histRedo" disabled>↷</button></div>
         <div class="warn-slot" id="warnSlot" tabindex="0" aria-live="polite">
           <div class="warn-line" id="warnLine"></div>
           <ul class="warn-pop" id="warnings"></ul>
@@ -72,6 +73,7 @@
       </div>
       <div class="panel-foot">
         <p class="plan" id="kPlan"></p>
+        <div class="price" id="price"></div>
         <button id="download" class="cta" type="button">
           <span class="cta-icon">↓</span>
           <span><b id="kDlB">Pobierz plik DXF</b><small id="ctaSub"></small></span>

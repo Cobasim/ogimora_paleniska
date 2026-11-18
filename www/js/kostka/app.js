@@ -5,7 +5,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { zbuduj, ogranicz, sciecieMin, zamekDomyslny, zamekTrojkat, ZAMEK_MIN, GESTOSC, LIM, w3 } from './geo.js';
 import { tresc, gdyCzcionka, NAPIS_MAX, FONTY, FONT_DOM, wiersze } from './tresc.js';
-import { buildPdf, planPrint } from '../print.js';
+import { buildPdf, planPrint, planJedna } from '../print.js';
+import { estimate, CUT_RATES, RYNEK, USA_SERIA, usaCena } from '../pricing.js';
 import { tessellate, polygonArea, perimeter, bbox } from '../geometry.js';
 import { buildDxf } from '../dxf.js';
 import { makeMaterial } from '../textures.js';
@@ -48,7 +49,7 @@ const luzL = (mm, j = J) => (j === 'in' ? liczba(mm / CAL, 3) : liczba(mm, 1));
 const KLUCZ = 'ogik_stan';
 const kropki = () => Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => [n, { typ: 'kropki', n, tekst: String(n), t1: '', t3: '', font: FONT_DOM, ksztalt: 'kolo', skala: 0.7 }]));
 function startowy(j) {
-  const s = { a: 250, t: 3, c: 0, g: 0.3, zw: zamekDomyslny(3), zt: zamekTrojkat(3), sc: kropki() };
+  const s = { a: 250, t: 3, c: 0, g: 0.3, zw: zamekDomyslny(3), zt: zamekTrojkat(3), uklad: 'pary', sc: kropki() };
   return j === 'in' ? przelicz(s, 'in') : s;
 }
 function przelicz(s, j) {
@@ -70,6 +71,7 @@ function popraw(s) {            // dane z linku albo z pamięci: tylko znane pol
   if (![...BLACHY.mm, ...BLACHY.in].some(b => Math.abs(b.t - q.t) < 1e-3)) q.t = 3;
   q.zw = s.zamki === false || s.zamki === 0 ? 0 : Number.isFinite(+s.zw) ? +s.zw : zamekDomyslny(q.t);   // stare linki: zamki tak / nie
   q.zt = s.zamki === false || s.zamki === 0 ? 0 : Number.isFinite(+s.zt) ? +s.zt : zamekTrojkat(q.t);
+  q.uklad = ['pary', 'konce', 'srodek'].includes(s.uklad) ? s.uklad : 'pary';       // układ zamków na krawędzi (od 0.3.4)
   q.sc = {};
   for (let n = 1; n <= 6; n++) {
     const x = (s.sc && s.sc[n]) || {}, typ = ['brak', 'kropki', 'napis', 'otwor'].includes(x.typ) ? x.typ : 'brak';
@@ -95,9 +97,38 @@ let model = null, czesci = [];
 let view = 'model', shading = 'draw', spoinyOn = false, dxfJ = J;
 
 function zapisz() {
+  histZapisz();
   try { localStorage.setItem(KLUCZ, JSON.stringify(state)); } catch {}
   try { history.replaceState(null, '', location.pathname + location.search + doLinku()); } catch {}
 }
+
+// ---------------------------------------------------------------- historia (cofnij / ponów) – jak w palenisku
+const H = { back: [], fwd: [], last: null, blokada: false }; let histT = 0;
+function histZapisz() {
+  if (H.blokada) return;
+  clearTimeout(histT);
+  histT = setTimeout(() => {
+    const m = JSON.stringify(state); if (m === H.last) return;
+    if (H.last) { H.back.push(H.last); if (H.back.length > 40) H.back.shift(); H.fwd = []; }
+    H.last = m; histPrzyciski();
+  }, 350);
+}
+function histKrok(dir) {
+  clearTimeout(histT);
+  const cur = JSON.stringify(state); if (cur !== H.last && H.last) { H.back.push(H.last); H.fwd = []; H.last = cur; }
+  const from = dir < 0 ? H.back : H.fwd, to = dir < 0 ? H.fwd : H.back;
+  if (!from.length) return;
+  to.push(H.last); H.last = from.pop();
+  H.blokada = true;
+  const jPrzed = J; state = popraw(JSON.parse(H.last)); J = jednStanu(state); dxfJ = J;
+  if (J !== jPrzed) { ustawPreferencje(J); panelKsztalt(); }
+  odswiez(); H.last = JSON.stringify(state); H.blokada = false; histPrzyciski();
+  track(dir < 0 ? 'cofnij' : 'ponow');
+}
+function histPrzyciski() { const u = $('histUndo'), r = $('histRedo'); if (u) { u.disabled = !H.back.length; r.disabled = !H.fwd.length; } }
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !/INPUT|TEXTAREA/.test(e.target.tagName)) { e.preventDefault(); histKrok(e.shiftKey ? 1 : -1); }
+});
 
 // ---------------------------------------------------------------- model → części do cięcia
 const naXY = ring => ring.map(q => (Array.isArray(q) ? { x: q[0], y: q[1] } : q));
@@ -389,6 +420,7 @@ function panelKsztalt() {
     ${suwak('a', T('Bok kostki (wymiar zewnętrzny)', 'Cube side (outside size)'), ik.bok, u)}
     ${suwak('c', T('Ścięcie narożników: 0 = brak; największe sięga połowy boku', 'Corner cut: 0 = none; the largest reaches the middle of each edge'), ik.sciecie, u)}
     ${suwak('zw', T('Szerokość zamków na krawędziach kostki: 0 = bez zamków', 'Tab width on the cube edges: 0 = no tabs'), ikZamek, u)}
+    <div class="k-uklad" id="kUklad"><span>${T('Zamki', 'Tabs')}</span>${[['pary', T('Rozłożone', 'Spread'), T('Pary zamków rozłożone równo wzdłuż krawędzi', 'Pairs of tabs spread evenly along the edge')], ['konce', T('Na końcach', 'At the ends'), T('Zamki tylko przy początku i końcu krawędzi – środek wolny na jedną ciągłą spoinę', 'Tabs only near both ends of the edge – the middle stays free for one continuous weld')], ['srodek', T('Jeden w środku', 'One in the middle'), T('Jeden zamek na środku krawędzi, łapany przez dwa zamki drugiej ścianki', 'One tab in the middle of the edge, held between two tabs of the other side')]].map(([v, n, tt]) => `<button type="button" class="chip" data-uklad="${v}" title="${tt}">${n}</button>`).join('')}</div>
     <div id="kZtRow">${suwak('zt', T('Szerokość zamków przy trójkątach narożników: 0 = bez zamków', 'Tab width at the corner triangles: 0 = no tabs'), ikZamekT, u)}</div>
     <div class="row derived" title="${T('Wymiar jednej ścianki do wycięcia (bez zamków) i liczba zamków na całej kostce', 'Size of one side plate to cut (without tabs) and the number of tabs on the whole cube')}"><span>${ICONS.sheet || ''}</span><output id="kPlyta"></output></div><p class="k-zwopis" id="kZwOpis"></p>`;
   const zm = (id, zZdarzenia) => {
@@ -397,6 +429,7 @@ function panelKsztalt() {
     n.addEventListener('change', () => { const v = parseFloat(String(n.value).replace(',', '.')); if (Number.isFinite(v)) ustaw(id, J === 'in' ? v * CAL : v); else odswiez(); track('k_pole', { param: id }); });
   };
   zm('a'); zm('c'); zm('zw'); zm('zt');
+  $('kUklad').addEventListener('click', e => { const b = e.target.closest('[data-uklad]'); if (!b) return; state.uklad = b.dataset.uklad; track('k_uklad', { value: state.uklad }); odswiez(false); });
 }
 function ustaw(id, v) {
   const S = SIATKA[J], Z = ZAKRES[J];
@@ -541,6 +574,21 @@ document.addEventListener('click', e => { const s = $('warnSlot'); if (s.classLi
   addEventListener('scroll', pytaj, { passive: true }); addEventListener('resize', pytaj); mq.addEventListener('change', pytaj);
 }
 
+// ---------------------------------------------------------------- wycena (jak w palenisku: te same stawki; bez szczegółów)
+// stawki cięcia dla blach, których cennik paleniska nie ma (2 mm, 14 ga): przedłużenie prostej 3 mm → 4 mm, nie mniej niż 60% stawki 3 mm
+for (const t of [2, 1.897]) if (!CUT_RATES[t]) { const A = CUT_RATES[3], B = CUT_RATES[4], k = t - 3; CUT_RATES[t] = [0, 1].map(i => +Math.max(0.6 * A[i], A[i] + (B[i] - A[i]) * k).toFixed(3)); }
+function wycena() {
+  const US = RYNEK === 'us', zl = v => (US ? `$${Math.round(v).toLocaleString('en-US')}` : `${liczba(Math.round(v), 0)} zł`);
+  let ciecie = 0, wyc = 0;
+  const parts = czesci.map(c => { const hp = c.holes.reduce((s, h) => s + perimeter(h), 0), P = perimeter(c.outline) + hp; ciecie += P * c.qty;
+    const [zaM, zaPrzeb] = CUT_RATES[c.t] || CUT_RATES[3]; wyc += (hp / 1000 * zaM + c.holes.length * zaPrzeb) * c.qty;       // same wycięcia w ściankach (bez obrysów)
+    return { t: CUT_RATES[c.t] ? c.t : 3, qty: c.qty, area: polygonArea(c.outline) - c.holes.reduce((s, h) => s + polygonArea(h), 0), perimeter: P, pierces: 1 + c.holes.length }; });
+  const est = estimate({ parts, stats: { cut: ciecie } }, 's235');
+  const K1 = US ? USA_SERIA[0][1] : 1, razem = Math.ceil((US ? usaCena(est.net, 1) : est.net) / 5) * 5;       // suma w górę do 5, jak w palenisku
+  $('price').innerHTML = `<div class="price-head k-cena"><span title="${US ? 'Test price for ONE cube cut from steel – a rough estimate for the USA. Before sales tax. Ask a shop for a real quote.' : 'Cena testowa za wycięcie JEDNEJ kostki ze stali – szacunek orientacyjny dla Polski. Netto. Dokładną cenę poda zakład.'}">${US ? 'Test price, rough' : 'Cena testowa, orientacyjna'} <u class="rynek">${US ? 'USA · 1 pc' : 'PL · 1 szt.'}</u></span><b>≈ ${zl(razem)}</b>
+    <em class="decor-price${wyc * K1 > 0.5 ? '' : ' none'}">${wyc * K1 > 0.5 ? (US ? `incl. cut-outs ${zl(wyc * K1)}` : `w tym wycięcia w ściankach ${zl(wyc)}`) : (US ? 'no cut-outs' : 'bez wycięć w ściankach')}</em></div>`;
+}
+
 // ---------------------------------------------------------------- odświeżanie
 function odswiez(panel = true) {
   Object.assign(state, wGranicach(state));
@@ -555,10 +603,11 @@ function odswiez(panel = true) {
   $('kZwOpis').textContent = model.zamki.razem > 0 ? T(`zamków: ${model.zamki.razem}`, `tabs: ${model.zamki.razem}`) : T('bez zamków', 'no tabs');
   ustawSuwak('zt', 0, ZW_MAX[J], S.zw, state.zt, pole(state.zt, J === 'in' ? 3 : 0)); $('n-zt').step = J === 'in' ? 0.0625 : 1;
   $('kZtRow').classList.toggle('off', !(state.c > 0));
+  document.querySelectorAll('#kUklad [data-uklad]').forEach(b => b.classList.toggle('active', b.dataset.uklad === state.uklad));
   $('kLuz').classList.toggle('off', !(state.zw > 0 || (state.c > 0 && state.zt > 0)));
   document.querySelectorAll('#kBlacha [data-g]').forEach(b => b.classList.toggle('active', Math.abs(+b.dataset.g - state.g) < 1e-3));
   $('n-a').step = J === 'in' ? 0.5 : 10; $('n-c').step = J === 'in' ? 0.25 : 5; $('n-g').step = J === 'in' ? 0.005 : 0.1;
-  statystyki(); syncJedn(); pdfOpis();
+  statystyki(); wycena(); syncJedn(); pdfOpis();
   if (view === 'flat') rozkroj(); else scena();
   zapisz();
 }
@@ -601,13 +650,13 @@ $('kLink').addEventListener('click', async () => {
 // ---------------------------------------------------------------- model papierowy (PDF)
 let pdfN = 0;                      // 0 = sama dobrana skala (wszystko na jednej kartce), inaczej 1:N
 const papier = () => (J === 'in' ? 'Letter' : 'A4');
-function pdfPlan() { try { return planPrint({ parts: czesci }, false, J, pdfN || -1); } catch { return null; } }
+function pdfPlan() { try { return pdfN ? planPrint({ parts: czesci }, false, J, pdfN) : planJedna({ parts: czesci }, J, 3); } catch { return null; } }
 function pdfOpis() {
   const p = pdfPlan(); if (!p) return;
   $('kPdfB').textContent = T(`Model papierowy ${papier()} (PDF)`, `${papier()} paper model (PDF)`);
-  $('pdfSub').textContent = T(`skala 1:${p.N} · ${p.pages.length} ${p.pages.length === 1 ? 'kartka' : p.pages.length < 5 ? 'kartki' : 'kartek'}${p.mode === 'tiles' ? ' do sklejenia' : ''}`,
-    `scale 1:${p.N} · ${p.pages.length} ${p.pages.length === 1 ? 'sheet' : 'sheets'}${p.mode === 'tiles' ? ' to tape together' : ''}`);
-  $('kPdfSk').innerHTML = `<span>${T('Skala', 'Scale')}</span>` + [[0, 'auto'], [2, '1:2'], [1, '1:1']].map(([n, t]) => `<button type="button" class="chip${n === pdfN ? ' active' : ''}" data-n="${n}">${t}</button>`).join('');
+  const ile = pdfN ? p.pages.length + 1 : 1;                  // przy 1:2 i 1:1 dochodzi kartka tytułowa z widokami
+  $('pdfSub').textContent = T(`skala 1:${p.N} · ${ile} ${ile === 1 ? 'kartka' : ile < 5 ? 'kartki' : 'kartek'}${pdfN ? '' : ' ze wszystkim'}`, `scale 1:${p.N} · ${ile} ${ile === 1 ? 'sheet with everything' : 'sheets'}`);
+  $('kPdfSk').innerHTML = `<span>${T('Skala', 'Scale')}</span>` + [[0, T('1 kartka', '1 sheet')], [2, '1:2'], [1, '1:1']].map(([n, t]) => `<button type="button" class="chip${n === pdfN ? ' active' : ''}" data-n="${n}">${t}</button>`).join('');
 }
 $('kPdfSk').addEventListener('click', e => { const b = e.target.closest('[data-n]'); if (!b) return; pdfN = +b.dataset.n; track('k_pdf_skala', { value: pdfN }); pdfOpis(); });
 /** Zdjęcia modelu do PDF: dwa widoki z przeciwległych narożników + widok w „pudełku” z narożnikami gabarytu (do wymiarów). */
@@ -656,15 +705,16 @@ $('pdf').addEventListener('click', async () => {
     const opis = [T('Stalowa kostka do nauki spawania', 'Steel cube for welding practice'),
       T(`Bok ${dl(state.a)} · blacha ${blacha(state.t).opis} · ${s2.sztuk} elementów · stal ok. ${masa} · spoiny ok. ${dlm(model.stat.spoiny)}`, `Side ${dl(state.a)} · sheet ${blacha(state.t).opis} · ${s2.sztuk} parts · steel approx. ${masa} · welds approx. ${dlm(model.stat.spoiny)}`),
       T('Darmowy generator i plik DXF do cięcia: ogimora.com/cube', 'Free generator and DXF file for cutting: ogimora.com/cube')];
-    const plan = await buildPdf({ parts: czesci }, { views, box, boxTop: true, logo, opis, url: 'ogimora.com/cube', code: `cube-${J === 'in' ? liczba(state.a / CAL, 1, true).replace(/[.,]/, '_') + 'in' : state.a + 'mm'}`, jedn: J, lang: LANG, N: pdfN || -1 });
-    $('note').textContent = T(`PDF gotowy: skala 1:${plan.N}, ${plan.pages.length + 1} str. ${papier()}. Drukuj w skali 100%. Sklej z kartonu i sprawdź, czy ścianki pasują.`, `PDF ready: scale 1:${plan.N}, ${plan.pages.length + 1} p. ${papier()}. Print at 100%. Build it from card and check the fit.`);
+    const plan = await buildPdf({ parts: czesci }, { views, box, boxTop: true, logo, opis, url: 'ogimora.com/cube', code: `cube-${J === 'in' ? liczba(state.a / CAL, 1, true).replace(/[.,]/, '_') + 'in' : state.a + 'mm'}`, jedn: J, lang: LANG, N: pdfN, jedna: !pdfN });
+    const str = pdfN ? plan.pages.length + 1 : 1;
+    $('note').textContent = T(`PDF gotowy: skala 1:${plan.N}, ${str} str. ${papier()}. Drukuj w skali 100%. Sklej z kartonu i sprawdź, czy ścianki pasują.`, `PDF ready: scale 1:${plan.N}, ${str} p. ${papier()}. Print at 100%. Build it from card and check the fit.`);
     $('note').className = 'note ok';
   } catch (err) { console.error(err); $('note').textContent = T('Nie udało się zrobić PDF (sprawdź internet — biblioteka ładuje się z sieci).', 'Could not make the PDF (check your connection – the PDF library loads from the web).'); }
 });
 
 // statystyki: kod i opis projektu (bez treści napisów – tylko liczba znaków)
 setCodeSource(() => `K${Math.round(state.a)}-${blacha(state.t).kod}-${Math.round(state.c)}`);
-setProjektSource(() => ({ model: 'kostka', wym: { bok: Math.round(state.a), wys: Math.round(state.a), kat: 0, dno: Math.round(state.c), nogi: Math.round(state.zw), blacha: blacha(state.t).kod },
+setProjektSource(() => ({ model: 'kostka', wym: { bok: Math.round(state.a), wys: Math.round(state.a), kat: 0, dno: Math.round(state.c), nogi: Math.round(state.zw), uklad: state.uklad, blacha: blacha(state.t).kod },
   wz: [1, 2, 3, 4, 5, 6].map(n => { const s = state.sc[n]; return 'k-' + (s.typ === 'kropki' ? 'kropki' + s.n : s.typ === 'otwor' ? 'otwor-' + s.ksztalt : s.typ === 'napis' ? 'napis-' + s.font.toLowerCase() : s.typ); }),
   nap: [1, 2, 3, 4, 5, 6].map(n => (state.sc[n].typ === 'napis' ? wiersze(state.sc[n]).join('').length : 0)), otw: 0, mat: 's235', luz: state.g.toFixed(2), jedn: J }));
 
@@ -684,5 +734,7 @@ try { if (localStorage.getItem('ogi_cards') === 'off') document.body.classList.a
 const kartyTxt = () => { $('cardsTgl').textContent = document.body.classList.contains('cards-off') ? T('Pokaż opcje', 'Show options') : T('Schowaj opcje', 'Hide options'); };
 $('cardsTgl').addEventListener('click', () => { const off = document.body.classList.toggle('cards-off'); try { localStorage.setItem('ogi_cards', off ? 'off' : 'on'); } catch {} kartyTxt(); track('schowaj_opcje'); kadr(); });
 kartyTxt();
-pasek(); panelKsztalt(); odswiez(); kadr(); kamera('iso');
+$('histUndo').addEventListener('click', () => histKrok(-1)); $('histRedo').addEventListener('click', () => histKrok(1));
+$('histUndo').title = T('Cofnij (Ctrl+Z)', 'Undo (Ctrl+Z)'); $('histRedo').title = T('Ponów (Ctrl+Shift+Z)', 'Redo (Ctrl+Shift+Z)');
+pasek(); panelKsztalt(); odswiez(); kadr(); kamera('iso'); histPrzyciski();
 track('strona', { value: 'cube' });

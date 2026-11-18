@@ -86,6 +86,51 @@ export function planPrint(model, withBox = true, j = akt(), wymusN = 0) {   // w
   return { N, mode: 'tiles', cols, rows, pages: tiles, minAreaCm2 };
 }
 
+// ---- kostka: wszystko na JEDNEJ kartce – nagłówek z logo, dwa widoki (jeden z wymiarami) i cały rozkrój pod spodem
+const JEDNA = { naglowek: 20, opis: 18, widoki: 58, skala: 9 };          // wysokości bloków [mm]
+const jednaObszar = (opisy = 3) => { const top = PAGE.m + JEDNA.naglowek + (opisy ? 6.5 + (opisy - 1) * 5 + 2 : 0) + JEDNA.widoki + JEDNA.skala; return { top, w: PAGE.w - 2 * PAGE.m, h: PAGE.h - PAGE.m - PAGE.foot - top }; };
+/** Plan jednej kartki: największa „ładna” skala 1:N, przy której cały rozkrój mieści się pod widokami. */
+export function planJedna(model, j = akt(), opisy = 3) {
+  ustawPapier(j);
+  const list = items(model, false), A = jednaObszar(opisy);
+  let lo = 1e-4, hi = 1;
+  for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2, r = pack(list, mid, A.w, A.h); if (r && r.length === 1) lo = mid; else hi = mid; }
+  let N = Math.max(1, Math.ceil(1 / lo - 1e-9)), pages = pack(list, 1 / N, A.w, A.h);
+  while (!pages || pages.length > 1) { N++; pages = pack(list, 1 / N, A.w, A.h); }
+  return { N, mode: 'jedna', pages, obszar: A };
+}
+function rysujElement(doc, it, s, ox, oy) {
+  const map = q => { let x = (q.x - it.bb.x) * s, y = (it.bb.y + it.bb.h - q.y) * s; if (it.rot) [x, y] = [it.bb.h * s - y, x]; return [ox + it.px + x, oy + it.py + y]; };
+  doc.setDrawColor(27, 29, 25); doc.setLineWidth(0.25); doc.setLineDashPattern([], 0);
+  for (const ring of [it.pts, ...it.holes]) { const R = ring.map(map); for (let i = 0; i < R.length; i++) { const a = R[i], b = R[(i + 1) % R.length]; doc.line(a[0], a[1], b[0], b[1]); } }
+}
+function stronaJedna(doc, model, extras, EN) {
+  const opisy = (extras.opis || []).length, plan = planJedna(model, CALE ? 'in' : 'mm', opisy), A = plan.obszar, AW = A.w;
+  const lg = extras.logo; let tx = PAGE.m;
+  if (lg) { const h = 15, w = h * lg.w / lg.h; doc.addImage(lg.img, 'PNG', PAGE.m, PAGE.m - 1, w, h, 'logo', 'MEDIUM'); tx += w + 4; }
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(20); doc.setTextColor(27, 29, 25); doc.text('OGIMORA', tx, PAGE.m + 9);
+  if (extras.code) { doc.setFont('courier', 'bold'); doc.setFontSize(11); doc.text(extras.code, PAGE.w - PAGE.m, PAGE.m + 8, { align: 'right' }); }
+  let y = PAGE.m + JEDNA.naglowek;
+  (extras.opis || []).forEach((l, i) => { doc.setFont('helvetica', i ? 'normal' : 'bold'); doc.setFontSize(i ? 9.5 : 12); doc.setTextColor(i ? 70 : 27); doc.text(ascii(l), PAGE.m, y + 2); y += i ? 5 : 6.5; });
+  if (opisy) y += 2;
+  // dwa widoki obok siebie: z wymiarami całości i z przeciwnej strony
+  const gap = 6, sw = (AW - gap) / 2, sh = JEDNA.widoki - 3;
+  if (extras.box) boxView(doc, extras.box, PAGE.m, y, sw, sh);
+  const v = (extras.views || [])[1] || (extras.views || [])[0];
+  if (v) { const k = Math.min(sw / v.w, sh / v.h), w = v.w * k, h = v.h * k; doc.addImage(v.img, 'PNG', PAGE.m + sw + gap + (sw - w) / 2, y + (sh - h) / 2, w, h, undefined, 'MEDIUM'); }
+  y += JEDNA.widoki;
+  const L = CALE ? 50.8 : 50;
+  doc.setLineDashPattern([], 0); doc.setDrawColor(27, 29, 25); doc.setLineWidth(0.3);
+  doc.line(PAGE.m, y, PAGE.m + L, y); doc.line(PAGE.m, y - 1.5, PAGE.m, y + 1.5); doc.line(PAGE.m + L, y - 1.5, PAGE.m + L, y + 1.5);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(60);
+  doc.text(`${CALE ? `2 in = ${2 * plan.N} in` : `5 cm = ${Math.round(5 * plan.N)} cm`}  ·  ${EN ? 'scale' : 'skala'} 1:${plan.N}  ·  ${EN ? 'print at 100%, cut out, tape together' : 'drukuj w 100%, wytnij, sklej'}`, PAGE.m + L + 4, y + 1);
+  // rozkrój wyśrodkowany w poziomie w wolnym polu
+  const szer = Math.max(...plan.pages[0].map(it => it.px + it.w)), ox = PAGE.m + (AW - szer) / 2;
+  for (const it of plan.pages[0]) rysujElement(doc, it, 1 / plan.N, ox, A.top);
+  brandFooter(doc, extras);
+  return plan;
+}
+
 const ascii = s => s.replace(/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ×·]/g, c => ({ ą: 'a', ć: 'c', ę: 'e', ł: 'l', ń: 'n', ó: 'o', ś: 's', ź: 'z', ż: 'z', Ą: 'A', Ć: 'C', Ę: 'E', Ł: 'L', Ń: 'N', Ó: 'O', Ś: 'S', Ź: 'Z', Ż: 'Z', '×': 'x', '·': '-' }[c]));
 
 async function loadJsPDF() {
@@ -194,6 +239,13 @@ export async function buildPdf(model, extras = {}) {
   const jsPDF = await loadJsPDF();
   CALE = extras.jedn === 'in';
   const EN = extras.lang === 'en';
+  if (extras.jedna) {   // kostka, skala „auto”: jedna kartka ze wszystkim
+    ustawPapier(CALE ? 'in' : 'mm');
+    const doc1 = new jsPDF({ unit: 'mm', format: CALE ? 'letter' : 'a4', compress: true });
+    const plan1 = stronaJedna(doc1, model, extras, EN);
+    doc1.save(`ogimora-model-${CALE ? 'Letter' : 'A4'}-${extras.code || '1do' + plan1.N}.pdf`);
+    return plan1;
+  }
   const plan = planPrint(model, !!extras.box && !extras.boxTop, CALE ? 'in' : 'mm', extras.N || 0);
   // compress: strumienie (linie rozkroju) skompresowane – plik kilka razy mniejszy, rysunek bez zmian
   const doc = new jsPDF({ unit: 'mm', format: CALE ? 'letter' : 'a4', compress: true });

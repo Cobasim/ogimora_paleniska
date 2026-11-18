@@ -42,6 +42,7 @@ export function ogranicz(p) {
   if (q.zt > 0 && q.zt < ZAMEK_MIN) q.zt = ZAMEK_MIN;
   if (q.zamki === false) q.zw = q.zt = 0;
   q.zamki = q.zw > 0 || q.zt > 0;
+  q.uklad = UKLADY.includes(q.uklad) ? q.uklad : 'pary';
   return q;
 }
 
@@ -50,47 +51,68 @@ export const zamekDomyslny = t => Math.min(14, Math.max(6, 2.5 * t));
 export const ZAMEK_MIN = 3;
 /** Domyślna szerokość ząbka na krawędziach trójkątów (krótsze krawędzie → węższy ząbek). */
 export const zamekTrojkat = t => Math.min(10, Math.max(4, 2 * t));
-/** Pary zamków na krawędzi o długości L: początki par (od początku krawędzi), szerokość ząbka w. */
-function pary(L, t, g, eMax, zw) {
-  const m = eMax + t + 3, wolne = L - 2 * m;
-  // szerokość ząbka: ustawiona (zw) albo domyślna; za szeroka na tę krawędź → tyle, ile się mieści (jedna para)
-  const w = Math.min(zw > 0 ? zw : zamekDomyslny(t), (wolne - g) / 2);
-  const para = 2 * w + g;
-  if (w < ZAMEK_MIN - 1e-9) return { w, starty: [] };
-  let n = Math.min(6, Math.max(2, Math.round(L / 120)));
-  while (n > 1 && n * para + (n - 1) * 12 > wolne) n--;
-  const starty = [];
-  for (let k = 0; k < n; k++) starty.push(Math.min(L - m - para, Math.max(m, L * (k + 0.5) / n - para / 2)));
-  return { w, starty };
+export const UKLADY = ['pary', 'konce', 'srodek'];
+/**
+ * Zamki na jednej krawędzi o długości L (współrzędna s od początku krawędzi, obrys przeciwnie do wskazówek zegara).
+ * Zwraca { moje: [[s0, s1]], sasiada: [[s0, s1]] } – przedziały ząbków tej ścianki i ząbków sąsiadki.
+ *  uklad 'pary'   – pary „mój ząbek, potem sąsiadki” rozłożone równo (1–6 par);
+ *        'konce'  – po jednej parze przy początku i przy końcu krawędzi (środek wolny na jedną ciągłą spoinę);
+ *        'srodek' – jeden ząbek na środku, łapany przez dwa ząbki drugiej ścianki (rola 'S' – jeden, 'D' – dwa).
+ * Ząbek za szeroki na tę krawędź zwęża się do tylu, ile się mieści.
+ */
+function zamkiKrawedzi(L, t, g, eMax, zw, uklad, rola) {
+  const m = eMax + t + 3, wolne = L - 2 * m, puste = { moje: [], sasiada: [] };
+  if (!(zw > 0)) return puste;
+  if (uklad === 'srodek') {
+    const w = Math.min(zw, (wolne - 2 * g) / 3); if (w < ZAMEK_MIN - 1e-9) return puste;
+    const c = L / 2, jeden = [[c - w / 2, c + w / 2]], dwa = [[c - w / 2 - g - w, c - w / 2 - g], [c + w / 2 + g, c + w / 2 + g + w]];
+    return rola === 'S' ? { moje: jeden, sasiada: dwa } : { moje: dwa, sasiada: jeden };
+  }
+  const w = Math.min(zw, (wolne - g) / 2), para = 2 * w + g;
+  if (w < ZAMEK_MIN - 1e-9) return puste;
+  let starty;
+  if (uklad === 'konce') starty = wolne >= 2 * para + 12 ? [m, L - m - para] : [(L - para) / 2];
+  else {
+    let n = Math.min(6, Math.max(2, Math.round(L / 120)));
+    while (n > 1 && n * para + (n - 1) * 12 > wolne) n--;
+    starty = []; for (let k = 0; k < n; k++) starty.push(Math.min(L - m - para, Math.max(m, L * (k + 0.5) / n - para / 2)));
+  }
+  return { moje: starty.map(x => [x, x + w]), sasiada: starty.map(x => [x + w + g, x + 2 * w + g]) };
 }
 
 const pole2 = r => { let s = 0; for (let i = 0; i < r.length; i++) { const a = r[i], b = r[(i + 1) % r.length]; s += a[0] * b[1] - b[0] * a[1]; } return s / 2; };
+/** Usuwa punkty powtórzone i leżące na prostej między sąsiadami. */
+function uprosc(ring) {
+  let r = ring.filter((q, i) => { const n = ring[(i + 1) % ring.length]; return Math.hypot(n[0] - q[0], n[1] - q[1]) > 1e-6; });
+  for (let zm = true; zm && r.length > 3;) { zm = false;
+    r = r.filter((q, i) => { const a = r[(i + r.length - 1) % r.length], b = r[(i + 1) % r.length];
+      const pr = (q[0] - a[0]) * (b[1] - q[1]) - (q[1] - a[1]) * (b[0] - q[0]), sk = (q[0] - a[0]) * (b[0] - q[0]) + (q[1] - a[1]) * (b[1] - q[1]);
+      if (!zm && Math.abs(pr) < 1e-7 && sk > 0) { zm = true; return false; } return true; }); }
+  return r;
+}
 
 /**
  * Obrys z zamkami: wielokąt bazowy (CCW) z ząbkami i wcięciami wpisanymi wprost w każdą krawędź
- * (bez działań na wielokątach – same proste odcinki). krawedzie[i] = { kat } dla krawędzi i → i+1.
+ * (bez działań na wielokątach – same proste odcinki). krawedzie[i] = { kat, zw, rola } dla krawędzi i → i+1.
  */
-function obrysZamki(baza, krawedzie, t, g, zamki, zw) {
+function obrysZamki(baza, krawedzie, t, g, uklad) {
   const ring = []; let ile = 0;
   baza.forEach((P0, i) => {
     const P1 = baza[(i + 1) % baza.length], dx = P1[0] - P0[0], dy = P1[1] - P0[1], L = Math.hypot(dx, dy);
     const E = [dx / L, dy / L], N = [E[1], -E[0]];            // N – na zewnątrz obrysu (obrys przeciwnie do wskazówek zegara)
     const P = (s, d) => ring.push([snap(P0[0] + E[0] * s + N[0] * d), snap(P0[1] + E[1] * s + N[1] * d)]);
     P(0, 0);
-    krawedzie[i].L = L; krawedzie[i].pary = 0;
-    if (!zamki) return;
-    const th = krawedzie[i].kat, e = t / Math.tan(th / 2), r = th > Math.PI / 2 + 1e-6 ? t * Math.abs(Math.cos(th)) / Math.sin(th) : 0;
-    const szer = krawedzie[i].zw ?? zw;
-    if (!(szer > 0)) return;                                   // ta krawędź bez zamków
-    const { w, starty } = pary(L, t, g, e, szer);
-    krawedzie[i].pary = starty.length;
-    for (const s of starty) {
-      P(s, 0); P(s, e); P(s + w, e); ile++;                                    // mój ząbek
-      if (r > 0) { P(s + w, -(r + g)); P(s + 2 * w + 2 * g, -(r + g)); P(s + 2 * w + 2 * g, 0); }   // wcięcie pod ząbek sąsiadki
-      else P(s + w, 0);
-    }
+    const kr = krawedzie[i]; kr.L = L;
+    const th = kr.kat, e = t / Math.tan(th / 2), r = th > Math.PI / 2 + 1e-6 ? t * Math.abs(Math.cos(th)) / Math.sin(th) : 0;
+    const z = zamkiKrawedzi(L, t, g, e, kr.zw, uklad, kr.rola);
+    // ząbek: wychodzi na zewnątrz o e; ząbek sąsiadki przy kącie rozwartym: wcięcie r + luz, szersze o luz z każdej strony
+    const cechy = z.moje.map(([a, b]) => ({ a, b, d: e }));
+    if (r > 0) z.sasiada.forEach(([a, b]) => cechy.push({ a: a - g, b: b + g, d: -(r + g) }));
+    cechy.sort((x, y) => x.a - y.a);
+    for (const c of cechy) { P(c.a, 0); P(c.a, c.d); P(c.b, c.d); P(c.b, 0); }
+    ile += z.moje.length;
   });
-  return { ring, ile };
+  return { ring: uprosc(ring), ile };
 }
 
 // ścianki kwadratowe: numer 1–6, normalna i „góra” (kierunek, w którym czyta się napis)
@@ -115,18 +137,26 @@ export function zbuduj(p0) {
   const cp = p.c > 0 ? p.c - (3 - S3) * t : 0;           // ścięcie na bryle wewnętrznej
   const k = h - cp;                                       // pół długości krawędzi kwadrat–kwadrat
   const plyty = [], spoiny = [];
+  const dlugosc = r => { let d = 0; for (let i = 0; i < r.length; i++) d += Math.hypot(r[(i + 1) % r.length][0] - r[i][0], r[(i + 1) % r.length][1] - r[i][1]); return d; };
 
   // kwadraty (po ścięciu ośmiokąty)
   const baza = cp > 0
     ? [[-k, -h], [k, -h], [h, -k], [h, k], [k, h], [-k, h], [-h, k], [-h, -k]]
     : [[-h, -h], [h, -h], [h, h], [-h, h]];
-  const kraw = baza.map((_, i) => (cp > 0 && i % 2 === 1 ? { kat: KAT_TROJKAT, zw: p.zt } : { kat: Math.PI / 2, zw: p.zw }));
-  const kw = obrysZamki(baza, kraw, t, g, p.zw > 0 || p.zt > 0, p.zw);
-  const margines = Math.max(8, 2 * t + 4) + (p.zamki ? 0 : 0);
+  const margines = Math.max(8, 2 * t + 4);
   const s = cp > 0 ? Math.min(h - margines, h - cp / 2 - 0.71 * margines) : h - margines;
   const wpisPelny = cp > 0 ? Math.min(h, (2 * h - cp) / Math.SQRT2) : h;      // środek ścianki → najbliższa krawędź
+  const os = N => N.findIndex(v => v !== 0);
+  let ileKw = 0, obwodKw = 0, poleKw = 0;
   for (const f of SCIANY) {
     const u = cross(f.V, f.N);
+    // sąsiadki kolejnych prostych krawędzi (dół, prawa, góra, lewa) i rola przy układzie „jeden na środku”:
+    // z dwóch stykających się ścianek jeden ząbek ma ta, której oś jest „o jeden wcześniej” (x przed y, y przed z, z przed x)
+    const sas = [mul(f.V, -1), u, f.V, mul(u, -1)];
+    const prosta = k => ({ kat: Math.PI / 2, zw: p.zw, rola: (os(sas[k]) - os(f.N) + 3) % 3 === 1 ? 'S' : 'D' });
+    const kraw = baza.map((_, i) => (cp > 0 ? (i % 2 ? { kat: KAT_TROJKAT, zw: p.zt, rola: 'D' } : prosta(i / 2)) : prosta(i)));
+    const kw = obrysZamki(baza, kraw, t, g, p.uklad);
+    ileKw += kw.ile; obwodKw += dlugosc(kw.ring); poleKw += Math.abs(pole2(kw.ring));
     plyty.push({ key: 's' + f.nr, rodzaj: 'kw', nr: f.nr, ring: kw.ring, baza, o: mul(f.N, h), u, v: f.V, n: f.N, t, pole: { s: Math.max(0, s), baza, wpisPelny, wpis: Math.max(0, wpisPelny - margines) } });
   }
   // spoiny kwadrat–kwadrat: 12 krawędzi
@@ -141,7 +171,7 @@ export function zbuduj(p0) {
   if (cp > 0) {
     const bok = cp * Math.SQRT2, R = bok / S3;            // promień okręgu opisanego
     const bazaT = [0, 1, 2].map(i => { const f = Math.PI / 2 + i * 2 * Math.PI / 3; return [R * Math.cos(f), R * Math.sin(f)]; });
-    tr = obrysZamki(bazaT, bazaT.map(() => ({ kat: KAT_TROJKAT, zw: p.zt })), t, g, p.zt > 0, p.zt);
+    tr = obrysZamki(bazaT, bazaT.map(() => ({ kat: KAT_TROJKAT, zw: p.zt, rola: 'S' })), t, g, p.uklad);
     let nr = 0;
     for (const sx of [1, -1]) for (const sy of [1, -1]) for (const sz of [1, -1]) {
       const N = norm([sx, sy, sz]);
@@ -161,17 +191,16 @@ export function zbuduj(p0) {
   }
 
   // statystyki
-  const dlugosc = r => { let d = 0; for (let i = 0; i < r.length; i++) d += Math.hypot(r[(i + 1) % r.length][0] - r[i][0], r[(i + 1) % r.length][1] - r[i][1]); return d; };
-  const poleKw = Math.abs(pole2(kw.ring)), poleTr = tr ? Math.abs(pole2(tr.ring)) : 0;
+  const poleTr = tr ? Math.abs(pole2(tr.ring)) : 0;
   const ostrz = [];
   if (p0.c > 0 && p.c !== +p0.c) ostrz.push('sciecie');
   return {
     p, plyty, spoiny, h, cp,
     wym: { kw: 2 * h, tr: cp > 0 ? cp * Math.SQRT2 : 0, krawedz: 2 * k },
-    zamki: { kw: kw.ile, tr: tr ? tr.ile : 0, razem: kw.ile * 6 + (tr ? tr.ile * 8 : 0) },
+    zamki: { kw: ileKw, tr: tr ? tr.ile : 0, razem: ileKw + (tr ? tr.ile * 8 : 0) },
     stat: {
-      pole: poleKw * 6 + poleTr * 8,
-      obrys: dlugosc(kw.ring) * 6 + (tr ? dlugosc(tr.ring) * 8 : 0),
+      pole: poleKw + poleTr * 8,
+      obrys: obwodKw + (tr ? dlugosc(tr.ring) * 8 : 0),
       spoiny: spoiny.reduce((d, sp) => d + Math.hypot(...sub(sp.b, sp.a)), 0),
       nSpoin: spoiny.length,
     },

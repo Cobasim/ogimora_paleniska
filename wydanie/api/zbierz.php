@@ -127,7 +127,8 @@ if ($typ === 'pobranie') {
   $w = (array)($d['wym'] ?? []);
   // wymiary zawsze w mm (także projekty calowe); blacha: '3' / '4' / '5' (mm) albo '11ga' / '10ga' / '3-16' / '1-4' (cale, od 0.2.0)
   $wym = ['bok' => (int)($w['bok'] ?? 0), 'wys' => (int)($w['wys'] ?? 0), 'kat' => (int)($w['kat'] ?? 0), 'dno' => (int)($w['dno'] ?? 0), 'nogi' => (int)($w['nogi'] ?? 0), 'blacha' => slowo($w['blacha'] ?? '', 6, '/[^0-9a-z\-]/') ?: '0'];
-  $model = ($d['model'] ?? '') === 'kostka' ? 'kostka' : 'palenisko';   // od 0.3.0: który model (kostka: bok = wysokość, „dno” = ścięcie narożnika, „nozki” = szerokość zamka w mm, 0 = bez zamków)
+  $model = ($d['model'] ?? '') === 'kostka' ? 'kostka' : 'palenisko';
+  $wym_uklad = (string)(($d['wym'] ?? [])['uklad'] ?? 'pary');   // od 0.3.0: który model (kostka: bok = wysokość, „dno” = ścięcie narożnika, „nozki” = szerokość zamka w mm, 0 = bez zamków)
   $jedn = ($d['jedn'] ?? '') === 'in' ? 'in' : 'mm';           // jednostki projektu na stronie
   $plik = ($d['plik'] ?? '') === 'in' ? 'in' : 'mm';           // jednostki pobranego pliku DXF
   $mat = slowo($d['mat'] ?? '', 12); $ciecie = slowo($d['luz'] ?? '', 6, '/[^0-9.]/');
@@ -148,13 +149,14 @@ if ($typ === 'pobranie') {
               implode('|', $wz), implode('|', $nap), $otw, $wer, $jedn, $plik, $model];
     file_put_contents($csv, implode(';', $linia) . "\n", FILE_APPEND | LOCK_EX);
   } else $poza = true;
-  licznik($dir, function (&$t) use ($wz, $nap, $wym, $mat, $kraj, $dzien, $d, $otw, $poza, $wer, $jedn, $plik, $model) {
+  licznik($dir, function (&$t) use ($wz, $nap, $wym, $mat, $kraj, $dzien, $d, $otw, $poza, $wer, $jedn, $plik, $model, $wym_uklad) {
     plus($t, 'razem', 'pobrania'); plus($t, 'pobrania_wersja', $wer); plus($t, 'model', $model); plus($t, 'dni_pobrania', $dzien); plus($t, 'pobrania_kraj', $kraj);
     if ($poza) plus($t, 'razem', 'pobrania_poza_rejestrem');
     if ($model === 'kostka') {   // kostka: własne liczniki, żeby nie mieszać z paleniskiem
       foreach (array_unique($wz) as $w) plus($t, 'kostka_scianka', $w === '-' ? 'brak' : $w);
       plus($t, 'kostka_blacha', (string)$wym['blacha']); plus($t, 'kostka_bok_mm', (string)(intdiv($wym['bok'], 50) * 50));
       plus($t, 'kostka_sciecie', $wym['dno'] > 0 ? 'jest' : 'brak'); plus($t, 'kostka_zamek_mm', (string)(intdiv($wym['nogi'], 5) * 5));   // szerokość zamka w przedziałach co 5 mm; 0 = bez zamków
+      plus($t, 'kostka_uklad_zamkow', slowo($wym_uklad ?? 'pary', 10));
       plus($t, 'jednostki', $jedn); plus($t, 'plik_dxf', $plik);
       return;
     }
