@@ -580,7 +580,7 @@ function panelBlacha() {
   const lista = BLACHY[J];
   $('kBlacha').innerHTML = `<h2>${T('Blacha', 'Sheet')}</h2>
     <div class="thk-box"><div class="row thk" title="${T('Grubość blachy', 'Sheet thickness')}"><span>${ICONS.thk}</span><div class="chips" id="kThk" data-thk="t">${lista.map(b => `<button type="button" class="chip${Math.abs(b.t - state.t) < 1e-3 ? ' active' : ''}" data-t="${b.t}" title="${b.opis}">${b.n}</button>`).join('')}</div></div></div>
-    <div id="kLuz"${state.zw > 0 ? '' : ' class="off"'}><div class="gap-head"><span>${T('Luz na zamkach', 'Tab clearance')}</span></div>
+    <div id="kLuz"${state.zw > 0 ? '' : ' class="off"'}><div class="gap-head"><span>${T('Luz na zamkach', 'Tab clearance')}</span><span class="gap-q" tabindex="0" role="button" aria-label="${T('Co to jest luz na zamkach?', 'What is tab clearance?')}">?</span></div>
     ${suwak('g', T('Luz zamków (na stronę)', 'Tab clearance (per side)'), ICONS.gap, J === 'in' ? 'in' : 'mm')}
     <div class="gap-pre">${LUZY[J].map(([n, g]) => `<button type="button" class="chip${Math.abs(g - state.g) < 1e-3 ? ' active' : ''}" data-g="${g}">${n} <small>${luzL(g)}</small></button>`).join('')}</div></div>`;
   const r = $('r-g'), n = $('n-g');
@@ -593,14 +593,53 @@ $('kBlacha').addEventListener('click', e => {
   if (b.dataset.g) { state.g = +b.dataset.g; track('k_luz', { value: b.textContent.trim().split(' ')[0] }); odswiez(); }
 });
 
+// ---- „?” przy luzie: to samo okienko co w palenisku (rysunek, opis, tabelka). Duży ekran – obok panelu; wąski – rozwija się pod panelem.
+const luzPop = document.createElement('div'); luzPop.className = 'gap-pop'; luzPop.setAttribute('role', 'tooltip');
+luzPop.innerHTML = `<div class="pop-h"><b>${T('Luz na zamkach', 'Tab clearance')}</b><button type="button" class="pop-x" aria-label="${T('Zamknij', 'Close')}">✕</button></div><svg viewBox="0 0 240 118" id="kLuzSvg" aria-hidden="true"></svg>
+  <p>${T('Odstęp między zamkiem jednej ścianki a zamkiem albo gniazdem drugiej – <b>z każdej strony</b>. Dzięki niemu ścianki składają się bez szlifowania.', 'The space between a tab of one side and the tab or pocket of the other – <b>on each side</b>. It lets the sides go together without grinding.')}</p>
+  <p class="gap-tab" id="kLuzTab"></p>
+  <p class="gap-note">${T('Za mały – zamki nie wejdą. Za duży – ścianki ruszają się przy sczepianiu. Sprawdzisz to płytkami próbnymi.', 'Too small – the tabs will not fit. Too large – the sides move while you tack. The test plates tell you which one fits.')}</p>`;
+document.body.appendChild(luzPop);
+function rysLuz() {
+  const g = state.g, gp = 2 + g * 9, tw = 34, cx = 120, L = cx - tw / 2 - gp, R = cx + tw / 2 + gp, f = v => v.toFixed(1), tx = luzL(g) + (J === 'in' ? ' in' : ' mm');
+  $('kLuzSvg').innerHTML = `<rect x="8" y="62" width="${f(L - 8)}" height="26" fill="#cfc8bd" stroke="#16130f" stroke-width="1.2"/>
+    <rect x="${f(R)}" y="62" width="${f(232 - R)}" height="26" fill="#cfc8bd" stroke="#16130f" stroke-width="1.2"/>
+    <rect x="${cx - tw / 2}" y="14" width="${tw}" height="74" fill="#6f665c" stroke="#16130f" stroke-width="1.2"/>
+    <rect x="${f(L)}" y="62" width="${f(gp)}" height="26" fill="#df3434" opacity=".85"/><rect x="${cx + tw / 2}" y="62" width="${f(gp)}" height="26" fill="#df3434" opacity=".85"/>
+    <path d="M${f(L)} 98V108M${f(L + gp)} 98V108M${f(R - gp)} 98V108M${f(R)} 98V108" stroke="#df3434" stroke-width="1.2"/>
+    <text x="${f(L - 4)}" y="110" text-anchor="end" font-size="12" fill="#df3434" font-weight="700">${tx}</text><text x="${f(R + 4)}" y="110" font-size="12" fill="#df3434" font-weight="700">${tx}</text>
+    <text x="${cx}" y="10" text-anchor="middle" font-size="11" fill="#4a443e">${T('zamek', 'tab')}</text><text x="10" y="56" font-size="11" fill="#4a443e">${T('sąsiednia ścianka', 'neighbouring side')}</text>`;
+  const t = J === 'in' ? [[0.008, 0.012], [0.03, 0.04], [0.045, 0.06]].map(([a, b]) => `${liczba(a, 3)}–${liczba(b, 3)} in`) : ['0,2–0,3 mm', '0,8–1,0 mm', '1,2–1,5 mm'].map(x => (EN ? x.replace(/,/g, '.') : x));
+  $('kLuzTab').innerHTML = `<span>Laser</span><b>${t[0]}</b><span>${T('Plazma CNC', 'CNC plasma')}</span><b>${t[1]}</b><span>${T('Stara / niedokładna plazma', 'Old / worn plasma')}</span><b>${t[2]}</b>`;
+}
+{ const waski = matchMedia('(max-width: 1100px)'), sek = $('kBlachaG'); let przyp = false, hideT = 0;
+  const show = (klik = false) => { clearTimeout(hideT); if (klik) przyp = true;
+    if (waski.matches) { if (luzPop.parentElement !== sek) sek.appendChild(luzPop); luzPop.classList.add('wbud', 'on'); luzPop.style.top = luzPop.style.left = ''; if (klik) setTimeout(() => luzPop.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 30); return; }
+    if (luzPop.parentElement !== document.body) document.body.appendChild(luzPop); luzPop.classList.remove('wbud');
+    const r = $('kLuz').getBoundingClientRect(); luzPop.classList.add('on');
+    luzPop.style.top = Math.max(8, Math.min(innerHeight - luzPop.offsetHeight - 8, r.top - 20)) + 'px'; luzPop.style.left = Math.max(8, r.left - luzPop.offsetWidth - 12) + 'px'; };
+  const hide = (teraz = false) => { clearTimeout(hideT); if (teraz) { przyp = false; luzPop.classList.remove('on'); return; } if (!przyp) hideT = setTimeout(() => luzPop.classList.remove('on'), 120); };
+  // panel „Blacha” rysuje się od nowa przy każdej zmianie – dlatego zdarzenia są podpięte do sekcji, a nie do samego „?”
+  sek.addEventListener('mouseover', e => { if (!waski.matches && e.target.closest('#kLuz')) show(); });
+  sek.addEventListener('mouseout', e => { if (!waski.matches && e.target.closest('#kLuz') && !(e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('#kLuz'))) hide(); });
+  sek.addEventListener('click', e => { if (!e.target.closest('.gap-q')) return; if (luzPop.classList.contains('on') && (przyp || waski.matches)) hide(true); else { show(true); track('k_luz_pomoc'); } });
+  sek.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('.gap-q')) { e.preventDefault(); e.target.click(); } });
+  luzPop.querySelector('.pop-x').addEventListener('click', () => hide(true));
+  document.addEventListener('click', e => { if (przyp && !waski.matches && !sek.contains(e.target) && !luzPop.contains(e.target)) hide(true); });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && luzPop.classList.contains('on')) hide(true); });
+  waski.addEventListener('change', () => hide(true));
+}
+
 // pasek narzędzi podglądu
+let camPrev = null;
 function pasek() {
   const sw = (id, tt, kl, ikona = '') => `<button class="chip sw ${kl}${shading === id ? ' active' : ''}" data-shade="${id}" title="${tt}">${ikona}</button>`;
   $('kLook').innerHTML = sw('draw', T('Rysunek: jasny model z czarnymi krawędziami', 'Drawing: light model with black edges'), 'f-draw', ICONS.iso) +
     sw('mill', T('Stal surowa', 'Raw steel'), 'f-mill') + sw('flash', T('Nalot rdzy', 'Flash rust'), 'f-flash') + sw('paint', T('Czarny mat', 'Matt black'), 'f-paint');
   $('kOpcje').innerHTML = `<button class="chip icon${spoinyOn ? ' active' : ''}" data-opc="spoiny" title="${T('Spoiny: pokaż rowki wypełnione spoiną (czerwone na rysunku)', 'Welds: show the grooves filled with weld (red in the drawing)')}">${ICONS.seamWeld}</button>`;
   $('kCams').innerHTML = [['iso', ICONS.iso, T('Widok izometryczny', 'Isometric view')], ['front', ICONS.front, T('Widok z przodu', 'Front view')], ['top', ICONS.topView, T('Widok z góry', 'Top view')], ['bottom', ICONS.bottom, T('Widok od spodu', 'View from below')]]
-    .map(([k, i, tt]) => `<button class="chip icon" data-cam="${k}" title="${tt}">${i}</button>`).join('');
+    .map(([k, i, tt]) => `<button class="chip icon" data-cam="${k}" title="${tt}">${i}</button>`).join('') +
+    `<button class="chip icon cam-back" id="camBack" type="button" title="${T('Poprzedni widok (sprzed ostatniego przycisku widoku)', 'Previous view')}"${camPrev ? '' : ' disabled'}>↩</button>`;
 }
 document.querySelector('.toolbar').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return; const d = b.dataset;
@@ -608,7 +647,9 @@ document.querySelector('.toolbar').addEventListener('click', e => {
     $('kFlat').hidden = view !== 'flat'; stage.classList.toggle('plasko', view === 'flat'); FV.k = 1; FV.x = 0; FV.y = 0; $('stageHint').textContent = view === 'flat' ? HINT_FLAT : HINT_3D; canvas.style.visibility = view === 'flat' ? 'hidden' : ''; $('viewTools').classList.toggle('off', view === 'flat'); track('k_widok', { value: view }); odswiez(false); }
   if (d.shade) { shading = d.shade; track('k_wyglad', { value: shading }); pasek(); scena(); }
   if (d.opc === 'spoiny') { spoinyOn = !spoinyOn; track('k_spoiny'); pasek(); scena(); }
-  if (d.cam) { kamera(d.cam); track('k_kamera', { value: d.cam }); }
+  if (d.cam) { camPrev = { pos: camera.position.clone(), zoom: camera.zoom, K: { ...K } }; kamera(d.cam); track('k_kamera', { value: d.cam }); $('camBack').disabled = false; }
+  if (e.target.closest('#camBack') && camPrev) { const p = camPrev; camPrev = { pos: camera.position.clone(), zoom: camera.zoom, K: { ...K } };
+    camera.position.copy(p.pos); camera.zoom = p.zoom; Object.assign(K, p.K); orbit.target.set(0, 0, 0); orbit.update(); ustawKadr(); needsRender = true; track('k_kamera', { value: 'wroc' }); }
 });
 
 // jednostki (pasek górny)
@@ -716,7 +757,7 @@ function odswiez(panel = true) {
   $('kLuz').classList.toggle('off', !(state.zw > 0 || (state.c > 0 && state.zt > 0)));
   document.querySelectorAll('#kBlacha [data-g]').forEach(b => b.classList.toggle('active', Math.abs(+b.dataset.g - state.g) < 1e-3));
   $('n-a').step = J === 'in' ? 0.5 : 10; $('n-c').step = J === 'in' ? 0.25 : 5; $('n-g').step = J === 'in' ? 0.005 : 0.1;
-  statystyki(); wycena(); syncJedn(); pdfOpis();
+  statystyki(); wycena(); syncJedn(); pdfOpis(); rysLuz();
   if (view === 'flat') rozkroj(); else scena();
   zapisz();
 }

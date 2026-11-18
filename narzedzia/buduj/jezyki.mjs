@@ -29,6 +29,8 @@ const KOSTKA = {
   </div>` },
 };
 const esc = s => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+// obrazek podglądu linku (1200×630, po angielsku): osobny dla każdej strony
+const OG_OBRAZ = { '': 'og-start.jpg', 'firepit/': 'og.jpg', 'cube/': 'og-cube.jpg' };
 const adres = (j, strona) => `${ADRES}/${j ? j + '/' : ''}${strona}`;
 
 /** Nagłówek dla wyszukiwarek i podglądu linku: canonical, hreflang, og:*, schema.org. */
@@ -46,7 +48,7 @@ function glowa(j, strona, t, og, wersja, nazwa) {
   <meta property="og:url" content="${url}">
   <meta property="og:title" content="${esc(og.tytul)}">
   <meta property="og:description" content="${esc(og.opis)}">
-  <meta property="og:image" content="${ADRES}/img/og.jpg">
+  <meta property="og:image" content="${ADRES}/img/${OG_OBRAZ[strona]}">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:locale" content="${j === 'pl' ? 'pl_PL' : 'en_US'}">

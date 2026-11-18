@@ -62,7 +62,6 @@
 .kostka .k-skala.off { opacity: .32; pointer-events: none; }
 .kostka #kKom { min-height: 36px; margin: 2px 0 4px; }
 .kostka #kKom:empty { display: block; }
-.kostka #kScianki { border-bottom: 0; }
 .kostka .k-wsk { margin: 2px 0 10px; }
 .kostka #kOpc .p-sc:last-child, .kostka #kOpc .k-fonty:last-child { margin-bottom: 0; }
 .kostka #kKom { min-height: 18px; height: 18px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -75,3 +74,6 @@
 /* 0.3.9: układ, który przy tych wymiarach się nie mieści, jest wygaszony; suwak bez żadnego miejsca na zamki też */
 .kostka .k-ukl .chip:disabled { opacity: .3; cursor: default; filter: grayscale(1); }
 .kostka #kKsztalt .row.nic { opacity: .32; pointer-events: none; }
+/* „Blacha” stoi nad „Ściankami” (odwrotnie niż w palenisku): opcje rodzaju ścianki mają różną wysokość, a pod nimi nie może nic skakać */
+.kostka #kScianki { border-bottom: 0; }
+.kostka .gap-head { display: flex; align-items: center; gap: 8px; }

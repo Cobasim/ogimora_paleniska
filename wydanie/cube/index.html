@@ -13,12 +13,12 @@
   <meta property="og:url" content="https://ogimora.com/cube/">
   <meta property="og:title" content="OGIMORA — steel welding cube, free DXF">
   <meta property="og:description" content="Free steel cube for welding practice: 4–28 in side, dots, numbers, lettering, cut corners – download a DXF ready for laser or plasma cutting.">
-  <meta property="og:image" content="https://ogimora.com/img/og.jpg">
+  <meta property="og:image" content="https://ogimora.com/img/og-cube.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:locale" content="en_US">
   <meta name="twitter:card" content="summary_large_image">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"OGIMORA – welding cube","url":"https://ogimora.com/cube/","description":"Darmowa stalowa kostka do nauki spawania: bok 10–70 cm, kropki, liczby, napis, ścinane narożniki – i gotowy plik DXF do cięcia laserem lub plazmą.","inLanguage":["pl","en"],"applicationCategory":"DesignApplication","operatingSystem":"Any (web browser)","softwareVersion":"0.4.1","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"OGI"},"publisher":{"@type":"Organization","name":"OGIMORA","url":"https://ogimora.com/","logo":"https://ogimora.com/img/logo.svg"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"OGIMORA – welding cube","url":"https://ogimora.com/cube/","description":"Darmowa stalowa kostka do nauki spawania: bok 10–70 cm, kropki, liczby, napis, ścinane narożniki – i gotowy plik DXF do cięcia laserem lub plazmą.","inLanguage":["pl","en"],"applicationCategory":"DesignApplication","operatingSystem":"Any (web browser)","softwareVersion":"0.4.2","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"OGI"},"publisher":{"@type":"Organization","name":"OGIMORA","url":"https://ogimora.com/","logo":"https://ogimora.com/img/logo.svg"}}</script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#ffffff">
   <link rel="icon" href="img/logo.svg" type="image/svg+xml">
@@ -31,7 +31,7 @@
   <link rel="stylesheet" href="strona.css?v=a66aa9">
   <link rel="stylesheet" href="naglowek.css?v=6d450d">
   <link rel="stylesheet" href="prosty.css?v=9df172">
-  <link rel="stylesheet" href="kostka.css?v=72b948">
+  <link rel="stylesheet" href="kostka.css?v=a3a350">
   </head>
 <body class="kostka">
   <header class="ob">
@@ -84,7 +84,10 @@
     </section>
     <aside class="panel" aria-label="Ścianki, blacha i pobieranie">
       <div class="panel-scroll">
-        <section class="group" id="kBlacha"></section>
+        <section class="group" id="kBlachaG">
+          <div id="kBlacha"></div>
+          <button type="button" class="proba-btn" id="probaBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 20.2 7.2v9.6L12 21.5 3.8 16.8V7.2z"/><path d="M12 8.5 14.5 13h-5z"/></svg><span><b>Płytki próbne</b><small>sprawdź luz na swojej maszynie</small></span></button>
+        </section>
         <section class="group p-panel" id="kScianki"></section>
       </div>
       <div class="panel-foot">
@@ -137,6 +140,6 @@
       "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
     } }
   </script>
-  <script type="module" src="js/c38317148f.js"></script>
+  <script type="module" src="js/e4a21c7f61.js"></script>
 </body>
 </html>

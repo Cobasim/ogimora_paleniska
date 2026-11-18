@@ -2,6 +2,9 @@
 
 Jedna linijka na każde wgranie na serwer. Numer wersji jest w `www/js/wersja.js`.
 
+## 0.4.2 – 2026-11-18
+Kostka dorównuje palenisku: „?” przy luzie na zamkach otwiera to samo okienko z rysunkiem, opisem i tabelką (laser / plazma); przycisk „Płytki próbne” z plikami do wycięcia i instrukcją; przycisk „poprzedni widok” przy widokach. Podgląd linku: osobny obrazek dla kostki i dla strony startowej (wcześniej link do kostki pokazywał obrazek paleniska).
+
 ## 0.4.1 – 2026-11-18
 Strona startowa: usunięty nagłówek z hasłem i wstępem – zaczyna się od razu od dwóch kart. (Dla wyszukiwarek został jeden niewidoczny tytuł strony.)
 

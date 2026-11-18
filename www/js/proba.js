@@ -23,6 +23,7 @@ const LISTA = {
   mm: [3, 4, 5].map(t => ({ v: t, n: `${t} mm`, k: `${t}mm` })),
   in: BLACHY_IN.map(b => ({ v: b.t, n: b.n, k: b.kod, tt: opisBlachy(b.t) })),
 };
+if (document.documentElement.dataset.model === 'kostka') T.sub = EN ? 'Cut them before the cube. They show which tab clearance fits your machine.' : 'Wytnij je przed kostką. Pokażą, jaki luz na zamkach pasuje do Twojej maszyny.';
 const btn = document.getElementById('probaBtn');
 if (btn) {
   const d = document.createElement('dialog'); d.className = 'dl proba-dlg'; d.setAttribute('aria-labelledby', 'probaT');
@@ -48,7 +49,7 @@ if (btn) {
     $('probaGr').innerHTML = LISTA[J].map(g => `<button type="button" class="chip" data-k="${g.k}"${g.tt ? ` title="${g.tt.replace(/"/g, '&quot;')}"` : ''}>${g.n}</button>`).join('');
     $('probaA2').textContent = J === 'in' ? T.a2in : T.a2;
     $('probaC').href = J === 'in' ? `proba/ogimora-${EN ? 'test-plate-EN-inch' : 'plytka-probna-PL-cale'}.pdf` : `proba/ogimora-${EN ? 'test-plate-EN' : 'plytka-probna-PL'}.pdf`;
-    const a = document.querySelector('[data-thk="tBowl"] .chip.active'), v = a ? +a.dataset.v : NaN;
+    const a = document.querySelector('[data-thk="tBowl"] .chip.active, #kThk .chip.active'), v = a ? +(a.dataset.v ?? a.dataset.t) : NaN;   // palenisko: blacha misy; kostka: jedyna blacha
     ustaw(LISTA[J].find(g => Math.abs(g.v - v) < 1e-3) || LISTA[J][J === 'in' ? 2 : 1]);
     track('proba', { value: 'okno' }); d.showModal(); });
   d.addEventListener('click', e => { if ((e.target === d && ((r => e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom)(d.getBoundingClientRect()))) || e.target.closest('[data-close]')) d.close(); });
