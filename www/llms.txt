@@ -2,9 +2,11 @@
 
 > Free online generators of sheet-steel projects. You set up a design in the browser and download a DXF file ready for CNC laser or plasma cutting. Two generators: a steel fire pit and a steel cube for welding practice. Test version, made by one person (OGI).
 
+- Home page: [English](https://ogimora.com/en/) · [Polish](https://ogimora.com/pl/)
+
 ## Fire pit generator
 
-- [English](https://ogimora.com/en/) · [Polish](https://ogimora.com/pl/)
+- [English](https://ogimora.com/en/firepit/) · [Polish](https://ogimora.com/pl/firepit/)
 - What it does: set the base size, height, wall angle and sheet thickness (3, 4 or 5 mm; in inch mode US sheet: 11 ga, 10 ga, 3/16" or 1/4"); choose a cut-out pattern for each of the four walls; add your own lettering; choose holes in the floor. Parts (4 walls + floor) join with tabs and slots.
 - Downloads: DXF at 1:1 scale in millimetres or inches; a paper model (PDF, A4 or US Letter); test plates (DXF + PDF instructions) for finding the right slot clearance on a given laser or plasma machine.
 - Licence: free for personal use; commercial use up to 20 finished fire pits per design; the files themselves may not be sold or passed on.

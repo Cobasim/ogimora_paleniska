@@ -125,7 +125,7 @@ const lista = a => '<ul>' + a.map(x => `<li>${x}</li>`).join('') + '</ul>';
 // ---------------------------------------------------------------- pasek: znaczek TEST i przycisk „O stronie”
 const hdr = document.querySelector('header.ob');
 const znak = document.createElement('button'); znak.type = 'button'; znak.className = 'ob-test'; znak.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 22 20.5H2z"/><path d="M12 10v5M12 17.6v.4"/></svg><b class="t-dl">${T.test}</b><b class="t-kr">TEST</b><span>${T.test2}</span>`; znak.title = T.testT;
-hdr.querySelector('.ob-brand').after(znak);
+(hdr.querySelector('.ob-proj') || hdr.querySelector('.ob-model') || hdr.querySelector('.ob-brand')).after(znak);   // kolejność: logo · model · projekt ▾ · STRONA TESTOWA
 // (przycisk „i” usunięty – okno „O stronie” otwiera ramka STRONA TESTOWA)
 
 // ---------------------------------------------------------------- okno „O stronie”

@@ -7,7 +7,7 @@
 import { build, transform } from 'esbuild';
 import fs from 'node:fs'; import path from 'node:path'; import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { wersjeJezykowe, wersjeKostki, bezKomentarzy } from './jezyki.mjs';
+import { wersjeJezykowe, wersjeKostki, wersjeStartu, bezKomentarzy } from './jezyki.mjs';
 const TU = path.dirname(fileURLToPath(import.meta.url));
 const KORZEN = path.resolve(TU, '../..'), SRC = path.join(KORZEN, 'www'), OUT = path.join(KORZEN, 'wydanie');
 const wersja = /WERSJA = '([^']+)'/.exec(fs.readFileSync(path.join(SRC, 'js/wersja.js'), 'utf8'))[1];
@@ -30,6 +30,7 @@ async function strona(plik) {
   let html = fs.readFileSync(path.join(SRC, plik), 'utf8');
   const moduly = [...html.matchAll(/<script type="module" src="(js\/[^"]+)"><\/script>\s*/g)];
   if (moduly.length < 2) throw new Error(plik + ': nie znalazłem skryptów strony');
+  moduly.sort((a, b) => a.index - b.index);
   const start = path.join(TU, '_start.mjs');
   fs.writeFileSync(start, moduly.map(m => `import ${JSON.stringify(path.join(SRC, m[1]))};`).join('\n') + '\n');
   const wyn = await build({
@@ -43,9 +44,9 @@ async function strona(plik) {
 
   // 3. HTML: skrypty znikają, jeden wspólny plik na końcu; mapa importów musi stać przed nim
   moduly.forEach(m => { html = html.replace(m[0], ''); });
-  const mapa = /[ \t]*<script type="importmap">[\s\S]*?<\/script>\s*/.exec(html);
-  if (!mapa) throw new Error(plik + ': brak mapy importów');
-  html = html.replace(mapa[0], '').replace('</body>', `${mapa[0].trimEnd()}\n  <script type="module" src="${nazwa}"></script>\n</body>`);
+  const mapa = /[ \t]*<script type="importmap">[\s\S]*?<\/script>\s*/.exec(html);      // strona startowa nie ma modelu 3D ani mapy importów
+  if (mapa) html = html.replace(mapa[0], '');
+  html = html.replace('</body>', `${mapa ? mapa[0].trimEnd() + '\n' : ''}  <script type="module" src="${nazwa}"></script>\n</body>`);
   html = html.replace(/<!DOCTYPE html>\s*/i, `<!DOCTYPE html>\n<!-- (c) ${rok} OGIMORA - ogimora.com. Wszelkie prawa zastrzezone / All rights reserved. -->\n`);
 
   // 4. CSS: ściśnięty, z podpisem; adres z sumą kontrolną (świeży po każdej zmianie)
@@ -56,14 +57,11 @@ async function strona(plik) {
   }
   return { html, nazwa };
 }
-const { html, nazwa } = await strona('index.html');
-// kostka (ogimora.com/cube): osobna strona z własnym skryptem; adresy w pliku są względem katalogu głównego (<base href="../">)
-const kostka = await strona('cube/index.html');
-for (const [d, h] of Object.entries(wersjeKostki(kostka.html, wersja))) { fs.mkdirSync(path.join(OUT, d), { recursive: true }); fs.writeFileSync(path.join(OUT, d, 'index.html'), bezKomentarzy(h)); }
-// 4b. wersje językowe: / (według przeglądarki), /pl/, /en/ – patrz jezyki.mjs
-for (const [j, h] of Object.entries(wersjeJezykowe(html, wersja))) {
-  if (j) fs.mkdirSync(path.join(OUT, j), { recursive: true });
-  fs.writeFileSync(path.join(OUT, j, 'index.html'), bezKomentarzy(h));
+// 4b. trzy strony × trzy adresy (domyślny, /pl/, /en/) – patrz jezyki.mjs. Adresy w plikach są względem katalogu głównego (<base>).
+const start = await strona('index.html'), palenisko = await strona('firepit/index.html'), kostka = await strona('cube/index.html');
+const nazwa = palenisko.nazwa;
+for (const [d, h] of Object.entries({ ...wersjeStartu(start.html, wersja), ...wersjeJezykowe(palenisko.html, wersja), ...wersjeKostki(kostka.html, wersja) })) {
+  fs.mkdirSync(path.join(OUT, d), { recursive: true }); fs.writeFileSync(path.join(OUT, d, 'index.html'), bezKomentarzy(h));
 }
 
 // 5. licencje bibliotek obcych (muszą zostać przy kodzie)
@@ -78,4 +76,4 @@ fs.writeFileSync(path.join(OUT, 'js/LICENCJE.txt'), [
 ].join('\n\n') + '\n');
 
 const kb = f => Math.round(fs.statSync(path.join(OUT, f)).size / 1024) + ' kB';
-console.log(`wydanie/ gotowe - wersja ${wersja} - skrypt ${nazwa} (${kb(nazwa)}), kostka ${kostka.nazwa} (${kb(kostka.nazwa)})`);
+console.log(`wydanie/ gotowe - wersja ${wersja} - start ${start.nazwa} (${kb(start.nazwa)}), palenisko ${nazwa} (${kb(nazwa)}), kostka ${kostka.nazwa} (${kb(kostka.nazwa)})`);

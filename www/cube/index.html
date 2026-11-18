@@ -26,6 +26,7 @@
 <body class="kostka">
   <header class="ob">
     <a class="ob-brand" href="./" aria-label="OGIMORA"><img src="img/logo.svg" alt=""><span>OGIMORA</span></a>
+    <button type="button" class="ob-proj" id="pjMenuBtn" aria-haspopup="menu" aria-expanded="false"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2.5h9V19H3z"/></svg><span class="pj-n"></span><span class="pj-ok">✓</span><svg class="i caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
     <button type="button" class="ob-opinia" id="opBtn" title="Napisz, co zmienić"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Napisz, co zmienić</span></button>
     <div class="ob-jedn" role="group" aria-label="Jednostki: milimetry albo cale"><button type="button" data-j="mm">mm</button><button type="button" data-j="in">in</button></div>
     <div class="ob-lang" role="group" aria-label="Język / Language"><button type="button" data-l="pl">PL</button><button type="button" data-l="en">EN</button></div>
@@ -112,12 +113,16 @@
     </form>
   </dialog>
 
+  <div class="pj-menu" id="pjMenu" role="menu" hidden></div>
+  <input type="file" id="loadFile" accept=".json,application/json" hidden>
+
   <script type="importmap">
     { "imports": {
       "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
       "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
     } }
   </script>
+  <script type="module" src="js/pasek.js"></script>
   <script type="module" src="js/kostka/app.js"></script>
   <script type="module" src="js/dymki.js"></script>
   <script type="module" src="js/opinia.js"></script>

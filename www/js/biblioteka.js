@@ -1,7 +1,11 @@
 // Twoje projekty – biblioteka w przeglądarce (localStorage), wspólna dla strony startowej i generatora.
 // Projekt zapisuje się sam: powstaje przy pierwszej zmianie w generatorze, potem każda zmiana go aktualizuje.
 // Wpis: { id, nazwa, t (ostatnia zmiana), utw (utworzony), kod (kształt), zdobienia (wzory), thumb (miniatura JPEG), zrodlo }
-const KEY = 'ogip_biblioteka', MAX = 40;   // PROSTY: własna lista (osobna od pełnego generatora)
+// Każdy model ma własną listę: palenisko 'ogip_biblioteka' (wpis ma `kod`), kostka 'ogik_biblioteka' (wpis ma `stan`).
+export const KLUCZE = { palenisko: 'ogip_biblioteka', kostka: 'ogik_biblioteka' };
+const KEY = KLUCZE[document.documentElement.dataset.model] || KLUCZE.palenisko, MAX = 40;
+/** Lista projektów innego modelu – tylko do odczytu (strona startowa). */
+export function listaModelu(model) { try { const l = JSON.parse(localStorage.getItem(KLUCZE[model]) || '[]'); return Array.isArray(l) ? l.sort((a, b) => (b.t || 0) - (a.t || 0)) : []; } catch { return []; } }
 
 function czytaj() {
   let l = null;

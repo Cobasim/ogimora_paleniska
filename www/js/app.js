@@ -6,6 +6,7 @@ import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { PARAMS, THICKNESSES, PERF_LEVELS, DEFAULTS, build, tessellate, layout, bbox } from './geometry.js';
 import { buildDxf } from './dxf.js';
 import { MATERIALS, estimate, RYNEK, USA_SERIA, usaCena } from './pricing.js';
+import { toastAkcja } from './pasek.js';
 import { buildPdf, planPrint } from './print.js';
 import { FINISHES, makeMaterial, isDark } from './textures.js';
 import { encode, decode, CODE_LENGTH } from './code.js';
@@ -1469,6 +1470,9 @@ else {
     }
   }
   pokazNazwe(); poUlozeniu();
+  // przyszliśmy tu z własnego projektu (nazwa modelu na pasku albo „Od nowa”): jedno kliknięcie wraca do niego
+  const z = startNowy && startQ.get('z'), wz0 = z && B.pobierz(z);
+  if (wz0) toastAkcja(EN_UI ? `${cur.podglad || 'New design'}. Your design “${wz0.nazwa}” is saved in My designs.` : `${cur.podglad || 'Nowy projekt'}. Twój projekt „${wz0.nazwa}” jest zapisany w Moich projektach.`, EN_UI ? 'Back to mine' : 'Wróć do mojego', () => idzDo('?p=' + wz0.id));
 }
 
 // ---------------- nazwa projektu ▾: zmiana nazwy, ostatnie projekty, nowy, duplikuj, plik ----------------
@@ -1527,13 +1531,14 @@ function idzDo(q) { zapiszTeraz(); location.href = location.pathname + q; }   //
   });
   document.addEventListener('click', e => { if (!menu.hidden && !menu.contains(e.target) && !btn.contains(e.target)) zamknij(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') zamknij(); });
+  document.addEventListener('ogi-przed-wyjsciem', () => zapiszTeraz());
   menu.addEventListener('click', e => {
     const dl = e.target.closest('[data-del]');
     if (dl) { e.stopPropagation(); const q = B.pobierz(dl.dataset.del); if (q && confirm(T.usunQ(q.nazwa))) { B.usun(q.id); track('menu', { k: 'usun' }); rysuj(); } return; }
     const p = e.target.closest('[data-p]'); if (p) { track('menu', { k: 'przelacz' }); idzDo('?p=' + p.dataset.p); return; }
     const b = e.target.closest('[data-pm]'); if (!b) return; zamknij();
     const k = b.dataset.pm; track('menu', { k });
-    if (k === 'nowy-start' || k === 'nowy-czysty') idzDo('?nowy=' + (k === 'nowy-czysty' ? 'czysty' : 'start'));
+    if (k === 'nowy-start' || k === 'nowy-czysty') idzDo('?nowy=' + (k === 'nowy-czysty' ? 'czysty' : 'start') + (cur.id ? '&z=' + cur.id : ''));
     else if (k === 'usun') { const q = cur.id && B.pobierz(cur.id); if (q && confirm(T.usunQ(q.nazwa))) { autoReady = false; B.usun(q.id); try { localStorage.setItem('ogip_biez', ''); } catch {} location.href = location.pathname + '?nowy=start'; } }
     else if (k === 'dup') { zapiszTeraz(); const q = B.duplikuj(cur.id, EN_UI ? 'copy' : 'kopia'); if (q) idzDo('?p=' + q.id); }
     else if (k === 'otworz') $('loadFile').click();

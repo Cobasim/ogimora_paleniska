@@ -15,6 +15,8 @@ import { LANG } from '../i18n.js';
 import { CAL, liczba, preferencja, ustawPreferencje } from '../jednostki.js';
 import { track, trackDebounced, setCodeSource, setProjektSource } from '../track.js';
 import { WERSJA } from '../wersja.js';
+import * as B from '../biblioteka.js';
+import { toastAkcja } from '../pasek.js';
 
 const EN = LANG === 'en';
 const T = (pl, en) => (EN ? en : pl);
@@ -50,6 +52,24 @@ const KLUCZ = 'ogik_stan';
 const kropki = () => Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => [n, { typ: 'kropki', n, tekst: String(n), t1: '', t3: '', font: FONT_DOM, ksztalt: 'kolo', skala: 0.7 }]));
 function startowy(j) {
   const s = { a: 250, t: 3, c: 0, g: 0.3, zw: zamekDomyslny(3), zt: zamekTrojkat(3), uklad: 'konce', ukladT: 'para', sc: kropki() };
+  return j === 'in' ? przelicz(s, 'in') : s;
+}
+// Projekty „od nowa” (menu projektu, strona startowa). 'start' = projekt startowy wybrany przez autora (0.4.0).
+const RODZAJE = {
+  start: [T('Kostka OGIMORA', 'OGIMORA cube'), T('projekt startowy: napis, kropki, otwór', 'starter design: lettering, dots, an opening')],
+  kostka: [T('Kostka do gry', 'Dice'), T('kropki 1–6', 'dots 1–6')],
+  otwory: [T('Kostka z otworami', 'Cube with openings'), T('duży otwór w każdej ściance', 'a large opening in every side')],
+  czysty: [T('Czysta kostka', 'Blank cube'), T('gładkie ścianki', 'plain sides')],
+};
+function stanRodzaju(rodzaj, j) {
+  const sc = (typ, d = {}) => ({ typ, n: 1, tekst: '', t1: '', t3: '', font: FONT_DOM, ksztalt: 'kolo', skala: 0.7, ...d });
+  const wsz = f => Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => [n, f(n)]));
+  const baza = { a: 200, t: 3, c: 0, g: 0.3, zw: zamekDomyslny(3), zt: zamekTrojkat(3), uklad: 'konce', ukladT: 'jeden' };
+  const s = rodzaj === 'kostka' ? { ...baza, sc: wsz(n => sc('kropki', { n, tekst: String(n) })) }
+    : rodzaj === 'otwory' ? { ...baza, c: 40, sc: wsz(n => sc('otwor', { n, tekst: String(n), skala: 0.8 })) }
+    : rodzaj === 'czysty' ? { ...baza, sc: wsz(n => sc('brak', { n, tekst: String(n) })) }
+    : { ...baza, c: 40, g: 0.4, zw: 0, zt: 5, uklad: 'para', sc: { 1: sc('otwor', { tekst: '1', skala: 1 }), 2: sc('napis', { n: 2, tekst: 'MORA', t1: 'OGI' }), 3: sc('kropki', { n: 6, tekst: '3' }),
+        4: sc('kropki', { n: 4, tekst: '4' }), 5: sc('kropki', { n: 5, tekst: '5' }), 6: sc('brak', { n: 6, tekst: '6', skala: 0.2 }) } };
   return j === 'in' ? przelicz(s, 'in') : s;
 }
 function przelicz(s, j) {
@@ -91,7 +111,26 @@ function zLinku() { const m = /[#&]k=([A-Za-z0-9_-]+)/.exec(location.hash); if (
 function zPamieci() { try { return JSON.parse(localStorage.getItem(KLUCZ) || 'null'); } catch { return null; } }
 const doLinku = () => '#k=' + b64.na(JSON.stringify(state));
 
-let state = popraw(zLinku() || zPamieci() || startowy(preferencja()));
+// ---- co otwieramy (kolejność): ?p=projekt · ?nowy=rodzaj · cudzy link #k= · bieżący projekt · stan sprzed 0.4.0 · projekt startowy
+const Q0 = new URLSearchParams(location.search);
+const cur = { id: '', podglad: '', baza: T('Moja kostka', 'My cube') };
+let BL = null, widokStart = false, wrocDo = '', adresQ = '';        // BL: stan przy otwarciu (dopóki się nie zmieni, projektu nie ma na liście)
+const czytaj = k => { try { return localStorage.getItem(k) || ''; } catch { return ''; } }, pisz = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+const tenSam = (x, y) => { try { return JSON.stringify(popraw(x)) === JSON.stringify(popraw(y)); } catch { return false; } };
+let state = (() => {
+  const zL = zLinku(), zP = zPamieci(), wp = Q0.get('p') && B.pobierz(Q0.get('p'));
+  const nowy = r => { const rodzaj = RODZAJE[r] ? r : 'start'; cur.podglad = RODZAJE[rodzaj][0]; widokStart = rodzaj === 'start'; pisz('ogik_rodzaj', rodzaj); pisz('ogik_biez', ''); return stanRodzaju(rodzaj, preferencja()); };
+  if (wp && wp.stan) { cur.id = wp.id; return popraw(wp.stan); }
+  if (Q0.get('nowy')) { wrocDo = Q0.get('z') || ''; return popraw(nowy(Q0.get('nowy'))); }
+  if (zL && !(zP && tenSam(zL, zP))) { cur.baza = T('Kostka z linku', 'Cube from a link'); pisz('ogik_biez', ''); pisz('ogik_rodzaj', ''); return popraw(zL); }
+  const wb = B.pobierz(czytaj('ogik_biez'));
+  if (wb && wb.stan) { cur.id = wb.id; return popraw(wb.stan); }
+  const rodzaj = czytaj('ogik_rodzaj');
+  if (zP && RODZAJE[rodzaj]) { cur.podglad = RODZAJE[rodzaj][0]; widokStart = rodzaj === 'start' && tenSam(zP, stanRodzaju('start', jednStanu(popraw(zP)))); return popraw(zP); }
+  if (zP) { BL = ''; return popraw(zP); }                             // kostka sprzed 0.4.0: od razu trafia do „Moich projektów”
+  return popraw(nowy('start'));
+})();
+adresQ = cur.id ? '?p=' + cur.id : '';
 let J = jednStanu(state);
 let wybrana = 1;                 // ścianka w panelu
 let model = null, czesci = [];
@@ -100,8 +139,50 @@ let view = 'model', shading = 'draw', spoinyOn = false, dxfJ = J;
 function zapisz() {
   histZapisz();
   try { localStorage.setItem(KLUCZ, JSON.stringify(state)); } catch {}
-  try { history.replaceState(null, '', location.pathname + location.search + doLinku()); } catch {}
+  try { history.replaceState(null, '', location.pathname + adresQ + doLinku()); } catch {}
+  projektZapisz();
 }
+
+// ---------------------------------------------------------------- Moje projekty (js/biblioteka.js) – jak w palenisku
+// Projekt zapisuje się sam w tej przeglądarce. Powstaje przy pierwszej zmianie – samo oglądanie projektu startowego listy nie zaśmieca.
+let projT = 0, ZAP = null;
+const nazwaBiez = () => (cur.id && B.pobierz(cur.id)?.nazwa) || cur.podglad || cur.baza;
+function projektZapisz() { if (BL == null) return; clearTimeout(projT); projT = setTimeout(projektTeraz, 700); }
+function projektTeraz() {
+  clearTimeout(projT); if (BL == null) return;
+  const m = JSON.stringify(state);
+  if (!cur.id && m === BL) return;
+  let w = cur.id && B.pobierz(cur.id), pierwszy = '';
+  if (!w) { cur.id = B.nowyId(); w = { id: cur.id, nazwa: B.wolnaNazwa(cur.baza), t: Date.now() }; pierwszy = w.nazwa; cur.podglad = ''; pisz('ogik_rodzaj', ''); track('projekt_nowy'); }
+  if (m !== ZAP || !w.thumb) { B.zapisz({ ...w, model: 'kostka', t: m === ZAP ? w.t : Date.now(), stan: JSON.parse(m), thumb: miniatura() || w.thumb || '' }); ZAP = m; }
+  pisz('ogik_biez', cur.id); adresQ = '?p=' + cur.id;
+  try { history.replaceState(null, '', location.pathname + adresQ + doLinku()); } catch {}
+  pokazNazwe(true);
+  if (pierwszy) toast(T(`Zapisano w tej przeglądarce jako „${pierwszy}” – nazwę zmienisz na górnym pasku`, `Saved in this browser as “${pierwszy}” – rename it in the top bar`));
+}
+function miniatura() {
+  if (view !== 'model') return '';
+  try { renderer.render(scene, camera);
+    const W = 240, c = document.createElement('canvas'); c.width = W; c.height = W;
+    const x = c.getContext('2d'); x.fillStyle = '#f3f1ed'; x.fillRect(0, 0, W, W);
+    const sw = Math.min(canvas.width, canvas.height);
+    x.drawImage(canvas, (canvas.width - sw) / 2, (canvas.height - sw) / 2, sw, sw, 0, 0, W, W);
+    return c.toDataURL('image/jpeg', 0.8);
+  } catch { return ''; }
+}
+function toast(msg) {
+  let t = document.querySelector('.toast');
+  if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); }
+  t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 3200);
+}
+function pokazNazwe(zapisano = false) {
+  const b = $('pjMenuBtn'); if (!b) return; const n = nazwaBiez(); b.querySelector('.pj-n').textContent = n; b.title = n;
+  if (zapisano) { const z = b.querySelector('.pj-ok'); z.classList.add('on'); clearTimeout(z._t); z._t = setTimeout(() => z.classList.remove('on'), 1600); }
+}
+/** Przejście do innego projektu: bieżący najpierw się zapisuje, strona ładuje się od nowa (czysta historia cofania). */
+function idzDo(q) { projektTeraz(); location.href = location.pathname + q; }
+document.addEventListener('ogi-przed-wyjsciem', () => projektTeraz());
+addEventListener('pagehide', () => projektTeraz());
 
 // ---------------------------------------------------------------- historia (cofnij / ponów) – jak w palenisku
 const H = { back: [], fwd: [], last: null, blokada: false }; let histT = 0;
@@ -321,7 +402,7 @@ function kadr() {
   if (K.auto) dopasuj(); else ustawKadr();
 }
 function kamera(rodzaj) {
-  const dirs = { iso: [1, .62, 1.25], front: [0, .0001, 1], top: [0, 1, .001], bottom: [.3, -1, .6] };
+  const dirs = { iso: [1, .62, 1.25], start: [1, .95, 1.35], front: [0, .0001, 1], top: [0, 1, .001], bottom: [.3, -1, .6] };
   orbit.target.set(0, 0, 0);
   camera.position.copy(new THREE.Vector3(...dirs[rodzaj]).normalize().multiplyScalar(5000)); camera.zoom = 1; camera.updateProjectionMatrix();
   orbit.update(); K.auto = true; dopasuj(); needsRender = true;
@@ -608,8 +689,8 @@ function wycena() {
   const est = estimate({ parts, stats: { cut: ciecie } }, 's235', { ...PRICE_DEFAULTS, setup: 0 });
   const MIN_PL = 120, PRZYG_PL = 63, plCena = poz => Math.max(MIN_PL, poz + PRZYG_PL);
   const K1 = US ? USA_SERIA[0][1] : 1, razem = Math.ceil((US ? usaCena(est.net, 1) : plCena(est.net)) / 5 - 1e-9) * 5;       // suma w górę do 5, jak w palenisku
-  $('price').innerHTML = `<div class="price-head k-cena"><span title="${US ? 'Test price for ONE cube cut from steel – a rough estimate for the USA. Before sales tax. Ask a shop for a real quote.' : 'Cena testowa za wycięcie JEDNEJ kostki ze stali – szacunek orientacyjny dla Polski. Netto. Dokładną cenę poda zakład.'}">${US ? 'Test price, rough' : 'Cena testowa, orientacyjna'} <u class="rynek">${US ? 'USA · 1 pc' : 'PL · 1 szt.'}</u></span><b>≈ ${zl(razem)}</b>
-    <em class="decor-price${wyc * K1 > 0.5 ? '' : ' none'}">${wyc * K1 > 0.5 ? (US ? `incl. cut-outs ${zl(wyc * K1)}` : `w tym wycięcia w ściankach ${zl(wyc)}`) : (US ? 'no cut-outs' : 'bez wycięć w ściankach')}${!US && razem <= MIN_PL ? ' <span title="Zakłady mają minimalną wartość zamówienia – w prawdziwej wycenie tej kostki było to 120 zł netto. Dwie takie kostki w jednym zleceniu wyjdą niewiele drożej niż jedna." style="color:var(--ink-3);font-weight:600">· minimum zakładu</span>' : ''}</em></div>`;
+  $('price').innerHTML = `<div class="price-head k-cena"><span title="${US ? 'Test price for ONE cube cut from steel – a rough estimate for the USA. Before sales tax. Ask a shop for a real quote.' : 'Cena testowa za wycięcie JEDNEJ kostki ze stali – szacunek orientacyjny dla Polski. Netto. Dokładną cenę poda zakład.'}">${US ? 'Test price, rough' : 'Cena testowa, orientacyjna'} <u class="rynek" title="${!US && razem <= MIN_PL ? 'Zakłady mają minimalną wartość zamówienia – w prawdziwej wycenie takiej kostki było to 120 zł netto.' : ''}">${US ? 'USA · 1 pc' : 'PL · 1 szt.' + (razem <= MIN_PL ? ' · minimum zakładu' : '')}</u></span><b>≈ ${zl(razem)}</b>
+    <em class="decor-price${wyc * K1 > 0.5 ? '' : ' none'}">${wyc * K1 > 0.5 ? (US ? `incl. cut-outs ${zl(wyc * K1)}` : `w tym wycięcia w ściankach ${zl(wyc)}`) : (US ? 'no cut-outs' : 'bez wycięć w ściankach')}</em></div>`;
 }
 
 // ---------------------------------------------------------------- odświeżanie
@@ -764,5 +845,71 @@ $('cardsTgl').addEventListener('click', () => { const off = document.body.classL
 kartyTxt();
 $('histUndo').addEventListener('click', () => histKrok(-1)); $('histRedo').addEventListener('click', () => histKrok(1));
 $('histUndo').title = T('Cofnij (Ctrl+Z)', 'Undo (Ctrl+Z)'); $('histRedo').title = T('Ponów (Ctrl+Shift+Z)', 'Redo (Ctrl+Shift+Z)');
-pasek(); panelKsztalt(); odswiez(); kadr(); kamera('iso'); histPrzyciski();
+// widok projektu startowego: surowa stal, spoiny, spojrzenie z góry na narożnik (jak na zdjęciu wzorcowym autora)
+if (widokStart) { shading = 'mill'; spoinyOn = true; }
+pasek(); panelKsztalt(); odswiez(); kadr(); kamera(widokStart ? 'start' : 'iso'); histPrzyciski();
+if (BL == null) BL = JSON.stringify(state); else projektZapisz();
+pokazNazwe();
+if (wrocDo && B.pobierz(wrocDo)) { const n = B.pobierz(wrocDo).nazwa; toastAkcja(T(`${cur.podglad || 'Nowa kostka'}. Twój projekt „${n}” jest zapisany w Moich projektach.`, `${cur.podglad || 'New cube'}. Your design “${n}” is saved in My designs.`), T('Wróć do mojego', 'Back to mine'), () => idzDo('?p=' + wrocDo)); }
+
+// ---- menu projektu (nazwa ▾): nazwa, moje projekty, od nowa, duplikuj, plik, usuń – ten sam układ co w palenisku
+{
+  const btn = $('pjMenuBtn'), menu = $('pjMenu');
+  const zamknij = () => { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
+  const esc = x => String(x || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const ic = d => `<svg class="i" viewBox="0 0 24 24"><path d="${d}"/></svg>`;
+  const IK = { start: 'M4 12a8 8 0 1 0 3-6.2M4 4v4h4', kostka: 'M5 5h14v14H5zM9 9h.01M15 15h.01M15 9h.01M9 15h.01', otwory: 'M5 5h14v14H5zM12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7', czysty: 'M5 5h14v14H5z' };
+  const usunQ = n => T(`Usunąć „${n}” z tej przeglądarki?`, `Delete “${n}” from this browser?`);
+  function rysuj() {
+    const w = cur.id && B.pobierz(cur.id), inne = B.lista().filter(p => p.id !== cur.id && p.stan).slice(0, 12);
+    menu.innerHTML = `<label class="pm-name"><span>${T('Nazwa projektu', 'Design name')}</span><input id="pmName" maxlength="40" value="${esc(nazwaBiez())}" spellcheck="false"></label>
+      <p class="pm-stan">${w ? `${T('Zapisuje się sam w tej przeglądarce', 'Saves itself in this browser')} · ${T('zmieniony', 'edited')} ${B.kiedy(w.t, LANG)}` : T('Zapisze się po pierwszej zmianie', 'Will be saved after your first change')}</p>` +
+      (inne.length ? `<div class="pm-sec">${T('Moje kostki w tej przeglądarce', 'My cubes in this browser')}</div><div class="pm-lista">` + inne.map(p => `<button type="button" class="pm-p" data-p="${p.id}">${p.thumb ? `<img src="${p.thumb}" alt="">` : '<span class="pm-noimg"></span>'}<span><b>${esc(p.nazwa)}</b><small>${B.kiedy(p.t, LANG)}</small></span><span class="pm-del" data-del="${p.id}" title="${T('Usuń ten projekt', 'Delete this design')}" role="button">✕</span></button>`).join('') + '</div>' : '') +
+      `<div class="pm-sep"></div><div class="pm-sec">${T('Od nowa', 'Start over')}</div>` +
+      Object.entries(RODZAJE).map(([k, [n, o]]) => `<button type="button" data-pm="nowy" data-r="${k}">${ic(IK[k])}<span>${n}</span><small>${o}</small></button>`).join('') +
+      `<div class="pm-sep"></div>
+      ${w ? `<button type="button" data-pm="dup">${ic('M8 8h11v11H8zM5 16V5h11')}<span>${T('Duplikuj', 'Duplicate')}</span></button>` : ''}
+      <button type="button" data-pm="otworz">${ic('M4 14v5h16v-5M12 15V4m-4 4 4-4 4 4')}<span>${T('Wczytaj z pliku…', 'Open from file…')}</span></button>
+      <button type="button" data-pm="zapisz">${ic('M4 14v5h16v-5M12 4v11m-4-4 4 4 4-4')}<span>${T('Zapisz do pliku', 'Save to file')}</span><small>${T('do przechowania albo wysłania', 'to keep or send')}</small></button>
+      ${w ? `<div class="pm-sep"></div><button type="button" data-pm="usun">${ic('M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13')}<span>${T('Usuń ten projekt', 'Delete this design')}</span></button>` : ''}`;
+    const inp = menu.querySelector('#pmName');
+    const zmien = () => { const v = inp.value.trim().slice(0, 40); if (!v || v === nazwaBiez()) return;
+      if (cur.id) B.zmienNazwe(cur.id, v); else { cur.baza = v; cur.podglad = ''; BL = ''; projektTeraz(); }      // nowa nazwa = zmiana: projekt powstaje
+      pokazNazwe(true); track('menu', { k: 'nazwa' }); };
+    inp.addEventListener('change', zmien);
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') { zmien(); zamknij(); } });
+  }
+  btn.addEventListener('click', e => { e.stopPropagation(); if (!menu.hidden) { zamknij(); return; }
+    projektTeraz(); rysuj(); menu.hidden = false; btn.setAttribute('aria-expanded', 'true');
+    const r = btn.getBoundingClientRect(); menu.style.top = (r.bottom + 6) + 'px'; menu.style.left = Math.max(8, Math.min(innerWidth - menu.offsetWidth - 8, r.left)) + 'px'; });
+  document.addEventListener('click', e => { if (!menu.hidden && !menu.contains(e.target) && !btn.contains(e.target)) zamknij(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') zamknij(); });
+  const slug = n => (n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ł/g, 'l').replace(/Ł/g, 'L').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'kostka').slice(0, 40);
+  function doPliku() {
+    const nazwa = nazwaBiez(), d = new Date(), z = n => String(n).padStart(2, '0');
+    const plik = { format: 'ogimora-projekt', model: 'kostka', schemat: 1, zapisano: d.toISOString(), aplikacja: 'ogimora.com/cube ' + WERSJA, nazwa, stan: state };
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([JSON.stringify(plik, null, 1)], { type: 'application/json' })),
+      download: `${slug(nazwa)}_${d.getFullYear()}${z(d.getMonth() + 1)}${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}.ogimora.json` });
+    document.body.appendChild(a); a.click(); a.remove(); toast(T(`Zapisano „${nazwa}” do pliku`, `Saved “${nazwa}” to a file`));
+  }
+  $('loadFile').addEventListener('change', async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    try { const o = JSON.parse(await f.text());
+      if (o && o.format === 'ogimora-projekt' && o.model === 'kostka' && o.stan) {
+        const id = B.nowyId(), nazwa = B.wolnaNazwa(String(o.nazwa || f.name.replace(/(_\d{8}-\d{4})?(\.ogimora)?\.json$/i, '') || T('Wczytana kostka', 'Opened cube')).slice(0, 40));
+        projektTeraz(); B.zapisz({ id, nazwa, model: 'kostka', t: Date.now(), stan: popraw(o.stan), thumb: '' }); track('menu', { k: 'plik_ok' }); location.href = location.pathname + '?p=' + id;
+      } else toast(o && o.format === 'ogimora-projekt' ? T('To projekt paleniska – otwórz go na stronie paleniska', 'This is a fire pit design – open it on the fire pit page') : T('To nie jest plik projektu OGIMORA', 'This is not an OGIMORA design file'));
+    } catch { toast(T('Nie udało się odczytać pliku', 'Could not read the file')); } });
+  menu.addEventListener('click', e => {
+    const dl = e.target.closest('[data-del]');
+    if (dl) { e.stopPropagation(); const q = B.pobierz(dl.dataset.del); if (q && confirm(usunQ(q.nazwa))) { B.usun(q.id); track('menu', { k: 'usun' }); rysuj(); } return; }
+    const p = e.target.closest('[data-p]'); if (p) { track('menu', { k: 'przelacz' }); idzDo('?p=' + p.dataset.p); return; }
+    const b = e.target.closest('[data-pm]'); if (!b) return; zamknij();
+    const k = b.dataset.pm; track('menu', { k: k === 'nowy' ? 'nowy-' + b.dataset.r : k });
+    if (k === 'nowy') idzDo('?nowy=' + b.dataset.r + (cur.id ? '&z=' + cur.id : ''));
+    else if (k === 'usun') { const q = cur.id && B.pobierz(cur.id); if (q && confirm(usunQ(q.nazwa))) { BL = null; B.usun(q.id); pisz('ogik_biez', ''); location.href = location.pathname + '?nowy=start'; } }
+    else if (k === 'dup') { projektTeraz(); const q = B.duplikuj(cur.id, T('kopia', 'copy')); if (q) idzDo('?p=' + q.id); }
+    else if (k === 'otworz') $('loadFile').click();
+    else if (k === 'zapisz') doPliku();
+  });
+}
 track('strona', { value: 'cube' });

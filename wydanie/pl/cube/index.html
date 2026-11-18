@@ -18,7 +18,7 @@
   <meta property="og:image:height" content="630">
   <meta property="og:locale" content="pl_PL">
   <meta name="twitter:card" content="summary_large_image">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"OGIMORA – kostka do nauki spawania","url":"https://ogimora.com/pl/cube/","description":"Darmowa stalowa kostka do nauki spawania: bok 10–70 cm, kropki, liczby, napis, ścinane narożniki – i gotowy plik DXF do cięcia laserem lub plazmą.","inLanguage":"pl","applicationCategory":"DesignApplication","operatingSystem":"Any (web browser)","softwareVersion":"0.3.11","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"PLN"},"author":{"@type":"Person","name":"OGI"},"publisher":{"@type":"Organization","name":"OGIMORA","url":"https://ogimora.com/","logo":"https://ogimora.com/img/logo.svg"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"OGIMORA – kostka do nauki spawania","url":"https://ogimora.com/pl/cube/","description":"Darmowa stalowa kostka do nauki spawania: bok 10–70 cm, kropki, liczby, napis, ścinane narożniki – i gotowy plik DXF do cięcia laserem lub plazmą.","inLanguage":"pl","applicationCategory":"DesignApplication","operatingSystem":"Any (web browser)","softwareVersion":"0.4.0","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"PLN"},"author":{"@type":"Person","name":"OGI"},"publisher":{"@type":"Organization","name":"OGIMORA","url":"https://ogimora.com/","logo":"https://ogimora.com/img/logo.svg"}}</script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#ffffff">
   <link rel="icon" href="img/logo.svg" type="image/svg+xml">
@@ -29,13 +29,14 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=e1c7b2">
   <link rel="stylesheet" href="strona.css?v=a66aa9">
-  <link rel="stylesheet" href="naglowek.css?v=dceb1d">
+  <link rel="stylesheet" href="naglowek.css?v=6d450d">
   <link rel="stylesheet" href="prosty.css?v=9df172">
   <link rel="stylesheet" href="kostka.css?v=72b948">
   </head>
 <body class="kostka">
   <header class="ob">
     <a class="ob-brand" href="./" aria-label="OGIMORA"><img src="img/logo.svg" alt=""><span>OGIMORA</span></a>
+    <button type="button" class="ob-proj" id="pjMenuBtn" aria-haspopup="menu" aria-expanded="false"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2.5h9V19H3z"/></svg><span class="pj-n"></span><span class="pj-ok">✓</span><svg class="i caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
     <button type="button" class="ob-opinia" id="opBtn" title="Napisz, co zmienić"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg><span>Napisz, co zmienić</span></button>
     <div class="ob-jedn" role="group" aria-label="Jednostki: milimetry albo cale"><button type="button" data-j="mm">mm</button><button type="button" data-j="in">in</button></div>
     <div class="ob-lang" role="group" aria-label="Język / Language"><button type="button" data-l="pl">PL</button><button type="button" data-l="en">EN</button></div>
@@ -122,12 +123,15 @@
     </form>
   </dialog>
 
+  <div class="pj-menu" id="pjMenu" role="menu" hidden></div>
+  <input type="file" id="loadFile" accept=".json,application/json" hidden>
+
   <script type="importmap">
     { "imports": {
       "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
       "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
     } }
   </script>
-  <script type="module" src="js/a93327436b.js"></script>
+  <script type="module" src="js/910668f349.js"></script>
 </body>
 </html>

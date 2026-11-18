@@ -39,3 +39,22 @@
    Strona startowa jest dłuższa niż ekran (pasek przewijania jest), generator mieści się w oknie (paska nie ma) –
    bez tego cała szerokość (i pasek górny) różniłaby się o szerokość paska przewijania. */
 html { scrollbar-gutter: stable; scrollbar-color: #c9c1b6 #f6f4f0; background: #f6f4f0; }
+
+/* nazwa modelu obok logo: Palenisko / Kostka – kliknięcie otwiera model startowy */
+.ob-brand { width: auto; margin-right: 8px; }
+.ob .ob-model { display: flex; align-items: center; height: 36px; padding: 0 13px; border-radius: 10px; background: rgba(255,255,255,.92); color: #16130f !important; font-size: 14.5px; font-weight: 700; flex: none; }
+.ob .ob-model:hover { background: #fff; }
+@media (max-width: 760px) { .ob .ob-model { padding: 0 9px; font-size: 13.5px; height: 32px; } }
+/* powiadomienie z przyciskiem */
+.toast-akcja { position: fixed; left: 50%; bottom: 26px; z-index: 1200; transform: translate(-50%, 20px); display: flex; align-items: center; gap: 12px; max-width: min(92vw, 560px); padding: 10px 10px 10px 16px; border-radius: 12px;
+  background: #1c1916; color: #fff; font: 500 14px/1.35 'DM Sans', system-ui, sans-serif; box-shadow: 0 8px 30px rgba(0,0,0,.28); opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
+.toast-akcja.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.toast-akcja button { flex: none; border: 0; border-radius: 8px; padding: 7px 12px; background: #fff; color: #16130f; font: 700 13.5px 'DM Sans', system-ui, sans-serif; cursor: pointer; }
+.toast-akcja .ta-x { background: none; color: #bbb; padding: 6px 8px; font-weight: 500; }
+/* pasek z nazwą modelu jest dłuższy – podpisy chowają się wcześniej, żeby nic nie wystawało */
+@media (max-width: 1320px) { html[data-model] .ob-test span { display: none; } }
+@media (max-width: 1000px) { html[data-model] .ob-proj { max-width: 200px; } }
+@media (max-width: 880px) { html[data-model] .ob-proj .pj-n, html[data-model] .ob-proj .pj-ok { display: none; } html[data-model] .ob-proj { padding: 0 8px; } }
+@media (max-width: 520px) { html[data-model] .ob-brand span { display: none !important; } html[data-model] .ob-brand { margin-right: 4px; } }
+@media (max-width: 400px) { html[data-model] .ob { gap: 3px; padding: 0 8px; } html[data-model] .ob .ob-model { padding: 0 7px; font-size: 13px; } html[data-model] .ob-test { padding: 0 4px; } html[data-model] .ob .ob-proj, html[data-model] .ob-opinia { padding: 0 5px; } }
+@media (max-width: 400px) { html[data-model] .ob-lang button, html[data-model] .ob-jedn button { padding: 6px 5px !important; } html[data-model] .ob .ob-jedn, html[data-model] .ob .ob-lang { margin-left: 2px !important; } }

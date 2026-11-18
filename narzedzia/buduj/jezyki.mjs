@@ -1,7 +1,9 @@
-// OGIMORA – wersje językowe pliku index.html dla wyszukiwarek:
-//   /      – język według przeglądarki (jak dotąd); dla Google to adres „domyślny” (x-default)
-//   /pl/   – zawsze po polsku      /en/ – zawsze po angielsku   (te same pliki strony, tylko inny nagłówek i opis)
-// Teksty poniżej to JEDYNE miejsce, gdzie zmienia się tytuł, opis i tekst dla wyszukiwarek w wersji angielskiej.
+// OGIMORA – wersje językowe stron dla wyszukiwarek. Każda strona ma trzy adresy:
+//   /<strona>      – język według przeglądarki; dla Google adres „domyślny” (x-default)
+//   /pl/<strona>   – zawsze po polsku        /en/<strona> – zawsze po angielsku
+// Strony: '' (start), 'firepit/' (palenisko), 'cube/' (kostka). Te same pliki strony, inny nagłówek i opis.
+// Teksty paleniska i kostki poniżej; teksty strony startowej – www/js/start_teksty.js (wspólne z przeglądarką).
+import { TEKSTY, htmlStartu } from '../../www/js/start_teksty.js';
 const ADRES = 'https://ogimora.com';
 const TXT = {
   pl: { tytul: 'OGIMORA — zaprojektuj stalowe palenisko, pobierz DXF',
@@ -15,48 +17,6 @@ const TXT = {
     <p>This is a test site: the files are made by a script and come with no warranty – check them before cutting. Licence: free for your own use; commercial use up to 20 finished fire pits per design; do not sell the files. Made by OGI. Contact: info@ogimora.com.</p>
   </div>` },
 };
-const esc = s => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-
-/** html = gotowy index.html (polski). Zwraca { '': html dla /, pl: …, en: … }. */
-export function wersjeJezykowe(html, wersja) {
-  const blokPL = /<!--OPIS-->([\s\S]*?)<!--\/OPIS-->/.exec(html);
-  if (!blokPL) throw new Error('index.html: brak bloku <!--OPIS-->');
-  const wynik = {};
-  for (const j of ['', 'pl', 'en']) {
-    const t = TXT[j || 'pl'], url = `${ADRES}/${j ? j + '/' : ''}`;
-    const og = j === 'pl' ? TXT.pl : TXT.en;                       // podgląd linku z adresu głównego: po angielsku (posty idą głównie za granicę)
-    let h = html;
-    if (j === 'en') h = h.replace('<html lang="pl">', '<html lang="en">').replace(/<title>[\s\S]*?<\/title>/, `<title>${t.tytul}</title>`)
-      .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(t.opis)}">`);
-    h = h.replace(blokPL[0], j === 'en' ? TXT.en.blok : j === 'pl' ? blokPL[1] : blokPL[1] + '\n  ' + TXT.en.blok.replace('<div class="opis-tekst">', '<div class="opis-tekst" lang="en">'));
-    const ld = { '@context': 'https://schema.org', '@type': 'WebApplication', name: 'OGIMORA', url, description: t.opis, inLanguage: j || ['pl', 'en'],
-      applicationCategory: 'DesignApplication', operatingSystem: 'Any (web browser)', softwareVersion: wersja, isAccessibleForFree: true,
-      offers: { '@type': 'Offer', price: '0', priceCurrency: j === 'pl' ? 'PLN' : 'USD' },
-      author: { '@type': 'Person', name: 'OGI' }, publisher: { '@type': 'Organization', name: 'OGIMORA', url: ADRES + '/', logo: ADRES + '/img/logo.svg' } };
-    const glowa = `${j ? '  <base href="/">\n' : ''}  <link rel="canonical" href="${url}">
-  <link rel="alternate" hreflang="pl" href="${ADRES}/pl/">
-  <link rel="alternate" hreflang="en" href="${ADRES}/en/">
-  <link rel="alternate" hreflang="x-default" href="${ADRES}/">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="OGIMORA">
-  <meta property="og:url" content="${url}">
-  <meta property="og:title" content="${esc(og.tytul)}">
-  <meta property="og:description" content="${esc(og.opis)}">
-  <meta property="og:image" content="${ADRES}/img/og.jpg">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:locale" content="${j === 'pl' ? 'pl_PL' : 'en_US'}">
-  <meta name="twitter:card" content="summary_large_image">
-  <script type="application/ld+json">${JSON.stringify(ld)}</script>
-`;
-    // <base> musi stać przed pierwszym adresem względnym – wstawiamy zaraz po <meta charset>
-    h = h.replace(/(<meta charset="utf-8">\n)/, `$1${glowa}`);
-    wynik[j] = h;
-  }
-  return wynik;
-}
-
-// ---- kostka: /cube/ (język według przeglądarki, x-default), /pl/cube/, /en/cube/ ---------------------------------
 const KOSTKA = {
   pl: { tytul: 'OGIMORA — stalowa kostka do nauki spawania, darmowy DXF',
         opis: 'Darmowa stalowa kostka do nauki spawania: bok 10–70 cm, kropki, liczby, napis, ścinane narożniki – i gotowy plik DXF do cięcia laserem lub plazmą.' },
@@ -68,26 +28,19 @@ const KOSTKA = {
     <p>The sides meet at their inner edges, which leaves an open groove for the weld on the outside. Locating tabs hold the sides in place while you tack. DXF at 1:1 scale, in millimetres or inches. Free.</p>
   </div>` },
 };
-/** html = gotowy cube/index.html (polski). Zwraca { 'cube': …, 'pl/cube': …, 'en/cube': … }. */
-export function wersjeKostki(html, wersja) {
-  const blok = /<div class="opis-tekst" id="opisK">[\s\S]*?<\/div>/.exec(html);
-  if (!blok) throw new Error('cube/index.html: brak bloku opisu (#opisK)');
-  const adres = j => `${ADRES}/${j ? j + '/' : ''}cube/`, wynik = {};
-  for (const j of ['', 'pl', 'en']) {
-    const t = KOSTKA[j || 'pl'], og = j === 'pl' ? KOSTKA.pl : KOSTKA.en, url = adres(j);
-    let h = html.replace(/\s*<link rel="canonical"[^>]*>/, '').replace(/\s*<meta property="og:[^>]*>/g, '');
-    if (j) h = h.replace('<base href="../">', '<base href="/">');
-    if (j === 'en') h = h.replace('<html lang="pl"', '<html lang="en"').replace(/<title>[\s\S]*?<\/title>/, `<title>${t.tytul}</title>`)
-      .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(t.opis)}">`).replace(blok[0], KOSTKA.en.blok);
-    else if (!j) h = h.replace(blok[0], blok[0] + '\n  ' + KOSTKA.en.blok.replace(' id="opisK"', ' lang="en"'));
-    const ld = { '@context': 'https://schema.org', '@type': 'WebApplication', name: j === 'pl' ? 'OGIMORA – kostka do nauki spawania' : 'OGIMORA – welding cube', url, description: t.opis, inLanguage: j || ['pl', 'en'],
-      applicationCategory: 'DesignApplication', operatingSystem: 'Any (web browser)', softwareVersion: wersja, isAccessibleForFree: true,
-      offers: { '@type': 'Offer', price: '0', priceCurrency: j === 'pl' ? 'PLN' : 'USD' },
-      author: { '@type': 'Person', name: 'OGI' }, publisher: { '@type': 'Organization', name: 'OGIMORA', url: ADRES + '/', logo: ADRES + '/img/logo.svg' } };
-    const glowa = `  <link rel="canonical" href="${url}">
-  <link rel="alternate" hreflang="pl" href="${adres('pl')}">
-  <link rel="alternate" hreflang="en" href="${adres('en')}">
-  <link rel="alternate" hreflang="x-default" href="${adres('')}">
+const esc = s => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+const adres = (j, strona) => `${ADRES}/${j ? j + '/' : ''}${strona}`;
+
+/** Nagłówek dla wyszukiwarek i podglądu linku: canonical, hreflang, og:*, schema.org. */
+function glowa(j, strona, t, og, wersja, nazwa) {
+  const url = adres(j, strona);
+  const ld = { '@context': 'https://schema.org', '@type': strona ? 'WebApplication' : 'WebSite', name: nazwa, url, description: t.opis, inLanguage: j || ['pl', 'en'],
+    ...(strona ? { applicationCategory: 'DesignApplication', operatingSystem: 'Any (web browser)', softwareVersion: wersja, isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: j === 'pl' ? 'PLN' : 'USD' } } : {}),
+    author: { '@type': 'Person', name: 'OGI' }, publisher: { '@type': 'Organization', name: 'OGIMORA', url: ADRES + '/', logo: ADRES + '/img/logo.svg' } };
+  return `  <link rel="canonical" href="${url}">
+  <link rel="alternate" hreflang="pl" href="${adres('pl', strona)}">
+  <link rel="alternate" hreflang="en" href="${adres('en', strona)}">
+  <link rel="alternate" hreflang="x-default" href="${adres('', strona)}">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="OGIMORA">
   <meta property="og:url" content="${url}">
@@ -100,10 +53,43 @@ export function wersjeKostki(html, wersja) {
   <meta name="twitter:card" content="summary_large_image">
   <script type="application/ld+json">${JSON.stringify(ld)}</script>
 `;
-    h = h.replace(/(<base href="[^"]*">\n)/, `$1${glowa}`);
-    wynik[(j ? j + '/' : '') + 'cube'] = h;
+}
+/** Wspólne: język, tytuł, opis, <base>, nagłówek. podmien(h, j) wstawia tekst strony w danym języku. */
+function wersje(html, strona, T, wersja, nazwy, podmien) {
+  const wynik = {};
+  for (const j of ['', 'pl', 'en']) {
+    const t = T[j || 'pl'], og = j === 'pl' ? T.pl : T.en;               // podgląd linku z adresu domyślnego: po angielsku (posty idą głównie za granicę)
+    let h = html.replace(/\s*<link rel="canonical"[^>]*>/, '').replace(/\s*<meta property="og:[^>]*>/g, '');
+    if (j === 'en') h = h.replace(/<html lang="pl"/, '<html lang="en"').replace(/<title>[\s\S]*?<\/title>/, `<title>${t.tytul}</title>`)
+      .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(t.opis)}">`);
+    h = podmien(h, j);
+    // <base>: strony językowe leżą głębiej – wszystkie adresy względne liczą się od katalogu głównego
+    if (j) h = /<base href="[^"]*">/.test(h) ? h.replace(/<base href="[^"]*">/, '<base href="/">') : h.replace(/(<meta charset="utf-8">\n)/, '$1  <base href="/">\n');
+    const g = glowa(j, strona, t, og, wersja, nazwy[j === 'pl' ? 'pl' : 'en']);
+    h = /<base href="[^"]*">\n/.test(h) ? h.replace(/(<base href="[^"]*">\n)/, `$1${g}`) : h.replace(/(<meta charset="utf-8">\n)/, `$1${g}`);
+    wynik[(j ? j + '/' : '') + strona] = h;
   }
   return wynik;
+}
+
+/** Palenisko: html = gotowy firepit/index.html (polski). Zwraca { 'firepit/': …, 'pl/firepit/': …, 'en/firepit/': … }. */
+export function wersjeJezykowe(html, wersja) {
+  const blokPL = /<!--OPIS-->([\s\S]*?)<!--\/OPIS-->/.exec(html);
+  if (!blokPL) throw new Error('firepit/index.html: brak bloku <!--OPIS-->');
+  return wersje(html, 'firepit/', TXT, wersja, { pl: 'OGIMORA – generator palenisk', en: 'OGIMORA – fire pit generator' },
+    (h, j) => h.replace(blokPL[0], j === 'en' ? TXT.en.blok : j === 'pl' ? blokPL[1] : blokPL[1] + '\n  ' + TXT.en.blok.replace('<div class="opis-tekst">', '<div class="opis-tekst" lang="en">')));
+}
+/** Kostka: html = gotowy cube/index.html (polski). */
+export function wersjeKostki(html, wersja) {
+  const blok = /<div class="opis-tekst" id="opisK">[\s\S]*?<\/div>/.exec(html);
+  if (!blok) throw new Error('cube/index.html: brak bloku opisu (#opisK)');
+  return wersje(html, 'cube/', KOSTKA, wersja, { pl: 'OGIMORA – kostka do nauki spawania', en: 'OGIMORA – welding cube' },
+    (h, j) => (j === 'en' ? h.replace(blok[0], KOSTKA.en.blok) : !j ? h.replace(blok[0], blok[0] + '\n  ' + KOSTKA.en.blok.replace(' id="opisK"', ' lang="en"')) : h));
+}
+/** Strona startowa: html = gotowy index.html. Treść (widoczna) wstawiana na stałe w języku strony – skrypt dopisuje tylko „Twoje ostatnie”. */
+export function wersjeStartu(html, wersja) {
+  if (!/<!--START--><!--\/START-->/.test(html)) throw new Error('index.html: brak miejsca <!--START-->');
+  return wersje(html, '', TEKSTY, wersja, { pl: 'OGIMORA', en: 'OGIMORA' }, (h, j) => h.replace('<!--START--><!--/START-->', htmlStartu(j || 'pl', j ? j + '/' : '')));
 }
 
 /** Komentarze HTML nie idą na serwer (zostaje tylko podpis ©); komentarze w osadzonym <style> też. */
