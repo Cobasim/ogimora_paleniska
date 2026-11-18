@@ -53,6 +53,9 @@ export const ZAMEK_MIN = 3;
 /** Domyślna szerokość ząbka na krawędziach trójkątów (krótsze krawędzie → węższy ząbek). */
 export const zamekTrojkat = t => Math.min(10, Math.max(4, 2 * t));
 export const UKLADY = ['para', 'konce', 'srodek'];
+// Układ „na końcach”: odstęp ząbka od końca krawędzi. Krawędź kostki: 0 – ząbek zaczyna się dokładnie w narożniku ścianki.
+// Krawędź trójkąta: 0,6 grubości blachy – bliżej ząbek wchodziłby w trzecią ściankę stykającą się w tym wierzchołku (sprawdzone testem kolizji).
+const KONIEC_TR = 0.6;
 /** Stare nazwy układów (0.3.4–0.3.5: 'pary' = kilka par rozłożonych) → najbliższy obecny. */
 export const ukladZe = u => (UKLADY.includes(u) ? u : u === 'pary' ? 'konce' : 'para');
 /**
@@ -66,7 +69,7 @@ export const ukladZe = u => (UKLADY.includes(u) ? u : u === 'pary' ? 'konce' : '
  * Wszystkie trzy układy są lustrzane względem środka krawędzi poza 'para' – dlatego blokują przesuw w obie strony.
  * Regulowana jest szerokość ząbka; za szeroki na tę krawędź zwęża się, a gdy 'konce' się nie mieszczą – zostaje 'para'.
  */
-function zamkiKrawedzi(L, t, g, eMax, zw, uklad, rola) {
+function zamkiKrawedzi(L, t, g, eMax, zw, uklad, rola, koniec) {
   const m = eMax + t + 3, wolne = L - 2 * m, puste = { moje: [], sasiada: [] }, c = L / 2;
   if (!(zw > 0)) return puste;
   const role = (A, B) => (rola === 'S' ? { moje: A, sasiada: B } : { moje: B, sasiada: A });
@@ -75,8 +78,9 @@ function zamkiKrawedzi(L, t, g, eMax, zw, uklad, rola) {
     if (w >= ZAMEK_MIN - 1e-9) return role([[c - w / 2, c + w / 2]], [[c - w / 2 - g - w, c - w / 2 - g], [c + w / 2 + g, c + w / 2 + g + w]]);
   }
   if (uklad === 'konce') {
-    const w = Math.min(zw, (wolne - 2 * g - Math.max(12, 2 * t)) / 4);      // w środku zostaje co najmniej kawałek szczeliny
-    if (w >= ZAMEK_MIN - 1e-9) return role([[m, m + w], [L - m - w, L - m]], [[m + w + g, m + 2 * w + g], [L - m - 2 * w - g, L - m - w - g]]);
+    // ząbki A przy samych końcach krawędzi (odstęp m0 – patrz KONIEC_TR), B dotyka ich od środka
+    const m0 = koniec ?? m, w = Math.min(zw, (L - 2 * m0 - 2 * g - Math.max(12, 2 * t)) / 4);      // w środku zostaje co najmniej kawałek szczeliny
+    if (w >= ZAMEK_MIN - 1e-9) return role([[m0, m0 + w], [L - m0 - w, L - m0]], [[m0 + w + g, m0 + 2 * w + g], [L - m0 - 2 * w - g, L - m0 - w - g]]);
   }
   // 'para' (i zapas, gdy inny układ się nie mieści): ząbek tej ścianki, zaraz za nim ząbek sąsiadki – z obu stron wygląda tak samo
   const w = Math.min(zw, (wolne - g) / 2);
@@ -108,7 +112,7 @@ function obrysZamki(baza, krawedzie, t, g) {
     P(0, 0);
     const kr = krawedzie[i]; kr.L = L;
     const th = kr.kat, e = t / Math.tan(th / 2), r = th > Math.PI / 2 + 1e-6 ? t * Math.abs(Math.cos(th)) / Math.sin(th) : 0;
-    const z = zamkiKrawedzi(L, t, g, e, kr.zw, kr.uklad, kr.rola);
+    const z = zamkiKrawedzi(L, t, g, e, kr.zw, kr.uklad, kr.rola, kr.koniec);
     // ząbek: wychodzi na zewnątrz o e; ząbek sąsiadki przy kącie rozwartym: wcięcie r + luz, szersze o luz z każdej strony
     const cechy = z.moje.map(([a, b]) => ({ a, b, d: e }));
     if (r > 0) z.sasiada.forEach(([a, b]) => cechy.push({ a: a - g, b: b + g, d: -(r + g) }));
@@ -157,8 +161,8 @@ export function zbuduj(p0) {
     // sąsiadki kolejnych prostych krawędzi (dół, prawa, góra, lewa) i rola przy układzie „jeden na środku”:
     // z dwóch stykających się ścianek jeden ząbek ma ta, której oś jest „o jeden wcześniej” (x przed y, y przed z, z przed x)
     const sas = [mul(f.V, -1), u, f.V, mul(u, -1)];
-    const prosta = k => ({ kat: Math.PI / 2, zw: p.zw, uklad: p.uklad, rola: (os(sas[k]) - os(f.N) + 3) % 3 === 1 ? 'S' : 'D' });
-    const kraw = baza.map((_, i) => (cp > 0 ? (i % 2 ? { kat: KAT_TROJKAT, zw: p.zt, uklad: p.ukladT, rola: 'D' } : prosta(i / 2)) : prosta(i)));
+    const prosta = k => ({ kat: Math.PI / 2, zw: p.zw, uklad: p.uklad, koniec: 0, rola: (os(sas[k]) - os(f.N) + 3) % 3 === 1 ? 'S' : 'D' });
+    const kraw = baza.map((_, i) => (cp > 0 ? (i % 2 ? { kat: KAT_TROJKAT, zw: p.zt, uklad: p.ukladT, koniec: KONIEC_TR * t, rola: 'D' } : prosta(i / 2)) : prosta(i)));
     const kw = obrysZamki(baza, kraw, t, g);
     ileKw += kw.ile; obwodKw += dlugosc(kw.ring); poleKw += Math.abs(pole2(kw.ring));
     plyty.push({ key: 's' + f.nr, rodzaj: 'kw', nr: f.nr, ring: kw.ring, baza, o: mul(f.N, h), u, v: f.V, n: f.N, t, pole: { s: Math.max(0, s), baza, wpisPelny, wpis: Math.max(0, wpisPelny - margines) } });
@@ -175,7 +179,7 @@ export function zbuduj(p0) {
   if (cp > 0) {
     const bok = cp * Math.SQRT2, R = bok / S3;            // promień okręgu opisanego
     const bazaT = [0, 1, 2].map(i => { const f = Math.PI / 2 + i * 2 * Math.PI / 3; return [R * Math.cos(f), R * Math.sin(f)]; });
-    tr = obrysZamki(bazaT, bazaT.map(() => ({ kat: KAT_TROJKAT, zw: p.zt, uklad: p.ukladT, rola: 'S' })), t, g);
+    tr = obrysZamki(bazaT, bazaT.map(() => ({ kat: KAT_TROJKAT, zw: p.zt, uklad: p.ukladT, koniec: KONIEC_TR * t, rola: 'S' })), t, g);
     let nr = 0;
     for (const sx of [1, -1]) for (const sy of [1, -1]) for (const sz of [1, -1]) {
       const N = norm([sx, sy, sz]);

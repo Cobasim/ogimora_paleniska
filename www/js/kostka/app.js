@@ -742,7 +742,7 @@ if (EN) { document.title = 'OGIMORA — steel welding cube, free DXF'; document.
     <p>The sides meet at their inner edges, which leaves an open groove for the weld on the outside. Locating tabs hold the sides in place while you tack. DXF at 1:1 scale, in millimetres or inches. Free.</p>`; }
 try { if (localStorage.getItem('ogi_cards') === 'off') document.body.classList.add('cards-off'); } catch {}
 const kartyTxt = () => { $('cardsTgl').textContent = document.body.classList.contains('cards-off') ? T('Pokaż opcje', 'Show options') : T('Schowaj opcje', 'Hide options'); };
-$('cardsTgl').addEventListener('click', () => { const off = document.body.classList.toggle('cards-off'); try { localStorage.setItem('ogi_cards', off ? 'off' : 'on'); } catch {} kartyTxt(); track('schowaj_opcje'); kadr(); });
+$('cardsTgl').addEventListener('click', () => { const off = document.body.classList.toggle('cards-off'); try { localStorage.setItem('ogi_cards', off ? 'off' : 'on'); } catch {} kartyTxt(); track('schowaj_opcje'); kadr(); if (view === 'flat') rozkroj(); });
 kartyTxt();
 $('histUndo').addEventListener('click', () => histKrok(-1)); $('histRedo').addEventListener('click', () => histKrok(1));
 $('histUndo').title = T('Cofnij (Ctrl+Z)', 'Undo (Ctrl+Z)'); $('histRedo').title = T('Ponów (Ctrl+Shift+Z)', 'Redo (Ctrl+Shift+Z)');
