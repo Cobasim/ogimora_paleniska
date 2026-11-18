@@ -24,34 +24,42 @@ const kopiuj = (a, b) => { for (const e of fs.readdirSync(a, { withFileTypes: tr
 } };
 kopiuj(SRC, OUT);
 
-// 2. skrypty: kolejność jak w index.html → jeden plik
-let html = fs.readFileSync(path.join(SRC, 'index.html'), 'utf8');
-const moduly = [...html.matchAll(/<script type="module" src="(js\/[^"]+)"><\/script>\s*/g)];
-if (moduly.length < 2) throw new Error('index.html: nie znalazłem skryptów strony');
-const start = path.join(TU, '_start.mjs');
-fs.writeFileSync(start, moduly.map(m => `import ${JSON.stringify(path.join(SRC, m[1]))};`).join('\n') + '\n');
-const wyn = await build({
-  entryPoints: [start], bundle: true, format: 'esm', minify: true, target: 'es2020', write: false,
-  external: ['three', 'three/addons/*', './pracownia/*', 'fs'], legalComments: 'none', charset: 'utf8', logLevel: 'warning',
-});
-fs.rmSync(start);
-const kod = PODPIS + '\n' + wyn.outputFiles[0].text;
-const nazwa = 'js/' + crypto.createHash('sha1').update(kod).digest('hex').slice(0, 10) + '.js';
-fs.writeFileSync(path.join(OUT, nazwa), kod);
+// 2–4. jedna strona (plik HTML w www/): skrypty → jeden plik, CSS ściśnięty. Zwraca gotowy HTML i nazwę skryptu.
+async function strona(plik) {
+  // 2. skrypty: kolejność jak w pliku HTML → jeden plik
+  let html = fs.readFileSync(path.join(SRC, plik), 'utf8');
+  const moduly = [...html.matchAll(/<script type="module" src="(js\/[^"]+)"><\/script>\s*/g)];
+  if (moduly.length < 2) throw new Error(plik + ': nie znalazłem skryptów strony');
+  const start = path.join(TU, '_start.mjs');
+  fs.writeFileSync(start, moduly.map(m => `import ${JSON.stringify(path.join(SRC, m[1]))};`).join('\n') + '\n');
+  const wyn = await build({
+    entryPoints: [start], bundle: true, format: 'esm', minify: true, target: 'es2020', write: false,
+    external: ['three', 'three/addons/*', './pracownia/*', 'fs'], legalComments: 'none', charset: 'utf8', logLevel: 'warning',
+  });
+  fs.rmSync(start);
+  const kod = PODPIS + '\n' + wyn.outputFiles[0].text;
+  const nazwa = 'js/' + crypto.createHash('sha1').update(kod).digest('hex').slice(0, 10) + '.js';
+  fs.writeFileSync(path.join(OUT, nazwa), kod);
 
-// 3. index.html: pierwszy skrypt zostaje w swoim miejscu, reszta znika; mapa importów musi stać przed nim
-moduly.forEach(m => { html = html.replace(m[0], ''); });
-const mapa = /[ \t]*<script type="importmap">[\s\S]*?<\/script>\s*/.exec(html);
-if (!mapa) throw new Error('index.html: brak mapy importów');
-html = html.replace(mapa[0], '').replace('</body>', `${mapa[0].trimEnd()}\n  <script type="module" src="${nazwa}"></script>\n</body>`);
-html = html.replace(/<!DOCTYPE html>\s*/i, `<!DOCTYPE html>\n<!-- (c) ${rok} OGIMORA - ogimora.com. Wszelkie prawa zastrzezone / All rights reserved. -->\n`);
+  // 3. HTML: skrypty znikają, jeden wspólny plik na końcu; mapa importów musi stać przed nim
+  moduly.forEach(m => { html = html.replace(m[0], ''); });
+  const mapa = /[ \t]*<script type="importmap">[\s\S]*?<\/script>\s*/.exec(html);
+  if (!mapa) throw new Error(plik + ': brak mapy importów');
+  html = html.replace(mapa[0], '').replace('</body>', `${mapa[0].trimEnd()}\n  <script type="module" src="${nazwa}"></script>\n</body>`);
+  html = html.replace(/<!DOCTYPE html>\s*/i, `<!DOCTYPE html>\n<!-- (c) ${rok} OGIMORA - ogimora.com. Wszelkie prawa zastrzezone / All rights reserved. -->\n`);
 
-// 4. CSS: ściśnięty, z podpisem; adres z sumą kontrolną (świeży po każdej zmianie)
-for (const m of [...html.matchAll(/href="([\w.-]+\.css)(\?v=[\w.]+)?"/g)]) {
-  const css = (await transform(fs.readFileSync(path.join(SRC, m[1]), 'utf8'), { loader: 'css', minify: true })).code;
-  fs.writeFileSync(path.join(OUT, m[1]), PODPIS + '\n' + css);
-  html = html.replace(m[0], `href="${m[1]}?v=${crypto.createHash('sha1').update(css).digest('hex').slice(0, 6)}"`);
+  // 4. CSS: ściśnięty, z podpisem; adres z sumą kontrolną (świeży po każdej zmianie)
+  for (const m of [...html.matchAll(/href="([\w.-]+\.css)(\?v=[\w.]+)?"/g)]) {
+    const css = (await transform(fs.readFileSync(path.join(SRC, m[1]), 'utf8'), { loader: 'css', minify: true })).code;
+    fs.writeFileSync(path.join(OUT, m[1]), PODPIS + '\n' + css);
+    html = html.replace(m[0], `href="${m[1]}?v=${crypto.createHash('sha1').update(css).digest('hex').slice(0, 6)}"`);
+  }
+  return { html, nazwa };
 }
+const { html, nazwa } = await strona('index.html');
+// kostka (ogimora.com/cube): osobna strona z własnym skryptem; adresy w pliku są względem katalogu głównego (<base href="../">)
+const kostka = await strona('cube/index.html');
+fs.writeFileSync(path.join(OUT, 'cube/index.html'), kostka.html);
 // 4b. wersje językowe: / (według przeglądarki), /pl/, /en/ – patrz jezyki.mjs
 for (const [j, h] of Object.entries(wersjeJezykowe(html, wersja))) {
   if (j) fs.mkdirSync(path.join(OUT, j), { recursive: true });
@@ -70,4 +78,4 @@ fs.writeFileSync(path.join(OUT, 'js/LICENCJE.txt'), [
 ].join('\n\n') + '\n');
 
 const kb = f => Math.round(fs.statSync(path.join(OUT, f)).size / 1024) + ' kB';
-console.log(`wydanie/ gotowe - wersja ${wersja} - skrypt ${nazwa} (${kb(nazwa)})`);
+console.log(`wydanie/ gotowe - wersja ${wersja} - skrypt ${nazwa} (${kb(nazwa)}), kostka ${kostka.nazwa} (${kb(kostka.nazwa)})`);

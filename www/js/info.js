@@ -86,6 +86,40 @@ const T = EN ? {
   st: ['autor: OGI', 'V', 'D', 'P', 'od początku testu'],   // V – wizyty, D – pobrania DXF, P – PDF (na stronie bez objaśnienia)
   zamknij: 'Zamknij', dlWarn: 'Zanim wytniesz – przeczytaj',
 };
+// ---------------------------------------------------------------- kostka (ogimora.com/cube): inne ostrzeżenia i licencja – model jest darmowy bez limitu sztuk
+if (document.documentElement.dataset.model === 'kostka') Object.assign(T, EN ? {
+  p1: ['OGIMORA is a one-person project in an early stage. The cube generator is free and still changing.',
+       'Cubes from this generator have <b>not yet been cut in steel</b> and test-welded.'],
+  ostrz: ['The file is <b>generated automatically by a script</b>. Nobody checks it before you download it.',
+          'I <b>do not guarantee</b> that the file is correct or that the parts will fit. It may contain errors.',
+          'Check it before cutting: dimensions, sheet thickness, tab clearance for your machine. Cut one small cube first.',
+          'You decide to cut and weld <b>at your own risk</b>. I am not liable for wasted material, machine time or other costs.',
+          'Welding: use proper protection (helmet, gloves, ventilation). Never weld galvanised sheet. A large cube is heavy – check the weight shown under the preview.'],
+  lic: ['<b>The cube is free.</b> Cut it, change it, give it away, <b>sell finished cubes</b> – no limit.',
+        'Do not sell or pass on the files themselves (DXF).',
+        'Do not present yourself as OGIMORA or its representative.',
+        'The site itself (code, patterns, drawings, the dragon) is © OGIMORA. Do not copy it or run it under another address.'],
+  licKrotko: 'Licence: the cube is free, also for selling finished cubes; do not sell the files.',
+  zb: ['<b>Per visit, counters only:</b> approximate country (from your browser time zone), browser language, device type (phone / tablet / computer), the site you came from, and how many times each button or slider was used.',
+       '<b>Per downloaded file, one line:</b> date, approximate country, cube size, sheet thickness, what is on each side (dots, text, opening – for text only the number of characters).',
+       '<b>“Tell me what to change” and the notes field:</b> only what you type yourself.'],
+} : {
+  p1: ['OGIMORA to jednoosobowy projekt na wczesnym etapie. Generator kostki jest darmowy i ciągle się zmienia.',
+       'Kostki z tego generatora <b>nie były jeszcze wycinane w stali</b> ani próbnie spawane.'],
+  ostrz: ['Plik jest <b>generowany automatycznie przez skrypt</b>. Nikt go nie sprawdza przed pobraniem.',
+          '<b>Nie gwarantuję</b>, że plik jest poprawny ani że części będą do siebie pasować. Może zawierać błędy.',
+          'Sprawdź go przed cięciem: wymiary, grubość blachy, luz na zamkach dla swojej maszyny. Najpierw wytnij jedną małą kostkę.',
+          'O cięciu i spawaniu decydujesz sam, <b>na własną odpowiedzialność</b>. Nie odpowiadam za zmarnowany materiał, czas maszyny ani inne koszty.',
+          'Spawanie: używaj ochrony (przyłbica, rękawice, wentylacja). Nigdy nie spawaj blachy ocynkowanej. Duża kostka jest ciężka – masę widać pod podglądem.'],
+  lic: ['<b>Kostka jest darmowa.</b> Wytnij, zmień, podaruj, <b>sprzedawaj gotowe kostki</b> – bez limitu.',
+        'Nie wolno sprzedawać ani przekazywać dalej samych plików (DXF).',
+        'Nie przedstawiaj się jako OGIMORA ani jej przedstawiciel.',
+        'Sama strona (kod, wzory, rysunki, smok) jest © OGIMORA. Nie wolno jej kopiować ani uruchamiać pod innym adresem.'],
+  licKrotko: 'Licencja: kostka jest darmowa, także do sprzedaży gotowych kostek; plików nie wolno sprzedawać.',
+  zb: ['<b>Z wizyty, same liczniki:</b> przybliżony kraj (ze strefy czasowej przeglądarki), język przeglądarki, rodzaj urządzenia (telefon / tablet / komputer), strona, z której przyszedłeś, oraz ile razy użyto którego przycisku i suwaka.',
+       '<b>Z pobranego pliku, jedna linijka:</b> data, przybliżony kraj, bok kostki, grubość blachy, co jest na której ściance (kropki, napis, otwór – przy napisie tylko liczba znaków).',
+       '<b>„Napisz, co zmienić” i pole uwag:</b> tylko to, co sam wpiszesz.'],
+});
 const lista = a => '<ul>' + a.map(x => `<li>${x}</li>`).join('') + '</ul>';
 
 // ---------------------------------------------------------------- pasek: znaczek TEST i przycisk „O stronie”

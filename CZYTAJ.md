@@ -19,7 +19,7 @@ Dwuklik w `uruchom.command` → strona pod adresem http://localhost:8793 (potrze
 4. Linijka w `ZMIANY.md`.
 5. Git: `git add -A` → `git commit -m "0.1.1: krótko co"` → `git tag v0.1.1` → `git push --follow-tags`.
 6. Zbuduj wydanie: `node narzedzia/buduj/buduj.mjs` (pierwszy raz: `cd narzedzia/buduj && npm install`; potrzebny Node.js – albo poproś Claude, zbuduje i wgra do `wydanie/`). Po zbudowaniu zrób commit, żeby `wydanie/` było w repozytorium.
-7. FileZilla: wgraj zawartość `wydanie/` na serwer (nadpisz). W folderze `js/` na serwerze mają zostać tylko dwa pliki z `wydanie/js/` – stary plik o innej nazwie skasuj. **Nie wgrywaj i nie kasuj folderu `api/dane` na serwerze** – tam są statystyki.
+7. FileZilla: wgraj zawartość `wydanie/` na serwer (nadpisz). W folderze `js/` na serwerze mają zostać tylko pliki z `wydanie/js/` (od 0.3.0 trzy: skrypt paleniska, skrypt kostki, `LICENCJE.txt`) – stare pliki o innych nazwach skasuj. **Nie wgrywaj i nie kasuj folderu `api/dane` na serwerze** – tam są statystyki.
 7. Wejdź na stronę, otwórz „O stronie” – na dole ma być nowy numer wersji.
 
 Zasada: na serwerze jest zawsze to, co w gałęzi `main` z ostatnim znacznikiem.
@@ -34,6 +34,14 @@ Zasada: na serwerze jest zawsze to, co w gałęzi `main` z ostatnim znacznikiem.
 - Kod kształtu: projekty w mm – jak dotąd (wersja 9); projekty calowe – wersja `A` (`www/js/code.js`). Starych kodów nie wolno zmieniać.
 - Płytki próbne calowe i instrukcje PDF w calach robią te same skrypty co mm (`narzedzia/plytka_probna`, opis w `OPIS.md`).
 - Na start strona wybiera cale w strefie czasowej USA; do testów: `?j=in` albo `?j=mm` w adresie.
+
+## Kostka (od 0.3.0)
+- Adres: `ogimora.com/cube` (i `/kostka` – przekierowanie w `.htaccess`). Źródła: `www/cube/index.html`, `www/kostka.css`, `www/js/kostka/` (`geo.js` – geometria i zamki, `tresc.js` – kropki, napisy, otwory, `app.js` – strona).
+- Strona kostki korzysta ze wspólnych plików paleniska (zapis DXF, czcionka i mostki w literach, statystyki, okna „O stronie” i „Napisz, co zmienić”). Zmiana w tych plikach dotyczy obu modeli – po zmianie sprawdź oba.
+- W pliku `cube/index.html` adresy są liczone od katalogu głównego (`<base href="../">`).
+- Projekt kostki jest zapisany w adresie (`#k=…`) i w pamięci przeglądarki (`ogik_stan`). Starych adresów nie wolno psuć: nowe pola dopisuje się z wartością domyślną.
+- Skrypt budujący robi dla kostki osobny plik w `wydanie/js/` – po wgraniu w `js/` na serwerze mają być **trzy** pliki: dwa skrypty i `LICENCJE.txt`.
+- Strona startowa i link do kostki z paleniska – jeszcze nie ma (do zrobienia później).
 
 ## Wyszukiwarki
 - Trzy adresy: `ogimora.com/` (język według przeglądarki), `/pl/`, `/en/`. Pliki `pl/index.html` i `en/index.html` robi skrypt budujący – tytuł, opis i tekst dla wyszukiwarek w wersji angielskiej zmienia się w `narzedzia/buduj/jezyki.mjs`, polski w `www/index.html` (blok `<!--OPIS-->`).

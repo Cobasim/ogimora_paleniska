@@ -7,3 +7,8 @@
 
 # Serwer OVH nie zna rozszerzenia .mjs - bez tego przegladarka nie uruchomi modulu (strona stoi z rozmytym podgladem).
 AddType application/javascript .mjs
+
+# Kostka: ogimora.com/kostka → ogimora.com/cube
+<IfModule mod_alias.c>
+  RedirectMatch 302 ^/kostka/?$ /cube/
+</IfModule>

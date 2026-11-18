@@ -2,6 +2,9 @@
 
 Jedna linijka na każde wgranie na serwer. Numer wersji jest w `www/js/wersja.js`.
 
+## 0.3.0 – 2026-11-18
+Nowy model: **kostka do nauki spawania** pod adresem `ogimora.com/cube` (także `/kostka`). Strona główna bez zmian – dalej otwiera palenisko, do kostki nie prowadzi jeszcze żaden link. Kostka: bok 100–700 mm (4–28"), blacha 2 / 3 / 4 / 5 mm (cale: 14 ga, 11 ga, 10 ga, 3/16", 1/4"), ścianki stykają się wewnętrznymi krawędziami (rowek na spoinę na zewnątrz), zamki ustalające w parach z ustawianym luzem, ścinane narożniki (trójkąty) aż do połowy boku, na każdej ściance kropki, napis / liczba albo duży otwór (okrągły, kwadratowy), zestawy „kostka do gry” i „liczby”, podgląd 3D ze spoinami, rozkrój, plik DXF w mm albo calach, link odtwarzający projekt. Darmowa bez limitu sztuk (osobny tekst licencji w „O stronie”). Statystyki: w rejestrze pobrań nowa kolumna `model`, liczniki kostki z przedrostkiem `kostka_`, kliknięcia z przedrostkiem `k_`. Palenisko: bez zmian w działaniu.
+
 ## 0.2.1 – 2026-11-18
 Okienka: szczegóły ceny, wyjaśnienie „Luz na ząbkach” i lista uwag mają wyraźną ramkę i przycisk ✕. Na telefonie i tablecie (do 1100 px) rozwijają się w miejscu, pod swoim przyciskiem, zamiast zasłaniać ekran; przy cenie „szczegóły ▾” zmienia się w „zwiń ▴”. Poprawione: „?” przy luzie nie otwierał się na telefonie. Okna (pobieranie, płytki, O stronie, Napisz) – ✕ zostaje widoczny przy przewijaniu; zamykają się kliknięciem w tło, ale już nie przypadkowym kliknięciem przy brzegu okna. Stopka: liczniki opisane samymi literami V · D · P. Wersja angielska: przetłumaczone ostrzeżenie o pionowych nogach.
 

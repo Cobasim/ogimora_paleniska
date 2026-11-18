@@ -122,18 +122,19 @@ if ($typ === 'wizyta') {
 if ($typ === 'pobranie') {
   razem($dir, 'd');
   $kod = slowo($d['kod'] ?? '', 24, '/[^A-Za-z0-9\-]/');
-  $wz = []; foreach (array_slice((array)($d['wz'] ?? []), 0, 4) as $w) $wz[] = slowo($w, 48, '/[^a-z0-9\-]/') ?: '-';
-  $nap = []; foreach (array_slice((array)($d['nap'] ?? []), 0, 4) as $n) $nap[] = max(0, min(40, (int)$n));
+  $wz = []; foreach (array_slice((array)($d['wz'] ?? []), 0, 6) as $w) $wz[] = slowo($w, 48, '/[^a-z0-9\-]/') ?: '-';
+  $nap = []; foreach (array_slice((array)($d['nap'] ?? []), 0, 6) as $n) $nap[] = max(0, min(40, (int)$n));
   $w = (array)($d['wym'] ?? []);
   // wymiary zawsze w mm (także projekty calowe); blacha: '3' / '4' / '5' (mm) albo '11ga' / '10ga' / '3-16' / '1-4' (cale, od 0.2.0)
   $wym = ['bok' => (int)($w['bok'] ?? 0), 'wys' => (int)($w['wys'] ?? 0), 'kat' => (int)($w['kat'] ?? 0), 'dno' => (int)($w['dno'] ?? 0), 'nogi' => (int)($w['nogi'] ?? 0), 'blacha' => slowo($w['blacha'] ?? '', 6, '/[^0-9a-z\-]/') ?: '0'];
+  $model = ($d['model'] ?? '') === 'kostka' ? 'kostka' : 'palenisko';   // od 0.3.0: który model (kostka: bok = wysokość, „dno” = ścięcie narożnika, „nozki” = 1, gdy są zamki)
   $jedn = ($d['jedn'] ?? '') === 'in' ? 'in' : 'mm';           // jednostki projektu na stronie
   $plik = ($d['plik'] ?? '') === 'in' ? 'in' : 'mm';           // jednostki pobranego pliku DXF
   $mat = slowo($d['mat'] ?? '', 12); $ciecie = slowo($d['luz'] ?? '', 6, '/[^0-9.]/');
   $otw = max(0, min(8, (int)($d['otw'] ?? 0)));
   $poza = false;
   $csv = "$dir/pobrania-" . date('Y-m') . '.csv';
-  $NAGL = "czas;kraj;jezyk;urzadzenie;kod;bok;wysokosc;kat;dno;nozki;blacha;material;luz;wzory;napis_znakow;otwory_dna;wersja;jednostki;plik_dxf\n";
+  $NAGL = "czas;kraj;jezyk;urzadzenie;kod;bok;wysokosc;kat;dno;nozki;blacha;material;luz;wzory;napis_znakow;otwory_dna;wersja;jednostki;plik_dxf;model\n";
   if (!is_file($csv)) file_put_contents($csv, $NAGL, LOCK_EX);
   else {   // rejestr założony przed 0.2.0: nowy nagłówek (dwie kolumny na końcu – starsze wiersze mają je puste)
     $f = fopen($csv, 'r+');
@@ -144,12 +145,19 @@ if ($typ === 'pobranie') {
   }
   if (filesize($csv) < MAX_CSV) {
     $linia = [date('Y-m-d H:i'), $kraj, $jez, $urz, $kod, $wym['bok'], $wym['wys'], $wym['kat'], $wym['dno'], $wym['nogi'], $wym['blacha'], $mat, $ciecie,
-              implode('|', $wz), implode('|', $nap), $otw, $wer, $jedn, $plik];
+              implode('|', $wz), implode('|', $nap), $otw, $wer, $jedn, $plik, $model];
     file_put_contents($csv, implode(';', $linia) . "\n", FILE_APPEND | LOCK_EX);
   } else $poza = true;
-  licznik($dir, function (&$t) use ($wz, $nap, $wym, $mat, $kraj, $dzien, $d, $otw, $poza, $wer, $jedn, $plik) {
-    plus($t, 'razem', 'pobrania'); plus($t, 'pobrania_wersja', $wer); plus($t, 'dni_pobrania', $dzien); plus($t, 'pobrania_kraj', $kraj);
+  licznik($dir, function (&$t) use ($wz, $nap, $wym, $mat, $kraj, $dzien, $d, $otw, $poza, $wer, $jedn, $plik, $model) {
+    plus($t, 'razem', 'pobrania'); plus($t, 'pobrania_wersja', $wer); plus($t, 'model', $model); plus($t, 'dni_pobrania', $dzien); plus($t, 'pobrania_kraj', $kraj);
     if ($poza) plus($t, 'razem', 'pobrania_poza_rejestrem');
+    if ($model === 'kostka') {   // kostka: własne liczniki, żeby nie mieszać z paleniskiem
+      foreach (array_unique($wz) as $w) plus($t, 'kostka_scianka', $w === '-' ? 'brak' : $w);
+      plus($t, 'kostka_blacha', (string)$wym['blacha']); plus($t, 'kostka_bok_mm', (string)(intdiv($wym['bok'], 50) * 50));
+      plus($t, 'kostka_sciecie', $wym['dno'] > 0 ? 'jest' : 'brak'); plus($t, 'kostka_zamki', $wym['nogi'] > 0 ? 'sa' : 'brak');
+      plus($t, 'jednostki', $jedn); plus($t, 'plik_dxf', $plik);
+      return;
+    }
     foreach (array_unique($wz) as $w) plus($t, 'wzor', $w === '-' ? 'bez_wzoru' : $w);
     plus($t, 'napis', array_sum($nap) > 0 ? 'jest' : 'brak');
     plus($t, 'otwory_dna', (string)$otw);
