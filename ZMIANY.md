@@ -2,6 +2,9 @@
 
 Jedna linijka na każde wgranie na serwer. Numer wersji jest w `www/js/wersja.js`.
 
+## 0.3.5 – 2026-11-18
+Kostka: układ zamków wybiera się osobno dla krawędzi kostki i osobno dla trójkątów narożników (tak jak szerokość). Zamiast napisów trzy obrazki pod każdym suwakiem: zamki rozłożone, na końcach, jeden w środku (pełny prostokąt = zamek tej ścianki, pusty = sąsiadki); karta „Kształt” już się nie rozjeżdża.
+
 ## 0.3.4 – 2026-11-18
 Kostka. Układ zamków do wyboru: „rozłożone” (jak dotąd), „na końcach” (zamki tylko przy początku i końcu krawędzi – środek wolny na jedną ciągłą spoinę) i „jeden w środku” (jeden zamek łapany przez dwa zamki drugiej ścianki). Cofnij / ponów (przyciski ↶ ↷ i Ctrl+Z / Ctrl+Shift+Z). Cena testowa jak w palenisku, bez szczegółów: suma za jedną sztukę i pod nią „w tym wycięcia w ściankach”. Model papierowy w skali „1 kartka”: wszystko na jednej stronie – logo i nagłówek, dwa widoki (jeden z wymiarami) i cały rozkrój; skale 1:2 i 1:1 jak dotąd (kartka tytułowa + rozkrój). Palenisko: bez zmian.
 

@@ -156,7 +156,7 @@ if ($typ === 'pobranie') {
       foreach (array_unique($wz) as $w) plus($t, 'kostka_scianka', $w === '-' ? 'brak' : $w);
       plus($t, 'kostka_blacha', (string)$wym['blacha']); plus($t, 'kostka_bok_mm', (string)(intdiv($wym['bok'], 50) * 50));
       plus($t, 'kostka_sciecie', $wym['dno'] > 0 ? 'jest' : 'brak'); plus($t, 'kostka_zamek_mm', (string)(intdiv($wym['nogi'], 5) * 5));   // szerokość zamka w przedziałach co 5 mm; 0 = bez zamków
-      plus($t, 'kostka_uklad_zamkow', slowo($wym_uklad ?? 'pary', 10));
+      plus($t, 'kostka_uklad_zamkow', slowo($wym_uklad ?? 'pary', 16));
       plus($t, 'jednostki', $jedn); plus($t, 'plik_dxf', $plik);
       return;
     }

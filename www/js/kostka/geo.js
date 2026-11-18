@@ -42,7 +42,8 @@ export function ogranicz(p) {
   if (q.zt > 0 && q.zt < ZAMEK_MIN) q.zt = ZAMEK_MIN;
   if (q.zamki === false) q.zw = q.zt = 0;
   q.zamki = q.zw > 0 || q.zt > 0;
-  q.uklad = UKLADY.includes(q.uklad) ? q.uklad : 'pary';
+  q.uklad = UKLADY.includes(q.uklad) ? q.uklad : 'pary';                 // układ zamków na krawędziach kostki
+  q.ukladT = UKLADY.includes(q.ukladT) ? q.ukladT : 'pary';              // …i osobno na krawędziach trójkątów narożnych
   return q;
 }
 
@@ -93,9 +94,9 @@ function uprosc(ring) {
 
 /**
  * Obrys z zamkami: wielokąt bazowy (CCW) z ząbkami i wcięciami wpisanymi wprost w każdą krawędź
- * (bez działań na wielokątach – same proste odcinki). krawedzie[i] = { kat, zw, rola } dla krawędzi i → i+1.
+ * (bez działań na wielokątach – same proste odcinki). krawedzie[i] = { kat, zw, uklad, rola } dla krawędzi i → i+1.
  */
-function obrysZamki(baza, krawedzie, t, g, uklad) {
+function obrysZamki(baza, krawedzie, t, g) {
   const ring = []; let ile = 0;
   baza.forEach((P0, i) => {
     const P1 = baza[(i + 1) % baza.length], dx = P1[0] - P0[0], dy = P1[1] - P0[1], L = Math.hypot(dx, dy);
@@ -104,7 +105,7 @@ function obrysZamki(baza, krawedzie, t, g, uklad) {
     P(0, 0);
     const kr = krawedzie[i]; kr.L = L;
     const th = kr.kat, e = t / Math.tan(th / 2), r = th > Math.PI / 2 + 1e-6 ? t * Math.abs(Math.cos(th)) / Math.sin(th) : 0;
-    const z = zamkiKrawedzi(L, t, g, e, kr.zw, uklad, kr.rola);
+    const z = zamkiKrawedzi(L, t, g, e, kr.zw, kr.uklad, kr.rola);
     // ząbek: wychodzi na zewnątrz o e; ząbek sąsiadki przy kącie rozwartym: wcięcie r + luz, szersze o luz z każdej strony
     const cechy = z.moje.map(([a, b]) => ({ a, b, d: e }));
     if (r > 0) z.sasiada.forEach(([a, b]) => cechy.push({ a: a - g, b: b + g, d: -(r + g) }));
@@ -153,9 +154,9 @@ export function zbuduj(p0) {
     // sąsiadki kolejnych prostych krawędzi (dół, prawa, góra, lewa) i rola przy układzie „jeden na środku”:
     // z dwóch stykających się ścianek jeden ząbek ma ta, której oś jest „o jeden wcześniej” (x przed y, y przed z, z przed x)
     const sas = [mul(f.V, -1), u, f.V, mul(u, -1)];
-    const prosta = k => ({ kat: Math.PI / 2, zw: p.zw, rola: (os(sas[k]) - os(f.N) + 3) % 3 === 1 ? 'S' : 'D' });
-    const kraw = baza.map((_, i) => (cp > 0 ? (i % 2 ? { kat: KAT_TROJKAT, zw: p.zt, rola: 'D' } : prosta(i / 2)) : prosta(i)));
-    const kw = obrysZamki(baza, kraw, t, g, p.uklad);
+    const prosta = k => ({ kat: Math.PI / 2, zw: p.zw, uklad: p.uklad, rola: (os(sas[k]) - os(f.N) + 3) % 3 === 1 ? 'S' : 'D' });
+    const kraw = baza.map((_, i) => (cp > 0 ? (i % 2 ? { kat: KAT_TROJKAT, zw: p.zt, uklad: p.ukladT, rola: 'D' } : prosta(i / 2)) : prosta(i)));
+    const kw = obrysZamki(baza, kraw, t, g);
     ileKw += kw.ile; obwodKw += dlugosc(kw.ring); poleKw += Math.abs(pole2(kw.ring));
     plyty.push({ key: 's' + f.nr, rodzaj: 'kw', nr: f.nr, ring: kw.ring, baza, o: mul(f.N, h), u, v: f.V, n: f.N, t, pole: { s: Math.max(0, s), baza, wpisPelny, wpis: Math.max(0, wpisPelny - margines) } });
   }
@@ -171,7 +172,7 @@ export function zbuduj(p0) {
   if (cp > 0) {
     const bok = cp * Math.SQRT2, R = bok / S3;            // promień okręgu opisanego
     const bazaT = [0, 1, 2].map(i => { const f = Math.PI / 2 + i * 2 * Math.PI / 3; return [R * Math.cos(f), R * Math.sin(f)]; });
-    tr = obrysZamki(bazaT, bazaT.map(() => ({ kat: KAT_TROJKAT, zw: p.zt, rola: 'S' })), t, g, p.uklad);
+    tr = obrysZamki(bazaT, bazaT.map(() => ({ kat: KAT_TROJKAT, zw: p.zt, uklad: p.ukladT, rola: 'S' })), t, g);
     let nr = 0;
     for (const sx of [1, -1]) for (const sy of [1, -1]) for (const sz of [1, -1]) {
       const N = norm([sx, sy, sz]);

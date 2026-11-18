@@ -49,7 +49,7 @@ const luzL = (mm, j = J) => (j === 'in' ? liczba(mm / CAL, 3) : liczba(mm, 1));
 const KLUCZ = 'ogik_stan';
 const kropki = () => Object.fromEntries([1, 2, 3, 4, 5, 6].map(n => [n, { typ: 'kropki', n, tekst: String(n), t1: '', t3: '', font: FONT_DOM, ksztalt: 'kolo', skala: 0.7 }]));
 function startowy(j) {
-  const s = { a: 250, t: 3, c: 0, g: 0.3, zw: zamekDomyslny(3), zt: zamekTrojkat(3), uklad: 'pary', sc: kropki() };
+  const s = { a: 250, t: 3, c: 0, g: 0.3, zw: zamekDomyslny(3), zt: zamekTrojkat(3), uklad: 'pary', ukladT: 'pary', sc: kropki() };
   return j === 'in' ? przelicz(s, 'in') : s;
 }
 function przelicz(s, j) {
@@ -71,7 +71,8 @@ function popraw(s) {            // dane z linku albo z pamięci: tylko znane pol
   if (![...BLACHY.mm, ...BLACHY.in].some(b => Math.abs(b.t - q.t) < 1e-3)) q.t = 3;
   q.zw = s.zamki === false || s.zamki === 0 ? 0 : Number.isFinite(+s.zw) ? +s.zw : zamekDomyslny(q.t);   // stare linki: zamki tak / nie
   q.zt = s.zamki === false || s.zamki === 0 ? 0 : Number.isFinite(+s.zt) ? +s.zt : zamekTrojkat(q.t);
-  q.uklad = ['pary', 'konce', 'srodek'].includes(s.uklad) ? s.uklad : 'pary';       // układ zamków na krawędzi (od 0.3.4)
+  q.uklad = ['pary', 'konce', 'srodek'].includes(s.uklad) ? s.uklad : 'pary';       // układ zamków na krawędziach kostki (od 0.3.4)
+  q.ukladT = ['pary', 'konce', 'srodek'].includes(s.ukladT) ? s.ukladT : q.uklad;     // …i osobno przy trójkątach (od 0.3.5; starszy link: jak na krawędziach)
   q.sc = {};
   for (let n = 1; n <= 6; n++) {
     const x = (s.sc && s.sc[n]) || {}, typ = ['brak', 'kropki', 'napis', 'otwor'].includes(x.typ) ? x.typ : 'brak';
@@ -414,14 +415,21 @@ function ustawSuwak(id, min, max, step, v, wysw) {
   r.min = min; r.max = max; r.step = step; r.value = v; r.style.setProperty('--p', `${max > min ? Math.min(1, Math.max(0, (v - min) / (max - min))) * 100 : 0}%`);
   if (document.activeElement !== n) n.value = wysw;
 }
+// układy zamków pokazane obrazkami: krawędź, zamki tej ścianki (pełne) i sąsiadki (obrys)
+const UKL = {
+  pary: [T('Pary zamków rozłożone równo wzdłuż krawędzi', 'Pairs of tabs spread evenly along the edge'), [[5, 1], [9.5, 0], [22, 1], [26.5, 0]]],
+  konce: [T('Zamki tylko przy początku i końcu krawędzi – środek wolny na jedną ciągłą spoinę', 'Tabs only near both ends of the edge – the middle stays free for one continuous weld'), [[2, 1], [6.5, 0], [25, 1], [29.5, 0]]],
+  srodek: [T('Jeden zamek na środku krawędzi, łapany przez dwa zamki drugiej ścianki', 'One tab in the middle of the edge, held between two tabs of the other side'), [[11.5, 0], [16, 1], [20.5, 0]]],
+};
+const uklady = pole => `<div class="k-ukl" data-pole="${pole}" role="group">${Object.entries(UKL).map(([v, [tt, zeby]]) => `<button type="button" class="chip" data-u="${v}" title="${tt}" aria-label="${tt}"><svg viewBox="0 0 36 16" width="36" height="16" aria-hidden="true"><path d="M1 12.5H35" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>${zeby.map(([x, moj]) => `<rect x="${x}" y="5" width="4" height="7.5" ${moj ? 'fill="#df3434" stroke="#df3434"' : 'fill="none" stroke="currentColor"'} stroke-width="1.1"/>`).join('')}</svg></button>`).join('')}</div>`;
 function panelKsztalt() {
   const u = J === 'in' ? 'in' : 'mm';
   $('kKsztalt').innerHTML = `<h2>${T('Kształt', 'Shape')}</h2>
     ${suwak('a', T('Bok kostki (wymiar zewnętrzny)', 'Cube side (outside size)'), ik.bok, u)}
     ${suwak('c', T('Ścięcie narożników: 0 = brak; największe sięga połowy boku', 'Corner cut: 0 = none; the largest reaches the middle of each edge'), ik.sciecie, u)}
     ${suwak('zw', T('Szerokość zamków na krawędziach kostki: 0 = bez zamków', 'Tab width on the cube edges: 0 = no tabs'), ikZamek, u)}
-    <div class="k-uklad" id="kUklad"><span>${T('Zamki', 'Tabs')}</span>${[['pary', T('Rozłożone', 'Spread'), T('Pary zamków rozłożone równo wzdłuż krawędzi', 'Pairs of tabs spread evenly along the edge')], ['konce', T('Na końcach', 'At the ends'), T('Zamki tylko przy początku i końcu krawędzi – środek wolny na jedną ciągłą spoinę', 'Tabs only near both ends of the edge – the middle stays free for one continuous weld')], ['srodek', T('Jeden w środku', 'One in the middle'), T('Jeden zamek na środku krawędzi, łapany przez dwa zamki drugiej ścianki', 'One tab in the middle of the edge, held between two tabs of the other side')]].map(([v, n, tt]) => `<button type="button" class="chip" data-uklad="${v}" title="${tt}">${n}</button>`).join('')}</div>
-    <div id="kZtRow">${suwak('zt', T('Szerokość zamków przy trójkątach narożników: 0 = bez zamków', 'Tab width at the corner triangles: 0 = no tabs'), ikZamekT, u)}</div>
+    ${uklady('uklad')}
+    <div id="kZtRow">${suwak('zt', T('Szerokość zamków przy trójkątach narożników: 0 = bez zamków', 'Tab width at the corner triangles: 0 = no tabs'), ikZamekT, u)}${uklady('ukladT')}</div>
     <div class="row derived" title="${T('Wymiar jednej ścianki do wycięcia (bez zamków) i liczba zamków na całej kostce', 'Size of one side plate to cut (without tabs) and the number of tabs on the whole cube')}"><span>${ICONS.sheet || ''}</span><output id="kPlyta"></output></div><p class="k-zwopis" id="kZwOpis"></p>`;
   const zm = (id, zZdarzenia) => {
     const r = $('r-' + id), n = $('n-' + id);
@@ -429,7 +437,7 @@ function panelKsztalt() {
     n.addEventListener('change', () => { const v = parseFloat(String(n.value).replace(',', '.')); if (Number.isFinite(v)) ustaw(id, J === 'in' ? v * CAL : v); else odswiez(); track('k_pole', { param: id }); });
   };
   zm('a'); zm('c'); zm('zw'); zm('zt');
-  $('kUklad').addEventListener('click', e => { const b = e.target.closest('[data-uklad]'); if (!b) return; state.uklad = b.dataset.uklad; track('k_uklad', { value: state.uklad }); odswiez(false); });
+  $('kKsztalt').querySelectorAll('.k-ukl').forEach(box => box.addEventListener('click', e => { const b = e.target.closest('[data-u]'); if (!b) return; const pole = box.dataset.pole; state[pole] = b.dataset.u; track('k_' + pole.toLowerCase(), { value: b.dataset.u }); odswiez(false); }));
 }
 function ustaw(id, v) {
   const S = SIATKA[J], Z = ZAKRES[J];
@@ -603,7 +611,7 @@ function odswiez(panel = true) {
   $('kZwOpis').textContent = model.zamki.razem > 0 ? T(`zamków: ${model.zamki.razem}`, `tabs: ${model.zamki.razem}`) : T('bez zamków', 'no tabs');
   ustawSuwak('zt', 0, ZW_MAX[J], S.zw, state.zt, pole(state.zt, J === 'in' ? 3 : 0)); $('n-zt').step = J === 'in' ? 0.0625 : 1;
   $('kZtRow').classList.toggle('off', !(state.c > 0));
-  document.querySelectorAll('#kUklad [data-uklad]').forEach(b => b.classList.toggle('active', b.dataset.uklad === state.uklad));
+  document.querySelectorAll('#kKsztalt .k-ukl').forEach(box => box.querySelectorAll('[data-u]').forEach(b => { const on = b.dataset.u === state[box.dataset.pole]; b.classList.toggle('active', on); b.setAttribute('aria-pressed', on); }));
   $('kLuz').classList.toggle('off', !(state.zw > 0 || (state.c > 0 && state.zt > 0)));
   document.querySelectorAll('#kBlacha [data-g]').forEach(b => b.classList.toggle('active', Math.abs(+b.dataset.g - state.g) < 1e-3));
   $('n-a').step = J === 'in' ? 0.5 : 10; $('n-c').step = J === 'in' ? 0.25 : 5; $('n-g').step = J === 'in' ? 0.005 : 0.1;
@@ -714,7 +722,7 @@ $('pdf').addEventListener('click', async () => {
 
 // statystyki: kod i opis projektu (bez treści napisów – tylko liczba znaków)
 setCodeSource(() => `K${Math.round(state.a)}-${blacha(state.t).kod}-${Math.round(state.c)}`);
-setProjektSource(() => ({ model: 'kostka', wym: { bok: Math.round(state.a), wys: Math.round(state.a), kat: 0, dno: Math.round(state.c), nogi: Math.round(state.zw), uklad: state.uklad, blacha: blacha(state.t).kod },
+setProjektSource(() => ({ model: 'kostka', wym: { bok: Math.round(state.a), wys: Math.round(state.a), kat: 0, dno: Math.round(state.c), nogi: Math.round(state.zw), uklad: state.uklad + (state.c > 0 ? '-' + state.ukladT : ''), blacha: blacha(state.t).kod },
   wz: [1, 2, 3, 4, 5, 6].map(n => { const s = state.sc[n]; return 'k-' + (s.typ === 'kropki' ? 'kropki' + s.n : s.typ === 'otwor' ? 'otwor-' + s.ksztalt : s.typ === 'napis' ? 'napis-' + s.font.toLowerCase() : s.typ); }),
   nap: [1, 2, 3, 4, 5, 6].map(n => (state.sc[n].typ === 'napis' ? wiersze(state.sc[n]).join('').length : 0)), otw: 0, mat: 's235', luz: state.g.toFixed(2), jedn: J }));
 
